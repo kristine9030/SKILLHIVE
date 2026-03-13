@@ -82,6 +82,109 @@ $portfolioUrl = trim((string) ($student['portfolio_url'] ?? ''));
 $linkedinUrl = trim((string) ($student['linkedin_url'] ?? ''));
 $githubUrl = trim((string) ($student['github_url'] ?? ''));
 
+$aboutIntro = trim((string) ($student['about_me_intro'] ?? ''));
+if ($aboutIntro === '') {
+  $aboutIntro = $student['preferred_industry']
+    ? 'Interested in ' . $student['preferred_industry'] . ' opportunities and building practical internship-ready skills.'
+    : 'Passionate student building internship-ready skills and portfolio projects.';
+}
+
+$aboutPointsRaw = trim((string) ($student['about_me_points'] ?? ''));
+$aboutPoints = [];
+if ($aboutPointsRaw !== '') {
+  $pointLines = preg_split('/\r\n|\r|\n/', $aboutPointsRaw) ?: [];
+  foreach ($pointLines as $line) {
+    $line = trim((string) $line);
+    if ($line === '') {
+      continue;
+    }
+    $aboutPoints[] = $line;
+  }
+}
+if (!$aboutPoints) {
+  $aboutPoints = [
+    'Ability to work independently as well as a team member.',
+    'Ability to work under pressure and meet deadlines.',
+    'Dependable, organized, and highly motivated.',
+  ];
+}
+
+$experienceEntries = [];
+$experienceRaw = trim((string) ($student['experience_entries'] ?? ''));
+if ($experienceRaw !== '') {
+  $decoded = json_decode($experienceRaw, true);
+  if (is_array($decoded)) {
+    foreach ($decoded as $entry) {
+      if (!is_array($entry)) {
+        continue;
+      }
+      $title = trim((string) ($entry['title'] ?? ''));
+      $subtitle = trim((string) ($entry['subtitle'] ?? ''));
+      $date = trim((string) ($entry['date'] ?? ''));
+      if ($title === '' || $subtitle === '') {
+        continue;
+      }
+      $experienceEntries[] = [
+        'title' => $title,
+        'subtitle' => $subtitle,
+        'date' => $date !== '' ? $date : 'Present',
+      ];
+    }
+  }
+}
+if (!$experienceEntries) {
+  $experienceEntries = [
+    ['title' => 'Internship Candidate', 'subtitle' => (string) ($student['department'] ?? 'Department'), 'date' => 'Current'],
+    ['title' => 'Student Developer', 'subtitle' => (string) ($student['program'] ?? 'Program'), 'date' => 'Academic Projects'],
+  ];
+}
+
+$portfolioEntries = [];
+$portfolioEntriesRaw = trim((string) ($student['portfolio_entries'] ?? ''));
+if ($portfolioEntriesRaw !== '') {
+  $decodedPortfolio = json_decode($portfolioEntriesRaw, true);
+  if (is_array($decodedPortfolio)) {
+    foreach ($decodedPortfolio as $item) {
+      if (!is_array($item)) {
+        continue;
+      }
+      $label = trim((string) ($item['label'] ?? ''));
+      $emoji = trim((string) ($item['emoji'] ?? ''));
+      if ($label === '') {
+        continue;
+      }
+      $portfolioEntries[] = [
+        'label' => $label,
+        'emoji' => $emoji !== '' ? $emoji : '💼',
+      ];
+    }
+  }
+}
+if (!$portfolioEntries) {
+  $portfolioEntries = [
+    ['label' => 'Home App UI', 'emoji' => '🏠'],
+    ['label' => 'Design Kit', 'emoji' => '🎨'],
+    ['label' => 'Case Study', 'emoji' => '🧩'],
+  ];
+}
+
+$experienceTextAreaValue = implode("\n", array_map(static function (array $entry): string {
+  return $entry['title'] . ' | ' . $entry['subtitle'] . ' | ' . $entry['date'];
+}, $experienceEntries));
+
+$portfolioTextAreaValue = implode("\n", array_map(static function (array $item): string {
+  return $item['label'] . ' | ' . $item['emoji'];
+}, $portfolioEntries));
+
+$portfolioGradients = [
+  'linear-gradient(135deg,#BAE6FD,#93C5FD)',
+  'linear-gradient(135deg,#FEF08A,#F97316)',
+  'linear-gradient(135deg,#CBD5E1,#94A3B8)',
+  'linear-gradient(135deg,#A7F3D0,#34D399)',
+  'linear-gradient(135deg,#FBCFE8,#F472B6)',
+  'linear-gradient(135deg,#C4B5FD,#818CF8)',
+];
+
 $levelPercent = [
     'Beginner' => 45,
     'Intermediate' => 70,
@@ -431,29 +534,32 @@ $levelPercent = [
 
     <div id="pf-bg" style="display:flex;flex-direction:column;gap:12px;">
       <div class="pf-card">
-        <div class="pf-card-title">About Me</div>
-        <p class="pf-about-intro"><?php echo htmlspecialchars($student['preferred_industry'] ? 'Interested in ' . $student['preferred_industry'] . ' opportunities and building practical internship-ready skills.' : 'Passionate student building internship-ready skills and portfolio projects.'); ?></p>
+        <div class="pf-card-title">About Me <span class="pf-card-title-edit" onclick="openEditProfile()"><i class="fas fa-pen"></i> Edit</span></div>
+        <p class="pf-about-intro"><?php echo htmlspecialchars($aboutIntro); ?></p>
         <div class="pf-about-points">
-          <div class="pf-about-point"><i class="fas fa-check-circle"></i>Ability to work independently as well as a team member.</div>
-          <div class="pf-about-point"><i class="fas fa-check-circle"></i>Ability to work under pressure and meet deadlines.</div>
-          <div class="pf-about-point"><i class="fas fa-check-circle"></i>Dependable, organized, and highly motivated.</div>
+          <?php foreach ($aboutPoints as $point): ?>
+            <div class="pf-about-point"><i class="fas fa-check-circle"></i><?php echo htmlspecialchars($point); ?></div>
+          <?php endforeach; ?>
         </div>
       </div>
 
       <div class="pf-card">
-        <div class="pf-card-title">Experience</div>
+        <div class="pf-card-title">Experience <span class="pf-card-title-edit" onclick="openEditProfile()"><i class="fas fa-pen"></i> Edit</span></div>
         <div class="pf-exp-list">
-          <div class="pf-exp-row"><div class="pf-exp-logo" style="background:linear-gradient(135deg,#4285F4,#34A853)">I</div><div class="pf-exp-body"><div class="pf-exp-title">Internship Candidate</div><div class="pf-exp-sub"><?php echo htmlspecialchars($student['department'] ?? 'Department'); ?></div><div class="pf-exp-date">Current</div></div></div>
-          <div class="pf-exp-row"><div class="pf-exp-logo" style="background:linear-gradient(135deg,#111827,#374151)">S</div><div class="pf-exp-body"><div class="pf-exp-title">Student Developer</div><div class="pf-exp-sub"><?php echo htmlspecialchars($student['program'] ?? 'Program'); ?></div><div class="pf-exp-date">Academic Projects</div></div></div>
+          <?php $expGradients = ['linear-gradient(135deg,#4285F4,#34A853)', 'linear-gradient(135deg,#111827,#374151)', 'linear-gradient(135deg,#0EA5E9,#6366F1)', 'linear-gradient(135deg,#10B981,#06B6D4)']; ?>
+          <?php foreach ($experienceEntries as $index => $entry): ?>
+            <?php $logoChar = strtoupper(substr((string) $entry['title'], 0, 1)); ?>
+            <div class="pf-exp-row"><div class="pf-exp-logo" style="background:<?php echo $expGradients[$index % count($expGradients)]; ?>"><?php echo htmlspecialchars($logoChar !== '' ? $logoChar : 'E'); ?></div><div class="pf-exp-body"><div class="pf-exp-title"><?php echo htmlspecialchars($entry['title']); ?></div><div class="pf-exp-sub"><?php echo htmlspecialchars($entry['subtitle']); ?></div><div class="pf-exp-date"><?php echo htmlspecialchars($entry['date']); ?></div></div></div>
+          <?php endforeach; ?>
         </div>
       </div>
 
       <div class="pf-card">
-        <div class="pf-card-title">Portfolio</div>
+        <div class="pf-card-title">Portfolio <span class="pf-card-title-edit" onclick="openEditProfile()"><i class="fas fa-pen"></i> Edit</span></div>
         <div class="pf-portfolio-grid">
-          <div class="pf-pthumb"><div class="pf-pthumb-inner" style="background:linear-gradient(135deg,#BAE6FD,#93C5FD)">🏠</div><div class="pf-pthumb-label">Home App UI</div></div>
-          <div class="pf-pthumb"><div class="pf-pthumb-inner" style="background:linear-gradient(135deg,#FEF08A,#F97316)">🎨</div><div class="pf-pthumb-label">Design Kit</div></div>
-          <div class="pf-pthumb"><div class="pf-pthumb-inner" style="background:linear-gradient(135deg,#CBD5E1,#94A3B8)">🧩</div><div class="pf-pthumb-label">Case Study</div></div>
+          <?php foreach ($portfolioEntries as $index => $item): ?>
+            <div class="pf-pthumb"><div class="pf-pthumb-inner" style="background:<?php echo $portfolioGradients[$index % count($portfolioGradients)]; ?>"><?php echo htmlspecialchars($item['emoji']); ?></div><div class="pf-pthumb-label"><?php echo htmlspecialchars($item['label']); ?></div></div>
+          <?php endforeach; ?>
         </div>
       </div>
     </div>
@@ -811,6 +917,25 @@ $levelPercent = [
           </div>
         </div>
         <div class="pf-field"><label>Preferred Industry</label><input name="preferred_industry" value="<?php echo htmlspecialchars($student['preferred_industry'] ?? ''); ?>"></div>
+        <div class="pf-field" style="margin-top:18px;margin-bottom:8px;border-top:1px solid #F1F5F9;padding-top:16px;">
+          <label style="font-weight:700;color:#0F172A;">Background</label>
+        </div>
+        <div class="pf-field">
+          <label>About Me Intro</label>
+          <textarea name="about_me_intro" rows="3" maxlength="600" placeholder="Write a short introduction about yourself."><?php echo htmlspecialchars((string) ($student['about_me_intro'] ?? '')); ?></textarea>
+        </div>
+        <div class="pf-field">
+          <label>About Me Highlights (one per line)</label>
+          <textarea name="about_me_points" rows="4" placeholder="Ability to lead projects&#10;Strong communication skills&#10;Problem-solver mindset"><?php echo htmlspecialchars((string) ($student['about_me_points'] ?? '')); ?></textarea>
+        </div>
+        <div class="pf-field">
+          <label>Experience (one per line: Role | Organization | Date)</label>
+          <textarea name="experience_entries" rows="4" placeholder="Internship Candidate | College of Informatics and Computing | Current&#10;Student Developer | BS Information Technology | Academic Projects"><?php echo htmlspecialchars($experienceTextAreaValue); ?></textarea>
+        </div>
+        <div class="pf-field">
+          <label>Portfolio (one per line: Title | Emoji)</label>
+          <textarea name="portfolio_entries" rows="4" placeholder="Home App UI | 🏠&#10;Design Kit | 🎨&#10;Case Study | 🧩"><?php echo htmlspecialchars($portfolioTextAreaValue); ?></textarea>
+        </div>
         <div class="pf-field" style="margin-top:18px;margin-bottom:8px;border-top:1px solid #F1F5F9;padding-top:16px;">
           <label style="font-weight:700;color:#0F172A;">Social Links</label>
         </div>

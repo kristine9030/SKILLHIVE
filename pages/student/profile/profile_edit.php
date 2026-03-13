@@ -16,6 +16,10 @@ function profile_ensure_link_columns(PDO $pdo): void
         'portfolio_url' => 'VARCHAR(255) NULL',
         'linkedin_url' => 'VARCHAR(255) NULL',
         'github_url' => 'VARCHAR(255) NULL',
+        'about_me_intro' => 'TEXT NULL',
+        'about_me_points' => 'TEXT NULL',
+        'experience_entries' => 'LONGTEXT NULL',
+        'portfolio_entries' => 'LONGTEXT NULL',
     ];
 
     $existing = [];
@@ -80,6 +84,10 @@ function profile_handle_edit(PDO $pdo, int $userId, array &$profileErrors, strin
     $yearLevel = (int) ($_POST['year_level'] ?? 0);
     $availability = trim($_POST['availability_status'] ?? 'Available');
     $preferredIndustry = trim($_POST['preferred_industry'] ?? '');
+    $aboutMeIntro = trim((string) ($_POST['about_me_intro'] ?? ''));
+    $aboutMePointsRaw = trim((string) ($_POST['about_me_points'] ?? ''));
+    $experienceEntriesRaw = trim((string) ($_POST['experience_entries'] ?? ''));
+    $portfolioEntriesRaw = trim((string) ($_POST['portfolio_entries'] ?? ''));
     [$googleUrl, $googleError] = profile_normalize_link_input((string) ($_POST['google_url'] ?? ''));
     [$gmailUrl, $gmailError] = profile_normalize_link_input((string) ($_POST['gmail_url'] ?? ''), 'email');
     [$discordUrl, $discordError] = profile_normalize_link_input((string) ($_POST['discord_url'] ?? ''));
@@ -97,6 +105,100 @@ function profile_handle_edit(PDO $pdo, int $userId, array &$profileErrors, strin
     if ($department === '') $profileErrors[] = 'Department is required.';
     if ($yearLevel < 1 || $yearLevel > 8) $profileErrors[] = 'Year level must be between 1 and 8.';
     if (!in_array($availability, $validAvailability, true)) $profileErrors[] = 'Invalid availability status.';
+
+    if (mb_strlen($aboutMeIntro) > 600) {
+        $profileErrors[] = 'About me intro must be 600 characters or less.';
+    }
+
+    $aboutMePoints = [];
+    if ($aboutMePointsRaw !== '') {
+        $pointLines = preg_split('/\r\n|\r|\n/', $aboutMePointsRaw) ?: [];
+        foreach ($pointLines as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+            if (mb_strlen($line) > 180) {
+                $profileErrors[] = 'Each about me point must be 180 characters or less.';
+                break;
+            }
+            $aboutMePoints[] = $line;
+            if (count($aboutMePoints) >= 8) {
+                break;
+            }
+        }
+    }
+
+    $experienceEntries = [];
+    if ($experienceEntriesRaw !== '') {
+        $expLines = preg_split('/\r\n|\r|\n/', $experienceEntriesRaw) ?: [];
+        foreach ($expLines as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+
+            $parts = array_map('trim', explode('|', $line));
+            $title = (string) ($parts[0] ?? '');
+            $subtitle = (string) ($parts[1] ?? '');
+            $date = (string) ($parts[2] ?? '');
+
+            if ($title === '' || $subtitle === '') {
+                $profileErrors[] = 'Each experience line must follow: Role | Organization | Date.';
+                break;
+            }
+
+            if (mb_strlen($title) > 80 || mb_strlen($subtitle) > 120 || mb_strlen($date) > 60) {
+                $profileErrors[] = 'Experience fields are too long.';
+                break;
+            }
+
+            $experienceEntries[] = [
+                'title' => $title,
+                'subtitle' => $subtitle,
+                'date' => $date !== '' ? $date : 'Present',
+            ];
+
+            if (count($experienceEntries) >= 8) {
+                break;
+            }
+        }
+    }
+
+    $portfolioEntries = [];
+    if ($portfolioEntriesRaw !== '') {
+        $portfolioLines = preg_split('/\r\n|\r|\n/', $portfolioEntriesRaw) ?: [];
+        foreach ($portfolioLines as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+
+            $parts = array_map('trim', explode('|', $line));
+            $label = (string) ($parts[0] ?? '');
+            $emoji = (string) ($parts[1] ?? '');
+
+            if ($label === '') {
+                $profileErrors[] = 'Each portfolio line must include a title.';
+                break;
+            }
+
+            if (mb_strlen($label) > 80 || mb_strlen($emoji) > 8) {
+                $profileErrors[] = 'Portfolio fields are too long.';
+                break;
+            }
+
+            $portfolioEntries[] = [
+                'label' => $label,
+                'emoji' => $emoji !== '' ? $emoji : '💼',
+            ];
+
+            if (count($portfolioEntries) >= 9) {
+                break;
+            }
+        }
+    }
+
     foreach ([$googleError, $gmailError, $discordError, $dribbbleError, $behanceError, $portfolioError, $linkedinError, $githubError] as $linkError) {
         if ($linkError !== null) {
             $profileErrors[] = $linkError;
@@ -116,6 +218,10 @@ function profile_handle_edit(PDO $pdo, int $userId, array &$profileErrors, strin
              year_level = ?,
              availability_status = ?,
              preferred_industry = ?,
+             about_me_intro = ?,
+             about_me_points = ?,
+             experience_entries = ?,
+             portfolio_entries = ?,
              google_url = ?,
              gmail_url = ?,
              discord_url = ?,
@@ -136,6 +242,10 @@ function profile_handle_edit(PDO $pdo, int $userId, array &$profileErrors, strin
         $yearLevel,
         $availability,
         $preferredIndustry !== '' ? $preferredIndustry : null,
+        $aboutMeIntro !== '' ? $aboutMeIntro : null,
+        !empty($aboutMePoints) ? implode("\n", $aboutMePoints) : null,
+        !empty($experienceEntries) ? json_encode($experienceEntries, JSON_UNESCAPED_UNICODE) : null,
+        !empty($portfolioEntries) ? json_encode($portfolioEntries, JSON_UNESCAPED_UNICODE) : null,
         $googleUrl,
         $gmailUrl,
         $discordUrl,
