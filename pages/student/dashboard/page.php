@@ -1,5 +1,10 @@
 <?php
-require_once __DIR__ . '/../../backend/db_connect.php';
+function render_dashboard_page(): void
+{
+  global $userName, $userId, $baseUrl;
+?>
+<?php
+require_once __DIR__ . '/../../../backend/db_connect.php';
 
 $firstName = explode(' ', $userName)[0];
 
@@ -270,3 +275,6 @@ $student['internship_readiness_score'] = $readinessScore;
     </div>
   </div>
 </div>
+
+<?php
+}

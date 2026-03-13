@@ -1,3 +1,8 @@
+<?php
+function render_settings_page(): void
+{
+    global $userName, $userEmail, $role;
+?>
 <div class="page-header">
   <div>
     <h2 class="page-title">Settings</h2>
@@ -89,3 +94,6 @@
     </div>
   </div>
 </div>
+
+<?php
+}
