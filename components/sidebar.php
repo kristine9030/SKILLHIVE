@@ -58,7 +58,7 @@ if ($role === 'student') {
       <div class="logo-icon"><i class="fas fa-hexagon-nodes"></i></div>
       <span class="sb-logo-text">SkillHive</span>
     </a>
-    <button class="sb-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+    <button class="sb-toggle" type="button" onclick="toggleSidebar()"><i class="fas fa-chevron-left"></i></button>
   </div>
 
   <nav class="sb-nav">
@@ -67,18 +67,14 @@ if ($role === 'student') {
       <?php foreach ($section['items'] as $item): ?>
         <a href="<?php echo $baseUrl; ?>/layout.php?page=<?php echo $item['page']; ?>"
            class="sb-item <?php echo ($currentPage === $item['page']) ? 'active' : ''; ?>">
-          <i class="<?php echo $item['icon']; ?>"></i>
-          <span><?php echo $item['text']; ?></span>
+          <span class="sb-item-icon"><i class="<?php echo $item['icon']; ?>"></i></span>
+          <span class="sb-item-text"><?php echo $item['text']; ?></span>
         </a>
       <?php endforeach; ?>
     <?php endforeach; ?>
   </nav>
 
   <div class="sb-footer">
-    <a href="<?php echo $baseUrl; ?>/pages/auth/logout.php" class="sb-item sb-logout">
-      <i class="fas fa-right-from-bracket"></i>
-      <span>Sign Out</span>
-    </a>
     <div class="sb-user">
       <div class="sb-avatar"><?php echo $initials; ?></div>
       <div class="sb-user-info">

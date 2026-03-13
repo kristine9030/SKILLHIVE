@@ -138,13 +138,87 @@ if (!$pageTitle) $pageTitle = 'Dashboard';
   </div>
 </div>
 
-<div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileSidebar()"></div>
 
 <script>
 function toggleSidebar() {
-  document.querySelector('.sidebar').classList.toggle('open');
-  document.getElementById('mobileOverlay').classList.toggle('active');
+    var sidebar = document.querySelector('.sidebar');
+    var overlay = document.getElementById('mobileOverlay');
+    var isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+    if (!sidebar || !overlay) {
+        return;
+    }
+
+    if (isMobile) {
+        sidebar.classList.remove('collapsed');
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('active', sidebar.classList.contains('open'));
+        return;
+    }
+
+    sidebar.classList.toggle('collapsed');
 }
+
+function closeMobileSidebar() {
+    var sidebar = document.querySelector('.sidebar');
+    var overlay = document.getElementById('mobileOverlay');
+
+    if (!sidebar || !overlay) {
+        return;
+    }
+
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+}
+
+function toggleTopbarProfile(event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    var menu = document.getElementById('topbarProfileMenu');
+    var toggle = document.getElementById('topbarProfileToggle');
+    if (!menu || !toggle) return;
+
+    var isOpen = menu.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function closeTopbarProfile() {
+    var menu = document.getElementById('topbarProfileMenu');
+    var toggle = document.getElementById('topbarProfileToggle');
+    if (menu && toggle) {
+        menu.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+    }
+}
+
+document.addEventListener('click', function (event) {
+    var profileWrap = document.getElementById('topbarProfileWrap');
+    if (profileWrap && !profileWrap.contains(event.target)) {
+        closeTopbarProfile();
+    }
+});
+
+document.addEventListener('click', function (event) {
+    var item = event.target.closest('.topbar-dropdown-item');
+    if (item) {
+        closeTopbarProfile();
+    }
+});
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeTopbarProfile();
+    }
+});
+
+window.addEventListener('resize', function () {
+    if (!window.matchMedia('(max-width: 768px)').matches) {
+        closeMobileSidebar();
+    }
+    closeTopbarProfile();
+});
 
 // Auto-dismiss flash toast
 var toast = document.getElementById('flashToast');
