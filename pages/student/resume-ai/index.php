@@ -14,7 +14,7 @@ if (isset($pdo, $userId)) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string) ($_POST['action'] ?? '') === 'upload_resume_ai') {
-    $uploadDir = __DIR__ . '/../../assets/backend/uploads/resumes';
+    $uploadDir = __DIR__ . '/../../../assets/backend/uploads/resumes';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);
     }

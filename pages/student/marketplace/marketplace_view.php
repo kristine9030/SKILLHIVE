@@ -7,7 +7,7 @@ function marketplace_render(array $data): void
     // $consentVersion, $applicationSuccessModal, $studentSkillNames, $listings,
     // $industries, $locations, $appliedInternshipIds, $detailListing,
     // $detailRequirements, $detailMatchCount, $detailRequiredCount,
-    // $studentHasResume, $resumeRow
+    // $studentHasResume, $resumeRow, $externalListingsCount, $externalListingsNotice
     ?>
 
 <style>
@@ -66,6 +66,8 @@ function marketplace_render(array $data): void
 .market-success-box-head { padding:12px 14px; background:#f8fafc; font-weight:700; color:#0f172a; }
 .market-success-box-body { padding:14px; }
 .market-success-actions { padding:0 24px 24px; display:flex; flex-direction:column; gap:10px; }
+.market-source-chip { display:inline-flex; align-items:center; gap:4px; font-size:.68rem; color:#0369a1; background:rgba(14,165,233,.12); border:1px solid rgba(14,165,233,.24); border-radius:999px; padding:2px 8px; }
+.market-source-note { margin:6px 0 2px; font-size:.77rem; color:#475569; display:flex; align-items:center; gap:6px; }
 @media (max-width: 980px) {
   .market-detail-grid { grid-template-columns:1fr; }
   .market-modal-grid { grid-template-columns:1fr; }
@@ -82,31 +84,92 @@ function marketplace_render(array $data): void
 <form method="get" action="<?php echo marketplace_e($baseUrl); ?>/layout.php">
   <input type="hidden" name="page" value="student/marketplace">
   <div class="filter-row">
-    <div class="topbar-search" style="flex:1;max-width:300px">
-      <i class="fas fa-search"></i>
-      <input type="text" name="q" placeholder="Search internships..." value="<?php echo marketplace_e($currentFilters['q']); ?>">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="topbar-search" style="flex:1;max-width:300px">
+        <i class="fas fa-search"></i>
+        <input type="text" name="q" placeholder="Search internships..." value="<?php echo marketplace_e($currentFilters['q']); ?>">
+      </div>
+      <select class="filter-select" name="industry" onchange="this.form.submit()">
+        <option value="">All Industries</option>
+        <?php foreach ($industries as $industry): ?>
+          <option value="<?php echo marketplace_e($industry); ?>" <?php echo $currentFilters['industry'] === $industry ? 'selected' : ''; ?>><?php echo marketplace_e($industry); ?></option>
+        <?php endforeach; ?>
+      </select>
+      <select class="filter-select" name="location" onchange="this.form.submit()">
+        <option value="">All Locations</option>
+        <?php foreach ($locations as $location): ?>
+          <option value="<?php echo marketplace_e($location); ?>" <?php echo $currentFilters['location'] === $location ? 'selected' : ''; ?>><?php echo marketplace_e($location); ?></option>
+        <?php endforeach; ?>
+      </select>
+      <select class="filter-select" name="work_setup" onchange="this.form.submit()">
+        <option value="">Work Setup</option>
+        <?php foreach (['On-site', 'Remote', 'Hybrid'] as $setup): ?>
+          <option value="<?php echo marketplace_e($setup); ?>" <?php echo $currentFilters['work_setup'] === $setup ? 'selected' : ''; ?>><?php echo marketplace_e($setup); ?></option>
+        <?php endforeach; ?>
+      </select>
+      <button class="btn btn-ghost btn-sm" type="submit">Filter</button>
     </div>
-    <select class="filter-select" name="industry" onchange="this.form.submit()">
-      <option value="">All Industries</option>
-      <?php foreach ($industries as $industry): ?>
-        <option value="<?php echo marketplace_e($industry); ?>" <?php echo $currentFilters['industry'] === $industry ? 'selected' : ''; ?>><?php echo marketplace_e($industry); ?></option>
-      <?php endforeach; ?>
-    </select>
-    <select class="filter-select" name="location" onchange="this.form.submit()">
-      <option value="">All Locations</option>
-      <?php foreach ($locations as $location): ?>
-        <option value="<?php echo marketplace_e($location); ?>" <?php echo $currentFilters['location'] === $location ? 'selected' : ''; ?>><?php echo marketplace_e($location); ?></option>
-      <?php endforeach; ?>
-    </select>
-    <select class="filter-select" name="work_setup" onchange="this.form.submit()">
-      <option value="">Work Setup</option>
-      <?php foreach (['On-site', 'Remote', 'Hybrid'] as $setup): ?>
-        <option value="<?php echo marketplace_e($setup); ?>" <?php echo $currentFilters['work_setup'] === $setup ? 'selected' : ''; ?>><?php echo marketplace_e($setup); ?></option>
-      <?php endforeach; ?>
-    </select>
-    <button class="btn btn-ghost btn-sm" type="submit">Filter</button>
-  </div>
+    <input type="hidden" name="source" id="marketSourceInput" value="<?php echo isset($_GET['source']) ? marketplace_e($_GET['source']) : ''; ?>">
+    <input type="hidden" name="sort" id="marketSortInput" value="<?php echo isset($_GET['sort']) ? marketplace_e($_GET['sort']) : ''; ?>">
+    <div class="market-listing-filters" style="margin-top:10px;display:flex;gap:8px;">
+      <button type="button" class="btn btn-ghost btn-sm market-listing-btn" id="btnAllListings">All listings</button>
+      <button type="button" class="btn btn-ghost btn-sm market-listing-btn" id="btnLocalOnly">Local only</button>
+      <button type="button" class="btn btn-ghost btn-sm market-listing-btn" id="btnExternalOnly">External (Findwork)</button>
+      <button type="button" class="btn btn-ghost btn-sm market-listing-btn" id="btnBestMatch">Best match</button>
+    </div>
 </form>
+
+<style>
+.market-listing-filters {
+  margin-bottom: 8px;
+}
+.market-listing-btn.active, .market-listing-btn:active {
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+}
+</style>
+
+<script>
+// Activate the correct button based on URL params
+const urlParams = new URLSearchParams(window.location.search);
+const source = urlParams.get('source') || '';
+const sort = urlParams.get('sort') || '';
+function setActiveBtn(btnId) {
+  document.querySelectorAll('.market-listing-btn').forEach(btn => btn.classList.remove('active'));
+  if (btnId) document.getElementById(btnId).classList.add('active');
+}
+if (source === 'local') setActiveBtn('btnLocalOnly');
+else if (source === 'external') setActiveBtn('btnExternalOnly');
+else if (sort === 'bestmatch') setActiveBtn('btnBestMatch');
+else setActiveBtn('btnAllListings');
+
+// Button click handlers (use this.form to always submit the correct form)
+document.getElementById('btnAllListings').onclick = function() {
+  document.getElementById('marketSourceInput').value = '';
+  document.getElementById('marketSortInput').value = '';
+  this.form.submit();
+};
+document.getElementById('btnLocalOnly').onclick = function() {
+  document.getElementById('marketSourceInput').value = 'local';
+  document.getElementById('marketSortInput').value = '';
+  this.form.submit();
+};
+document.getElementById('btnExternalOnly').onclick = function() {
+  document.getElementById('marketSourceInput').value = 'external';
+  document.getElementById('marketSortInput').value = '';
+  this.form.submit();
+};
+document.getElementById('btnBestMatch').onclick = function() {
+  document.getElementById('marketSourceInput').value = '';
+  document.getElementById('marketSortInput').value = 'bestmatch';
+  this.form.submit();
+};
+</script>
+
+<?php if (!empty($externalListingsNotice)): ?>
+  <div class="market-source-note"><i class="fas fa-globe"></i> <?php echo marketplace_e((string) $externalListingsNotice); ?></div>
+<?php endif; ?>
 
 <?php if ($detailListing !== null): ?>
   <?php
@@ -350,7 +413,23 @@ function marketplace_render(array $data): void
   </div>
 <?php else: ?>
   <div class="cards-grid">
-    <?php foreach ($listings as $listing): ?>
+    <?php
+      // Filter logic for source and sort
+      $source = isset($_GET['source']) ? $_GET['source'] : '';
+      $sort = isset($_GET['sort']) ? $_GET['sort'] : '';
+      $filteredListings = $listings;
+      if ($source === 'local') {
+        $filteredListings = array_filter($filteredListings, function($l) { return empty($l['is_external']) || !$l['is_external']; });
+      } elseif ($source === 'external') {
+        $filteredListings = array_filter($filteredListings, function($l) { return !empty($l['is_external']); });
+      }
+      if ($sort === 'bestmatch') {
+        usort($filteredListings, function($a, $b) {
+          return (int)($b['compatibility_score'] ?? 0) <=> (int)($a['compatibility_score'] ?? 0);
+        });
+      }
+    ?>
+    <?php foreach ($filteredListings as $listing): ?>
       <?php
         $companyName    = (string) $listing['company_name'];
         $companyInitial = strtoupper(substr($companyName, 0, 1));
@@ -370,7 +449,59 @@ function marketplace_render(array $data): void
           <span><i class="fas fa-clock"></i> <?php echo marketplace_e(marketplace_duration_label((int) $listing['duration_weeks'])); ?></span>
           <span style="<?php echo marketplace_work_setup_style((string) $listing['work_setup']); ?>"><?php echo marketplace_e((string) $listing['work_setup']); ?></span>
         </div>
-        <p class="market-card-desc"><?php echo marketplace_e((string) $listing['description']); ?></p>
+        <?php
+          $desc = (string) $listing['description'];
+          $descFull = $desc;
+          $descTrunc = $desc;
+          $descLimit = 220;
+          $showViewMore = false;
+          if (mb_strlen($desc) > $descLimit) {
+            $descTrunc = mb_substr($desc, 0, $descLimit - 3) . '...';
+            $showViewMore = true;
+          }
+          $descId = 'desc_' . md5($listing['title'] . $listing['company_name'] . $listing['internship_id']);
+        ?>
+        <div class="market-card-desc-wrap" id="wrap_<?php echo $descId; ?>">
+          <p class="market-card-desc" id="<?php echo $descId; ?>">
+            <span class="desc-short"><?php echo marketplace_e($descTrunc); ?></span>
+            <?php if ($showViewMore): ?>
+              <span class="desc-full" style="display:none;"><?php echo marketplace_e($descFull); ?></span>
+              <a href="#" class="market-view-more" onclick="event.preventDefault();toggleDesc('<?php echo $descId; ?>');">View more</a>
+            <?php endif; ?>
+          </p>
+        </div>
+<style>
+.market-view-more {
+  color: #0f172a;
+  font-weight: 600;
+  margin-left: 6px;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: .85em;
+}
+.market-card-desc-wrap {
+  transition: all .25s cubic-bezier(.4,0,.2,1);
+}
+</style>
+<script>
+function toggleDesc(descId) {
+  var wrap = document.getElementById('wrap_' + descId);
+  var p = document.getElementById(descId);
+  if (!wrap || !p) return;
+  var shortSpan = p.querySelector('.desc-short');
+  var fullSpan = p.querySelector('.desc-full');
+  var viewMore = p.querySelector('.market-view-more');
+  if (shortSpan && fullSpan && viewMore) {
+    shortSpan.style.display = 'none';
+    fullSpan.style.display = 'inline';
+    viewMore.style.display = 'none';
+    wrap.style.maxHeight = '1000px';
+    wrap.style.background = '#f9fafb';
+    wrap.style.borderRadius = '10px';
+    wrap.style.padding = '6px 0 6px 0';
+  }
+}
+</script>
         <div class="job-card-skills">
           <?php if (!$skills): ?>
             <span class="skill-chip">No skills listed</span>
@@ -386,11 +517,19 @@ function marketplace_render(array $data): void
             <span style="font-weight:700;color:#111">&#8369;<?php echo number_format((float) ($listing['allowance'] ?? 0), 0); ?><span style="font-weight:400;color:#999;font-size:.78rem">/mo</span></span>
             <div style="font-size:.74rem;color:#94a3b8;margin-top:3px"><?php echo marketplace_e((string) $listing['industry']); ?> &middot; <?php echo (int) $listing['slots_available']; ?> slot<?php echo (int) $listing['slots_available'] === 1 ? '' : 's'; ?></div>
           </div>
-          <?php if ($isApplied): ?>
+          <?php if (!empty($listing['is_external']) && !empty($listing['external_url'])): ?>
+            <a class="btn btn-primary btn-sm" href="<?php echo marketplace_e($listing['external_url']); ?>" target="_blank" rel="noopener noreferrer">View in Findwork</a>
+          <?php elseif ($isApplied): ?>
             <a class="btn btn-ghost btn-sm" href="<?php echo marketplace_e($baseUrl); ?>/layout.php?page=student/applications">Applied</a>
           <?php else: ?>
             <a class="btn btn-primary btn-sm" href="<?php echo marketplace_e(marketplace_detail_url($baseUrl, $currentFilters, (int) $listing['internship_id'])); ?>">View Details</a>
           <?php endif; ?>
+        </div>
+        <div style="margin-top:10px;">
+          <div style="height:8px;background:#f1f5f9;border-radius:6px;overflow:hidden;">
+            <div style="width:<?php echo (int) ($listing['compatibility_score'] ?? 0); ?>%;background:#06b6d4;height:8px;border-radius:6px;"></div>
+          </div>
+          <div style="font-size:.72rem;color:#64748b;margin-top:2px;">Compatibility score: <strong><?php echo (int) ($listing['compatibility_score'] ?? 0); ?>%</strong></div>
         </div>
       </div>
     <?php endforeach; ?>

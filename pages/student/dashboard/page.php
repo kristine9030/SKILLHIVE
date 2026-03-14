@@ -243,8 +243,8 @@ $student['internship_readiness_score'] = $readinessScore;
         <div class="timeline-item">
           <div class="timeline-dot" style="background:#06B6D4"></div>
           <div class="timeline-content">
-            <div style="font-weight:600;font-size:.85rem">Interview — Google</div>
-            <div style="font-size:.75rem;color:#999">Tomorrow, 2:00 PM</div>
+            <div style="font-weight:600;font-size:.85rem">Application Update — Google</div>
+            <div style="font-size:.75rem;color:#999">Status review tomorrow, 2:00 PM</div>
           </div>
         </div>
         <div class="timeline-item">

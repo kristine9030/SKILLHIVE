@@ -1,5 +1,285 @@
 <?php
 
+
+function marketplace_findwork_credentials(): array
+{
+    $apiKey = trim((string) (
+        getenv('FINDWORK_API_KEY')
+        ?: ($_ENV['FINDWORK_API_KEY'] ?? $_SERVER['FINDWORK_API_KEY'] ?? (defined('FINDWORK_API_KEY') ? FINDWORK_API_KEY : ''))
+    ));
+    return [
+        'api_key' => $apiKey,
+        'configured' => $apiKey !== '',
+    ];
+}
+
+function marketplace_http_request_json(string $url, string $method = 'GET', array $headers = [], ?string $body = null, int $timeoutSeconds = 8): array
+{
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        $requestHeaders = array_merge(['User-Agent: SkillHive/1.0'], $headers);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => $timeoutSeconds,
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_HTTPHEADER => $requestHeaders,
+            CURLOPT_CUSTOMREQUEST => strtoupper($method),
+        ]);
+
+        if (strtoupper($method) !== 'GET' && $body !== null) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+        }
+
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($response === false || $httpCode >= 400) {
+            return [
+                'ok' => false,
+                'status' => $httpCode,
+                'body' => is_string($response) ? $response : '',
+                'error' => $error,
+            ];
+        }
+
+        $decoded = json_decode((string) $response, true);
+        return [
+            'ok' => is_array($decoded),
+            'status' => $httpCode,
+            'body' => (string) $response,
+            'error' => is_array($decoded) ? '' : 'Invalid JSON response from external jobs API.',
+            'data' => is_array($decoded) ? $decoded : null,
+        ];
+    }
+
+    $headerText = "User-Agent: SkillHive/1.0\r\n";
+    foreach ($headers as $headerLine) {
+        $headerText .= trim((string) $headerLine) . "\r\n";
+    }
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => strtoupper($method),
+            'timeout' => $timeoutSeconds,
+            'header' => $headerText,
+            'content' => strtoupper($method) === 'GET' ? '' : (string) ($body ?? ''),
+        ],
+    ]);
+
+    $response = @file_get_contents($url, false, $context);
+    if ($response === false) {
+        $httpCode = 0;
+        if (isset($http_response_header) && is_array($http_response_header)) {
+            foreach ($http_response_header as $headerLine) {
+                if (preg_match('/HTTP\/\S+\s+(\d+)/i', (string) $headerLine, $matches)) {
+                    $httpCode = (int) $matches[1];
+                    break;
+                }
+            }
+        }
+
+        return [
+            'ok' => false,
+            'status' => $httpCode,
+            'body' => '',
+            'error' => 'HTTP request failed while contacting external jobs API.',
+        ];
+    }
+
+    $decoded = json_decode((string) $response, true);
+    $httpCode = 200;
+    if (isset($http_response_header) && is_array($http_response_header)) {
+        foreach ($http_response_header as $headerLine) {
+            if (preg_match('/HTTP\/\S+\s+(\d+)/i', (string) $headerLine, $matches)) {
+                $httpCode = (int) $matches[1];
+                break;
+            }
+        }
+    }
+
+    return [
+        'ok' => is_array($decoded),
+        'status' => $httpCode,
+        'body' => (string) $response,
+        'error' => is_array($decoded) ? '' : 'Invalid JSON response from external jobs API.',
+        'data' => is_array($decoded) ? $decoded : null,
+    ];
+}
+
+function marketplace_external_api_error_notice(array $result, string $sourceName): string
+{
+    $status = (int) ($result['status'] ?? 0);
+    $error = trim((string) ($result['error'] ?? ''));
+    $body = trim((string) ($result['body'] ?? ''));
+
+    $message = '';
+    if ($body !== '') {
+        $decoded = json_decode($body, true);
+        if (is_array($decoded)) {
+            $message = trim((string) ($decoded['message'] ?? $decoded['error'] ?? ''));
+        }
+        if ($message === '') {
+            $message = trim(substr(preg_replace('/\s+/', ' ', strip_tags($body)), 0, 180));
+        }
+    }
+
+    $parts = ['Unable to load external listings from ' . $sourceName];
+    if ($status > 0) {
+        $parts[] = '(HTTP ' . $status . ')';
+    }
+    if ($message !== '') {
+        $parts[] = '- ' . $message;
+    } elseif ($error !== '') {
+        $parts[] = '- ' . $error;
+    }
+
+    return implode(' ', $parts) . '.';
+}
+
+function marketplace_external_work_setup(string $locationText): string
+{
+    $haystack = strtolower($locationText);
+    if (str_contains($haystack, 'remote')) {
+        return 'Remote';
+    }
+    if (str_contains($haystack, 'hybrid')) {
+        return 'Hybrid';
+    }
+    return 'On-site';
+}
+
+function marketplace_extract_external_results($payload): array
+{
+    if (isset($payload['results']) && is_array($payload['results'])) {
+        return $payload['results'];
+    }
+    if (isset($payload['jobs']) && is_array($payload['jobs'])) {
+        return $payload['jobs'];
+    }
+    if (isset($payload['data']) && is_array($payload['data'])) {
+        return $payload['data'];
+    }
+    if (array_is_list($payload)) {
+        return $payload;
+    }
+    return [];
+}
+
+
+function marketplace_fetch_findwork_listings(array $currentFilters, int $maxResults = 10): array
+{
+    $creds = marketplace_findwork_credentials();
+    if (!$creds['configured']) {
+        return [
+            'rows' => [],
+            'notice' => 'Findwork API is not configured. Set FINDWORK_API_KEY to enable external listings.',
+            'count' => 0,
+        ];
+    }
+
+    $query = trim((string) ($currentFilters['q'] ?? 'intern'));
+    $industryFilter = trim((string) ($currentFilters['industry'] ?? ''));
+    $locationFilter = trim((string) ($currentFilters['location'] ?? ''));
+
+    $params = [];
+    if ($query !== '') {
+        $params['search'] = $query;
+    }
+    if ($locationFilter !== '') {
+        $params['location'] = $locationFilter;
+    }
+    if ($industryFilter !== '') {
+        $params['category'] = $industryFilter;
+    }
+    $params['limit'] = max(1, min(10, $maxResults)); // Reduce to 10 for performance
+
+    $endpoint = 'https://findwork.dev/api/jobs/?' . http_build_query($params);
+    $response = marketplace_http_request_json($endpoint, 'GET', [
+        'Authorization: Token ' . $creds['api_key'],
+        'Accept: application/json',
+    ], null, 10);
+    if (!(bool) ($response['ok'] ?? false)) {
+        return [
+            'rows' => [],
+            'notice' => marketplace_external_api_error_notice($response, 'Findwork'),
+            'count' => 0,
+        ];
+    }
+
+    $payload = $response['data'] ?? null;
+    if (!is_array($payload) || !isset($payload['results']) || !is_array($payload['results'])) {
+        return [
+            'rows' => [],
+            'notice' => 'Unable to load external listings from Findwork - invalid API response.',
+            'count' => 0,
+        ];
+    }
+
+    $rows = [];
+    foreach ($payload['results'] as $idx => $job) {
+        if (!is_array($job)) continue;
+        $title = trim((string) ($job['role'] ?? $job['title'] ?? ''));
+        $description = trim((string) ($job['text'] ?? $job['description'] ?? ''));
+        // Only include jobs with 'intern' in the title or description
+        if (!preg_match('/intern/i', $title . ' ' . $description)) continue;
+        if ($title === '') continue;
+        $companyName = trim((string) ($job['company_name'] ?? 'External Employer'));
+        $industry = trim((string) ($job['category'] ?? 'General'));
+        $location = trim((string) ($job['location'] ?? 'Location not set'));
+        $monthlyAllowance = 0; // Findwork does not provide salary info
+        $postedAt = trim((string) ($job['date_posted'] ?? $job['created'] ?? ''));
+        $externalUrl = trim((string) ($job['url'] ?? $job['job_url'] ?? ''));
+
+        // Clean description: remove HTML tags, decode entities, remove React/JSX, trim whitespace
+        $desc = $description;
+        // Remove HTML tags
+        $desc = preg_replace('/<[^>]+>/', ' ', $desc);
+        // Remove React/JSX fragments
+        $desc = preg_replace('/<\/?[a-zA-Z][^>]*>/', ' ', $desc);
+        // Remove class=, data-*, etc.
+        $desc = preg_replace('/\s(class|data-[a-zA-Z0-9_-]+)="[^"]*"/', '', $desc);
+        // Decode HTML entities
+        $desc = html_entity_decode($desc, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        // Collapse whitespace
+        $desc = preg_replace('/\s+/', ' ', $desc);
+        $desc = trim($desc);
+        // Truncate for card preview
+        if (strlen($desc) > 220) {
+            $desc = mb_substr($desc, 0, 217) . '...';
+        }
+
+        $syntheticId = -1 * (100000 + $idx + (int) (abs(crc32($title . '|' . $companyName)) % 900000));
+        $rows[] = [
+            'internship_id' => $syntheticId,
+            'title' => $title,
+            'company_name' => $companyName,
+            'industry' => $industry,
+            'company_badge_status' => 'None',
+            'duration_weeks' => 12,
+            'allowance' => $monthlyAllowance,
+            'work_setup' => marketplace_external_work_setup($location),
+            'location' => $location,
+            'slots_available' => 1,
+            'status' => 'Open',
+            'posted_at' => $postedAt !== '' ? $postedAt : date('Y-m-d H:i:s'),
+            'required_skills' => '',
+            'description' => $desc,
+            'is_external' => 1,
+            'external_source' => 'Findwork',
+            'external_url' => $externalUrl,
+        ];
+    }
+    return [
+        'rows' => $rows,
+        'notice' => count($rows) > 0 ? ('Showing ' . count($rows) . ' external listing' . (count($rows) === 1 ? '' : 's') . ' from Findwork.') : 'No external Findwork listings found for this filter.',
+        'count' => count($rows),
+    ];
+}
+
 function marketplace_ensure_application_consent_columns(PDO $pdo): void
 {
     static $ensured = false;
@@ -84,7 +364,23 @@ function marketplace_load_data(PDO $pdo, int $userId, array $currentFilters, int
            . $baseQuery . $whereSql . ' ORDER BY v.posted_at DESC, v.internship_id DESC';
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
-    $listings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $localListings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($localListings as &$localListing) {
+        $localListing['is_external'] = 0;
+        $localListing['external_source'] = '';
+        $localListing['external_url'] = '';
+    }
+    unset($localListing);
+
+    $externalResult = marketplace_fetch_findwork_listings($currentFilters, 10);
+    $externalListings = $externalResult['rows'] ?? [];
+
+    $listings = array_merge($localListings, $externalListings);
+
+    usort($listings, static function (array $a, array $b): int {
+        return strcmp((string) ($b['posted_at'] ?? ''), (string) ($a['posted_at'] ?? ''));
+    });
 
     $detailListing      = null;
     $detailRequirements = [];
@@ -144,5 +440,7 @@ function marketplace_load_data(PDO $pdo, int $userId, array $currentFilters, int
         'detailRequiredCount'  => $detailRequiredCount,
         'studentHasResume'     => $studentHasResume,
         'resumeRow'            => $resumeRow,
+        'externalListingsCount' => (int) ($externalResult['count'] ?? 0),
+        'externalListingsNotice' => (string) ($externalResult['notice'] ?? ''),
     ];
 }

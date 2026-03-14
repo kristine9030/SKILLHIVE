@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../backend/db_connect.php';
+require_once __DIR__ . '/../../../backend/db_connect.php';
 
 $firstName = explode(' ', $userName)[0];
 
@@ -104,6 +104,14 @@ $student['internship_readiness_score'] = $readinessScore;
       <div class="stat-card-label">Shortlisted</div>
     </div>
     <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +1 today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon" style="background:rgba(8,145,178,.12)"><i class="fas fa-list-check" style="color:#0E7490"></i></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num">2</div>
+      <div class="stat-card-label">Waitlisted</div>
+    </div>
+    <div class="stat-card-trend neutral">awaiting openings</div>
   </div>
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-clock" style="color:#F59E0B"></i></div>
@@ -238,8 +246,8 @@ $student['internship_readiness_score'] = $readinessScore;
         <div class="timeline-item">
           <div class="timeline-dot" style="background:#06B6D4"></div>
           <div class="timeline-content">
-            <div style="font-weight:600;font-size:.85rem">Interview — Google</div>
-            <div style="font-size:.75rem;color:#999">Tomorrow, 2:00 PM</div>
+            <div style="font-weight:600;font-size:.85rem">Application Update — Google</div>
+            <div style="font-size:.75rem;color:#999">Status review tomorrow, 2:00 PM</div>
           </div>
         </div>
         <div class="timeline-item">
