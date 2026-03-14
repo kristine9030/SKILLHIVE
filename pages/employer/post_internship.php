@@ -1,30 +1,17 @@
 <?php
-
 /**
- * ──────────────────────────────────────────────
- *  POST INTERNSHIP  –  Employer Page
- * ──────────────────────────────────────────────
- *  This page is loaded INSIDE layout.php via include,
- *  so session is already started, $pdo is NOT yet available,
- *  and skillhive.css + Font Awesome are already linked.
- *
- *  Flow:
- *  1. Verify employer is logged in.
- *  2. Load the master "skill" table for the multi‑select.
- *  3. On POST ➜ validate ➜ INSERT internship + internship_skill rows.
- *  4. Redirect to dashboard on success.
- * ──────────────────────────────────────────────
+ * Purpose: Employer internship posting page that validates the form, loads selectable skills, and creates internship plus internship_skill records.
+ * Tables/columns used: Indirectly uses skill(skill_id, skill_name), internship(internship_id, employer_id, title, description, duration_weeks, allowance, work_setup, location, slots_available, status, posted_at, created_at), internship_skill(internship_id, skill_id, required_level, is_mandatory), application(application_id, internship_id), student(student_id), interview(application_id).
  */
 
 // Database connection (layout.php doesn't require it globally)
 require_once __DIR__ . '/../../backend/db_connect.php';
+require_once __DIR__ . '/dashboard/formatters.php';
+require_once __DIR__ . '/post_internship/internship_data.php';
 
 // ── 1. Auth check ──────────────────────────────
 // The login flow stores the employer PK as `user_id` with role `employer`.
-$employerId = $_SESSION['employer_id'] ?? null;
-if (!$employerId && (($_SESSION['user_role'] ?? '') === 'employer')) {
-    $employerId = $_SESSION['user_id'] ?? null;
-}
+$employerId = resolveEmployerId($_SESSION, isset($userId) ? (int)$userId : null);
 
 if (!$employerId) {
     // Not logged in as employer — bounce to login
@@ -42,131 +29,94 @@ $allowedLevels    = ['Beginner', 'Intermediate', 'Advanced'];
 // Load every skill from the `skill` table
 $skills = [];
 try {
-    $stmt  = $pdo->query("SELECT skill_id, skill_name FROM skill ORDER BY skill_name ASC");
-    $skills = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  $skills = getSkillMasterList($pdo);
 } catch (Throwable $e) {
     $errors[] = 'Failed to load skills list.';
 }
 // Build a fast look‑up of valid IDs
 $validSkillIds = array_map(static fn($s) => (int)$s['skill_id'], $skills);
 
+$postingsPerPage = 4;
+$postingsPage = max(1, (int)($_GET['postings_page'] ?? 1));
+$postingsTotal = 0;
+$postingsTotalPages = 1;
+$myPostings = [];
+
 // ── 3. Handle form submission ──────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if (isset($_POST['delete_posting_id'])) {
+    $deletePostingId = (int)($_POST['delete_posting_id'] ?? 0);
+    $deletePage = max(1, (int)($_POST['postings_page'] ?? $postingsPage));
 
-    /* ── Collect & remember inputs ── */
-    $old['title']           = trim($_POST['title'] ?? '');
-    $old['description']     = trim($_POST['description'] ?? '');
-    $old['duration_weeks']  = trim($_POST['duration_weeks'] ?? '');
-    $old['allowance']       = trim($_POST['allowance'] ?? '');
-    $old['work_setup']      = trim($_POST['work_setup'] ?? '');
-    $old['location']        = trim($_POST['location'] ?? '');
-    $old['slots_available'] = trim($_POST['slots_available'] ?? '');
-    $old['status']          = trim($_POST['status'] ?? 'Draft');
-
-    $selectedSkills  = $_POST['skills'] ?? [];
-    $skillLevels     = $_POST['skill_level'] ?? [];
-    $skillMandatory  = $_POST['skill_mandatory'] ?? [];
-
-    /* ── Validate required text fields ── */
-    if ($old['title'] === '')       $errors[] = 'Title is required.';
-    if ($old['description'] === '') $errors[] = 'Description is required.';
-    if ($old['location'] === '')    $errors[] = 'Location is required.';
-
-    /* ── Validate numeric fields ── */
-    $durationWeeks = filter_var($old['duration_weeks'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-    if ($durationWeeks === false) $errors[] = 'Duration must be a whole number ≥ 1.';
-
-    $allowance = filter_var($old['allowance'], FILTER_VALIDATE_FLOAT);
-    if ($allowance === false || $allowance < 0) $errors[] = 'Allowance must be 0 or higher.';
-
-    $slotsAvailable = filter_var($old['slots_available'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-    if ($slotsAvailable === false) $errors[] = 'Slots must be a whole number ≥ 1.';
-
-    /* ── Validate enum fields ── */
-    if (!in_array($old['work_setup'], $allowedWorkSetup, true)) $errors[] = 'Invalid Work Setup.';
-    if (!in_array($old['status'], $allowedStatus, true))         $errors[] = 'Invalid Status.';
-
-    /* ── Validate skills selection ── */
-    if (!is_array($selectedSkills) || count($selectedSkills) === 0) {
-        $errors[] = 'Select at least one required skill.';
+    try {
+      $deleteResult = deleteEmployerInternshipPosting($pdo, (int)$employerId, $deletePostingId);
+      if (!empty($deleteResult['success'])) {
+        $_SESSION['status'] = 'Posting deleted successfully.';
+      } else {
+        $errors[] = (string)($deleteResult['error'] ?? 'Unable to delete posting.');
+      }
+    } catch (Throwable $e) {
+      if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+      }
+      $errors[] = 'Unable to delete posting right now. Please try again.';
     }
 
-    /* ── Build validated skill rows ── */
-    $rowsToInsert = [];
     if (empty($errors)) {
-        foreach ($selectedSkills as $sidRaw) {
-            $sid = (int)$sidRaw;
-            if (!in_array($sid, $validSkillIds, true)) {
-                $errors[] = "Invalid skill (ID {$sid}).";
-                continue;
-            }
-            $lvl = $skillLevels[$sid] ?? '';
-            if (!in_array($lvl, $allowedLevels, true)) {
-                $errors[] = "Invalid level for skill ID {$sid}.";
-                continue;
-            }
-            $isMandatory    = isset($skillMandatory[$sid]) ? 1 : 0;
-            $rowsToInsert[] = [$sid, $lvl, $isMandatory];
-        }
+      header('Location: /Skillhive/layout.php?page=employer/post_internship&postings_page=' . $deletePage . '#my-postings');
+      exit;
     }
+  } else {
+    $validated = validatePostInternshipPayload($_POST, $validSkillIds);
+    $errors = $validated['errors'];
+    $old = $validated['old'];
+    $allowedWorkSetup = $validated['allowed_work_setup'];
+    $allowedStatus = $validated['allowed_status'];
+    $allowedLevels = $validated['allowed_levels'];
 
-    /* ── 4. INSERT using a transaction (prepared stmts = no SQL‑injection) ── */
-    if (empty($errors)) {
-        try {
-            $pdo->beginTransaction();
+      /* ── 4. INSERT using a transaction (prepared stmts = no SQL‑injection) ── */
+      if (empty($errors)) {
+          try {
+        createInternshipPosting($pdo, (int)$employerId, $validated);
 
-            // Insert the internship record
-            $sqlInternship = "
-                INSERT INTO internship
-                    (employer_id, title, description, duration_weeks, allowance,
-                     work_setup, location, slots_available, status, posted_at)
-                VALUES
-                    (:employer_id, :title, :description, :duration_weeks, :allowance,
-                     :work_setup, :location, :slots_available, :status, NOW())
-            ";
-            $stmtI = $pdo->prepare($sqlInternship);
-            $stmtI->execute([
-                ':employer_id'     => (int)$employerId,
-                ':title'           => $old['title'],
-                ':description'     => $old['description'],
-                ':duration_weeks'  => (int)$durationWeeks,
-                ':allowance'       => (float)$allowance,
-                ':work_setup'      => $old['work_setup'],
-                ':location'        => $old['location'],
-                ':slots_available' => (int)$slotsAvailable,
-                ':status'          => $old['status'],
-            ]);
-            $internshipId = (int)$pdo->lastInsertId();
+              // 5. Flash success & stay on the postings page
+              $_SESSION['status'] = 'Internship posted successfully!';
+              header('Location: /Skillhive/layout.php?page=employer/post_internship&postings_page=1#my-postings');
+              exit;
 
-            // Insert each required skill
-            $sqlSkill = "
-                INSERT INTO internship_skill
-                    (internship_id, skill_id, required_level, is_mandatory)
-                VALUES
-                    (:internship_id, :skill_id, :required_level, :is_mandatory)
-            ";
-            $stmtS = $pdo->prepare($sqlSkill);
-            foreach ($rowsToInsert as [$skillId, $requiredLevel, $mandatory]) {
-                $stmtS->execute([
-                    ':internship_id'  => $internshipId,
-                    ':skill_id'       => (int)$skillId,
-                    ':required_level' => $requiredLevel,
-                    ':is_mandatory'   => (int)$mandatory,
-                ]);
-            }
+          } catch (Throwable $e) {
+              if ($pdo->inTransaction()) $pdo->rollBack();
+              $errors[] = 'Database error — please try again.';
+          }
+      }
+  }
+}
 
-            $pdo->commit();
+try {
+  $postingsTotal = getEmployerInternshipPostingsTotal($pdo, (int)$employerId);
+  $postingsTotalPages = max(1, (int)ceil($postingsTotal / $postingsPerPage));
+  $postingsPage = min($postingsPage, $postingsTotalPages);
+  $postingsOffset = ($postingsPage - 1) * $postingsPerPage;
+  $myPostings = getEmployerInternshipPostings($pdo, (int)$employerId, $postingsPerPage, $postingsOffset);
+} catch (Throwable $e) {
+  $myPostings = [];
+  $postingsTotal = 0;
+  $postingsTotalPages = 1;
+  $postingsPage = 1;
+}
 
-            // 5. Flash success & redirect to employer dashboard
-            $_SESSION['status'] = 'Internship posted successfully!';
-            header('Location: /Skillhive/layout.php?page=employer/dashboard');
-            exit;
-
-        } catch (Throwable $e) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
-            $errors[] = 'Database error — please try again.';
-        }
+$focusPostingId = max(0, (int)($_GET['focus_posting'] ?? 0));
+$selectedPosting = null;
+if (!empty($myPostings)) {
+  $selectedPosting = $myPostings[0];
+  if ($focusPostingId > 0) {
+    foreach ($myPostings as $postingRow) {
+      if ((int)($postingRow['internship_id'] ?? 0) === $focusPostingId) {
+        $selectedPosting = $postingRow;
+        break;
+      }
     }
+  }
 }
 
 // ── Helpers ────────────────────────────────────
@@ -199,6 +149,154 @@ function oldVal(array $old, string $key, string $default = ''): string {
   </ul>
 </div>
 <?php endif; ?>
+
+<!-- My Postings Card -->
+<div class="card" id="my-postings">
+  <h3 class="card-title"><i class="fa-solid fa-list" style="color:var(--dark,#1a1a1a);margin-right:6px;"></i> My Postings</h3>
+  <p style="font-size:12px;color:var(--grey,#888);margin-bottom:14px;">Select a posting on the left to view full details on the right.</p>
+
+  <?php if (!empty($myPostings)): ?>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start;">
+      <div style="display:flex;flex-direction:column;gap:10px;max-height:520px;overflow:auto;padding-right:2px;">
+        <?php foreach ($myPostings as $posting): ?>
+          <?php
+          $postingId = (int)($posting['internship_id'] ?? 0);
+          $isActivePosting = $selectedPosting !== null && (int)($selectedPosting['internship_id'] ?? 0) === $postingId;
+          $cardBorder = $isActivePosting ? '2px solid var(--red,#8b0000)' : '1px solid var(--border,#e8e0e0)';
+          $cardBg = $isActivePosting ? 'rgba(139,0,0,.04)' : '#fff';
+          ?>
+          <div style="border:<?php echo $cardBorder; ?>;background:<?php echo $cardBg; ?>;border-radius:10px;padding:10px;">
+            <button
+              type="button"
+              data-posting-card="1"
+              data-active="<?php echo $isActivePosting ? '1' : '0'; ?>"
+              data-id="<?php echo $postingId; ?>"
+              data-title="<?php echo e((string)($posting['title'] ?? 'Untitled Internship')); ?>"
+              data-description="<?php echo e((string)($posting['description'] ?? '')); ?>"
+              data-status="<?php echo e((string)($posting['status'] ?? 'pending')); ?>"
+              data-posted="<?php echo e((string)($posting['posted_at'] ?? '')); ?>"
+              data-location="<?php echo e((string)($posting['location'] ?? 'N/A')); ?>"
+              data-duration="<?php echo (int)($posting['duration_weeks'] ?? 0); ?>"
+              data-applicants="<?php echo (int)($posting['applicants_count'] ?? 0); ?>"
+              data-work-setup="<?php echo e((string)($posting['work_setup'] ?? 'N/A')); ?>"
+              data-allowance="<?php echo number_format((float)($posting['allowance'] ?? 0), 2, '.', ''); ?>"
+              data-slots="<?php echo (int)($posting['slots_available'] ?? 0); ?>"
+              onclick="selectPostingCard(this)"
+              style="text-align:left;border:none;background:transparent;padding:0;cursor:pointer;width:100%;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                <div style="font-weight:700;font-size:.9rem;"><?php echo e((string)($posting['title'] ?? 'Untitled Internship')); ?></div>
+                <span class="status-pill <?php echo dashboard_status_class((string)($posting['status'] ?? 'pending')); ?>"><?php echo e(dashboard_status_label((string)($posting['status'] ?? 'pending'))); ?></span>
+              </div>
+              <div style="font-size:.76rem;color:#777;margin-top:4px;"><?php echo e(dashboard_time_ago((string)($posting['posted_at'] ?? ''))); ?></div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.76rem;color:#555;">
+                <span><i class="fas fa-users"></i> <?php echo (int)($posting['applicants_count'] ?? 0); ?></span>
+                <span><i class="fas fa-map-marker-alt"></i> <?php echo e((string)($posting['location'] ?? 'N/A')); ?></span>
+              </div>
+            </button>
+            <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+              <form method="post" action="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Delete this posting?');" style="margin:0;">
+                <input type="hidden" name="delete_posting_id" value="<?php echo $postingId; ?>">
+                <input type="hidden" name="postings_page" value="<?php echo $postingsPage; ?>">
+                <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#EF4444;"><i class="fas fa-trash"></i> Delete</button>
+              </form>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+
+      <div id="postingDetailPanel" style="border:1px solid var(--border,#e8e0e0);border-radius:10px;padding:12px;background:#fff;height:498px;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <h4 id="detailTitle" style="margin:0;font-size:1rem;"><?php echo e((string)($selectedPosting['title'] ?? 'Untitled Internship')); ?></h4>
+          <span id="detailStatus" class="status-pill <?php echo dashboard_status_class((string)($selectedPosting['status'] ?? 'pending')); ?>"><?php echo e(dashboard_status_label((string)($selectedPosting['status'] ?? 'pending'))); ?></span>
+        </div>
+        <div id="detailPosted" style="font-size:.78rem;color:#777;margin-top:4px;"><?php echo e(dashboard_time_ago((string)($selectedPosting['posted_at'] ?? ''))); ?></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;font-size:.8rem;">
+          <div><strong>Location:</strong> <span id="detailLocation"><?php echo e((string)($selectedPosting['location'] ?? 'N/A')); ?></span></div>
+          <div><strong>Duration:</strong> <span id="detailDuration"><?php echo e(dashboard_duration_label((int)($selectedPosting['duration_weeks'] ?? 0))); ?></span></div>
+          <div><strong>Work Setup:</strong> <span id="detailWorkSetup"><?php echo e((string)($selectedPosting['work_setup'] ?? 'N/A')); ?></span></div>
+          <div><strong>Applicants:</strong> <span id="detailApplicants"><?php echo (int)($selectedPosting['applicants_count'] ?? 0); ?></span></div>
+          <div><strong>Allowance:</strong> <span id="detailAllowance">₱<?php echo number_format((float)($selectedPosting['allowance'] ?? 0), 2); ?></span></div>
+          <div><strong>Slots:</strong> <span id="detailSlots"><?php echo (int)($selectedPosting['slots_available'] ?? 0); ?></span></div>
+        </div>
+
+        <div style="margin-top:12px;flex:1;display:flex;flex-direction:column;min-height:0;">
+          <div style="font-weight:700;font-size:.8rem;margin-bottom:4px;">Description</div>
+          <div id="detailDescription" style="font-size:.82rem;color:#444;line-height:1.5;height:300px;overflow:auto;border:1px solid var(--border,#e8e0e0);border-radius:8px;padding:10px;background:#fafafa;"><?php echo e((string)($selectedPosting['description'] ?? 'No description provided.')); ?></div>
+        </div>
+
+        <div class="job-card-actions" style="margin-top:12px;">
+          <a id="detailApplicantsLink" href="/Skillhive/layout.php?page=employer/candidates&position=<?php echo rawurlencode((string)($selectedPosting['title'] ?? '')); ?>" class="btn btn-ghost btn-sm">View Applicants</a>
+          <form method="post" action="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Delete this posting?');" style="margin:0;display:inline-block;">
+            <input type="hidden" name="delete_posting_id" id="detailDeletePostingId" value="<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>">
+            <input type="hidden" name="postings_page" value="<?php echo $postingsPage; ?>">
+            <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#EF4444;"><i class="fas fa-trash"></i> Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <?php if ($postingsTotalPages > 1): ?>
+      <?php
+      $startPage = max(1, $postingsPage - 2);
+      $endPage = min($postingsTotalPages, $postingsPage + 2);
+      if (($endPage - $startPage) < 4) {
+        if ($startPage === 1) {
+          $endPage = min($postingsTotalPages, $startPage + 4);
+        } elseif ($endPage === $postingsTotalPages) {
+          $startPage = max(1, $endPage - 4);
+        }
+      }
+      ?>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
+        <?php if ($postingsPage > 1): ?>
+          <a class="btn btn-ghost btn-sm" href="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo ($postingsPage - 1); ?>">Previous</a>
+        <?php endif; ?>
+
+        <?php if ($startPage > 1): ?>
+          <a class="btn btn-ghost btn-sm" href="/Skillhive/layout.php?page=employer/post_internship&postings_page=1">1</a>
+          <?php if ($startPage > 2): ?>
+            <span style="padding:6px 4px;color:#999;">...</span>
+          <?php endif; ?>
+        <?php endif; ?>
+
+        <?php for ($pageNum = $startPage; $pageNum <= $endPage; $pageNum++): ?>
+          <?php if ($pageNum === $postingsPage): ?>
+            <span class="btn btn-red btn-sm" style="pointer-events:none;"><?php echo $pageNum; ?></span>
+          <?php else: ?>
+            <a class="btn btn-ghost btn-sm" href="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo $pageNum; ?>"><?php echo $pageNum; ?></a>
+          <?php endif; ?>
+        <?php endfor; ?>
+
+        <?php if ($endPage < $postingsTotalPages): ?>
+          <?php if ($endPage < ($postingsTotalPages - 1)): ?>
+            <span style="padding:6px 4px;color:#999;">...</span>
+          <?php endif; ?>
+          <a class="btn btn-ghost btn-sm" href="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsTotalPages; ?>"><?php echo $postingsTotalPages; ?></a>
+        <?php endif; ?>
+
+        <?php if ($postingsPage < $postingsTotalPages): ?>
+          <a class="btn btn-ghost btn-sm" href="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo ($postingsPage + 1); ?>">Next</a>
+        <?php endif; ?>
+      </div>
+    <?php endif; ?>
+  <?php else: ?>
+    <div class="job-card" style="margin-bottom:0;">
+      <div class="job-card-header">
+        <div class="job-card-info">
+          <div class="job-card-title">No postings yet</div>
+          <div class="job-card-company">Create your first internship posting using the form above.</div>
+        </div>
+        <span class="status-pill status-pending">Pending</span>
+      </div>
+    </div>
+  <?php endif; ?>
+</div>
+
+<div class="page-header" style="margin-top:18px;">
+  <h2 class="page-title"><i class="fa-solid fa-pen-to-square" style="color:var(--red);"></i> Create New Posting</h2>
+  <p class="page-sub">Use the form below to add a new internship.</p>
+</div>
 
 <!-- Form Card -->
 <div class="card">
@@ -339,6 +437,13 @@ function oldVal(array $old, string $key, string $default = ''): string {
 <script>
   // Attach all inputs/selects/textareas inside .card forms to the single internshipForm
   document.querySelectorAll('.card input, .card select, .card textarea').forEach(el => {
+    const parentForm = el.closest('form');
+    const isDeleteFormField = parentForm && parentForm.querySelector('input[name="delete_posting_id"]');
+
+    if (isDeleteFormField) {
+      return;
+    }
+
     if (!el.hasAttribute('form') && el.name) {
       el.setAttribute('form', 'internshipForm');
     }
@@ -351,5 +456,75 @@ function oldVal(array $old, string $key, string $default = ''): string {
       const name = row.getAttribute('data-name') || '';
       row.style.display = name.includes(q) ? '' : 'none';
     });
+  }
+
+  function setPostingCardActiveState(button) {
+    document.querySelectorAll('[data-posting-card="1"]').forEach(card => {
+      card.dataset.active = '0';
+      const wrap = card.closest('div[style*="border-radius:10px"]');
+      if (wrap) {
+        wrap.style.border = '1px solid var(--border,#e8e0e0)';
+        wrap.style.background = '#fff';
+      }
+    });
+
+    button.dataset.active = '1';
+    const currentWrap = button.closest('div[style*="border-radius:10px"]');
+    if (currentWrap) {
+      currentWrap.style.border = '2px solid var(--red,#8b0000)';
+      currentWrap.style.background = 'rgba(139,0,0,.04)';
+    }
+  }
+
+  function selectPostingCard(button) {
+    if (!button) return;
+    setPostingCardActiveState(button);
+
+    const title = button.getAttribute('data-title') || 'Untitled Internship';
+    const description = button.getAttribute('data-description') || 'No description provided.';
+    const status = button.getAttribute('data-status') || 'pending';
+    const posted = button.getAttribute('data-posted') || '';
+    const location = button.getAttribute('data-location') || 'N/A';
+    const duration = parseInt(button.getAttribute('data-duration') || '0', 10);
+    const applicants = button.getAttribute('data-applicants') || '0';
+    const workSetup = button.getAttribute('data-work-setup') || 'N/A';
+    const allowanceRaw = parseFloat(button.getAttribute('data-allowance') || '0');
+    const slots = button.getAttribute('data-slots') || '0';
+
+    const durationText = duration > 0 ? (duration % 4 === 0 ? (duration / 4) + ' month' + ((duration / 4) === 1 ? '' : 's') : duration + ' week' + (duration === 1 ? '' : 's')) : 'N/A';
+
+    const statusLabel = status.replace(/[_-]+/g, ' ').trim();
+    const prettyStatus = statusLabel ? statusLabel.replace(/\b\w/g, c => c.toUpperCase()) : 'N/A';
+
+    const postedDate = new Date(posted);
+    const postedText = isNaN(postedDate.getTime()) ? 'Posted recently' : 'Posted ' + postedDate.toLocaleString();
+
+    document.getElementById('detailTitle').textContent = title;
+    document.getElementById('detailStatus').textContent = prettyStatus;
+    document.getElementById('detailStatus').className = 'status-pill ' + (
+      ['accepted','hired','open','verified','approved','scheduled'].includes(status.toLowerCase()) ? 'status-accepted' :
+      ['rejected','declined','closed','cancelled','canceled'].includes(status.toLowerCase()) ? 'status-rejected' :
+      ['interview','interviewing','for interview'].includes(status.toLowerCase()) ? 'status-interview' :
+      ['shortlisted','reviewed'].includes(status.toLowerCase()) ? 'status-shortlisted' :
+      'status-pending'
+    );
+    document.getElementById('detailPosted').textContent = postedText;
+    document.getElementById('detailLocation').textContent = location;
+    document.getElementById('detailDuration').textContent = durationText;
+    document.getElementById('detailWorkSetup').textContent = workSetup;
+    document.getElementById('detailApplicants').textContent = applicants;
+    document.getElementById('detailAllowance').textContent = '₱' + allowanceRaw.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('detailSlots').textContent = slots;
+    document.getElementById('detailDescription').textContent = description;
+    document.getElementById('detailApplicantsLink').setAttribute('href', '/Skillhive/layout.php?page=employer/candidates&position=' + encodeURIComponent(title));
+    const detailDeletePostingId = document.getElementById('detailDeletePostingId');
+    if (detailDeletePostingId) {
+      detailDeletePostingId.value = button.getAttribute('data-id') || '0';
+    }
+  }
+
+  const initiallyActiveCard = document.querySelector('[data-posting-card="1"][data-active="1"]') || document.querySelector('[data-posting-card="1"]');
+  if (initiallyActiveCard) {
+    selectPostingCard(initiallyActiveCard);
   }
 </script>
