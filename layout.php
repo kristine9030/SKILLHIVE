@@ -1,4 +1,5 @@
 <?php
+ob_start();
 session_start();
 
 $role = $_SESSION['role'] ?? null;
@@ -79,6 +80,12 @@ if (!file_exists($fullPath)) {
     if (file_exists($altPath)) {
         $fullPath = $altPath;
         $currentPage = $altPage;
+    }
+}
+if (!file_exists($fullPath)) {
+    $indexPath = __DIR__ . "/pages/{$currentPage}/index.php";
+    if (file_exists($indexPath)) {
+        $fullPath = $indexPath;
     }
 }
 if (!file_exists($fullPath)) {

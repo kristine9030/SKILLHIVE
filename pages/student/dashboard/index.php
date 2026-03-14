@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../backend/db_connect.php';
+require_once __DIR__ . '/../../../backend/db_connect.php';
 
 $firstName = explode(' ', $userName)[0];
 
@@ -7,6 +7,77 @@ $firstName = explode(' ', $userName)[0];
 $stmt = $pdo->prepare("SELECT * FROM student WHERE student_id = ?");
 $stmt->execute([$userId]);
 $student = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Compute readiness score dynamically and persist if needed.
+$stmt = $pdo->prepare(
+  'SELECT ss.skill_level, ss.verified
+   FROM student_skill ss
+   WHERE ss.student_id = ?'
+);
+$stmt->execute([$userId]);
+$studentSkills = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$hasResume = !empty($student['resume_file']);
+$hasPortfolio = !empty($student['profile_picture']);
+
+$readinessScore = 0.0;
+$basicFields = [
+  !empty($student['first_name']),
+  !empty($student['last_name']),
+  !empty($student['program']),
+  !empty($student['department']),
+  !empty($student['year_level']),
+];
+$filledBasic = 0;
+foreach ($basicFields as $ok) {
+  if ($ok) $filledBasic++;
+}
+$readinessScore += $filledBasic * 6;
+
+if (!empty($student['preferred_industry'])) {
+  $readinessScore += 10;
+}
+
+if (($student['availability_status'] ?? '') !== 'Unavailable') {
+  $readinessScore += 10;
+}
+
+if ($hasResume) {
+  $readinessScore += 20;
+}
+
+if ($hasPortfolio) {
+  $readinessScore += 10;
+}
+
+if (count($studentSkills) > 0) {
+  $skillMap = [
+    'Beginner' => 40,
+    'Intermediate' => 70,
+    'Advanced' => 90,
+  ];
+
+  $totalSkillValue = 0;
+  foreach ($studentSkills as $row) {
+    $value = $skillMap[$row['skill_level']] ?? 40;
+    if ((int) ($row['verified'] ?? 0) === 1) {
+      $value = min(100, $value + 10);
+    }
+    $totalSkillValue += $value;
+  }
+
+  $avgSkill = $totalSkillValue / max(1, count($studentSkills));
+  $readinessScore += ($avgSkill * 0.20);
+}
+
+$readinessScore = round(max(0, min(100, $readinessScore)), 2);
+$storedScore = isset($student['internship_readiness_score']) ? (float) $student['internship_readiness_score'] : 0.0;
+if (abs($storedScore - $readinessScore) >= 0.01) {
+  $stmt = $pdo->prepare('UPDATE student SET internship_readiness_score = ?, updated_at = NOW() WHERE student_id = ?');
+  $stmt->execute([$readinessScore, $userId]);
+}
+
+$student['internship_readiness_score'] = $readinessScore;
 ?>
 
 <div class="page-header">
@@ -35,6 +106,14 @@ $student = $stmt->fetch(PDO::FETCH_ASSOC);
     <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +1 today</div>
   </div>
   <div class="stat-card">
+    <div class="stat-card-icon" style="background:rgba(8,145,178,.12)"><i class="fas fa-list-check" style="color:#0E7490"></i></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num">2</div>
+      <div class="stat-card-label">Waitlisted</div>
+    </div>
+    <div class="stat-card-trend neutral">awaiting openings</div>
+  </div>
+  <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-clock" style="color:#F59E0B"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num">248</div>
@@ -45,7 +124,7 @@ $student = $stmt->fetch(PDO::FETCH_ASSOC);
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(111,66,193,.1)"><i class="fas fa-star" style="color:#6F42C1"></i></div>
     <div class="stat-card-info">
-      <div class="stat-card-num"><?php echo $student['internship_readiness_score'] ?? '85'; ?></div>
+      <div class="stat-card-num"><?php echo number_format((float) ($student['internship_readiness_score'] ?? 0), 2); ?></div>
       <div class="stat-card-label">Readiness Score</div>
     </div>
     <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +5 pts</div>
@@ -167,8 +246,8 @@ $student = $stmt->fetch(PDO::FETCH_ASSOC);
         <div class="timeline-item">
           <div class="timeline-dot" style="background:#06B6D4"></div>
           <div class="timeline-content">
-            <div style="font-weight:600;font-size:.85rem">Interview — Google</div>
-            <div style="font-size:.75rem;color:#999">Tomorrow, 2:00 PM</div>
+            <div style="font-weight:600;font-size:.85rem">Application Update — Google</div>
+            <div style="font-size:.75rem;color:#999">Status review tomorrow, 2:00 PM</div>
           </div>
         </div>
         <div class="timeline-item">
