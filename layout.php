@@ -51,8 +51,11 @@ $allowedPages = [
     ],
     'admin' => [
         'admin/dashboard',
+        'admin/universities',
         'admin/verify-companies',
         'admin/users',
+        'admin/reports',
+        'admin/audit-logs',
         'admin/settings',
     ],
 ];
