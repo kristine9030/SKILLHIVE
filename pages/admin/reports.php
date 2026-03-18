@@ -4,6 +4,8 @@ if (($_SESSION['role'] ?? '') !== 'admin') {
     header('Location: /SkillHive/layout.php'); exit;
 }
 
+$baseUrl = $baseUrl ?? '/SkillHive';
+
 // ── Reports data ────────────────────────────────────────────────────────────
 $appsByStatus = $pdo->query("SELECT status, COUNT(*) cnt FROM application GROUP BY status ORDER BY cnt DESC")->fetchAll(PDO::FETCH_KEY_PAIR);
 $totalApps = array_sum($appsByStatus);

@@ -4,6 +4,8 @@ if (($_SESSION['role'] ?? '') !== 'admin') {
     header('Location: /SkillHive/layout.php'); exit;
 }
 
+$baseUrl = $baseUrl ?? '/SkillHive';
+
 // ── Live stats ──────────────────────────────────────────────────────────────
 $stats = $pdo->query("
     SELECT

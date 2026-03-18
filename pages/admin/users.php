@@ -4,6 +4,8 @@ if (($_SESSION['role'] ?? '') !== 'admin') {
     header('Location: /SkillHive/layout.php'); exit;
 }
 
+$baseUrl = $baseUrl ?? '/SkillHive';
+
 // Filter params
 $filterRole   = $_GET['role']   ?? '';
 $filterStatus = $_GET['status'] ?? '';
@@ -11,6 +13,7 @@ $search       = trim($_GET['q'] ?? '');
 $page_num     = max(1, (int)($_GET['p'] ?? 1));
 $perPage      = 20;
 $offset       = ($page_num - 1) * $perPage;
+$currentUri   = $_SERVER['REQUEST_URI'] ?? '/SkillHive/layout.php?page=admin/users';
 
 // Build combined UNION for all user types
 $bindings = [];
@@ -173,7 +176,7 @@ $roleBg     = ['student'=>'rgba(6,182,212,.1)','employer'=>'rgba(16,185,129,.1)'
               <input type="hidden" name="action" value="delete_user">
               <input type="hidden" name="user_id" value="<?= $u['uid'] ?>">
               <input type="hidden" name="user_role" value="<?= $u['role'] ?>">
-              <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+              <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
               <button type="submit" class="btn btn-ghost" style="font-size:.72rem;padding:4px 10px;color:#EF4444;border-color:#EF4444" onclick="return confirm('Delete this user permanently?')"><i class="fas fa-trash"></i></button>
             </form>
           </div>

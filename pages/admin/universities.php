@@ -6,6 +6,8 @@ if (($_SESSION['role'] ?? '') !== 'admin') {
     exit;
 }
 
+$baseUrl = $baseUrl ?? '/SkillHive';
+
 $studentDomains = $pdo->query("SELECT SUBSTRING_INDEX(email, '@', -1) AS domain, COUNT(*) AS cnt FROM student GROUP BY domain")
     ->fetchAll(PDO::FETCH_KEY_PAIR);
 $adviserDomains = $pdo->query("SELECT SUBSTRING_INDEX(email, '@', -1) AS domain, COUNT(*) AS cnt FROM internship_adviser GROUP BY domain")

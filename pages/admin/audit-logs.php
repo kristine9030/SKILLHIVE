@@ -4,6 +4,8 @@ if (($_SESSION['role'] ?? '') !== 'admin') {
     header('Location: /SkillHive/layout.php'); exit;
 }
 
+$baseUrl = $baseUrl ?? '/SkillHive';
+
 // Filter params
 $filterEvent  = $_GET['event']    ?? '';
 $filterSev    = $_GET['severity'] ?? '';

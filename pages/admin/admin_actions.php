@@ -12,6 +12,13 @@ if (($_SESSION['role'] ?? '') !== 'admin') {
     exit;
 }
 
+$userId = (int)($_SESSION['user_id'] ?? 0);
+if ($userId <= 0) {
+    http_response_code(403);
+    header('Location: /SkillHive/pages/auth/login.php');
+    exit;
+}
+
 $action   = $_REQUEST['action'] ?? '';
 $redirect = $_POST['redirect'] ?? ($_SERVER['HTTP_REFERER'] ?? ('/SkillHive/layout.php?page=admin/dashboard'));
 
@@ -291,9 +298,10 @@ switch ($action) {
 
     // ── Purge rejected records ──────────────────────────────────────────────
     case 'purge_rejected': {
-        // Remove rejected company verification records
-        $pdo->exec("DELETE cv FROM company_verification cv JOIN employer e ON e.employer_id=cv.employer_id WHERE cv.status='Rejected'");
-        flash('admin_msg', 'Rejected records purged.');
+        // Remove rejected and flagged company verification records.
+        $pdo->prepare("DELETE FROM company_verification WHERE status IN ('Rejected', 'Flagged')")
+            ->execute();
+        flash('admin_msg', 'Rejected/flagged records purged.');
         break;
     }
 

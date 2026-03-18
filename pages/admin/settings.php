@@ -4,10 +4,21 @@ if (($_SESSION['role'] ?? '') !== 'admin') {
     header('Location: /SkillHive/layout.php'); exit;
 }
 
+$baseUrl = $baseUrl ?? '/SkillHive';
+$userId = (int)($userId ?? ($_SESSION['user_id'] ?? 0));
+if ($userId <= 0) {
+  header('Location: /SkillHive/pages/auth/login.php');
+  exit;
+}
+$currentUri = $_SERVER['REQUEST_URI'] ?? '/SkillHive/layout.php?page=admin/settings';
+
 // Load current admin info
 $adminInfo = $pdo->prepare("SELECT * FROM admin WHERE admin_id = ?");
 $adminInfo->execute([$userId]);
 $admin = $adminInfo->fetch();
+if (!$admin) {
+  $admin = ['first_name' => '', 'last_name' => '', 'email' => ''];
+}
 ?>
 
 <div class="page-header" style="margin-bottom:24px">
@@ -40,7 +51,7 @@ $admin = $adminInfo->fetch();
       </div>
       <form method="post" action="<?= $baseUrl ?>/pages/admin/admin_actions.php">
         <input type="hidden" name="action" value="update_profile">
-        <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+        <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
           <div>
@@ -67,7 +78,7 @@ $admin = $adminInfo->fetch();
       </div>
       <form method="post" action="<?= $baseUrl ?>/pages/admin/admin_actions.php">
         <input type="hidden" name="action" value="change_password">
-        <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+        <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
         <div style="margin-bottom:14px">
           <label style="font-size:.8rem;font-weight:600;color:#666;display:block;margin-bottom:5px">Current Password</label>
           <input name="current_password" type="password" placeholder="••••••••" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:.88rem" required>
@@ -99,7 +110,7 @@ $admin = $adminInfo->fetch();
       </div>
       <form method="post" action="<?= $baseUrl ?>/pages/admin/admin_actions.php">
         <input type="hidden" name="action" value="platform_settings">
-        <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+        <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
         <div style="display:flex;flex-direction:column;gap:14px">
 
           <!-- Toggle: New Registrations -->
@@ -172,7 +183,7 @@ $admin = $adminInfo->fetch();
           <div style="font-size:.8rem;font-weight:700;color:#EF4444;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Danger Zone</div>
           <form method="post" action="<?= $baseUrl ?>/pages/admin/admin_actions.php" onsubmit="return confirm('Purge ALL rejected/flagged company applications? This cannot be undone.')">
             <input type="hidden" name="action" value="purge_rejected">
-            <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+            <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
             <button type="submit" class="btn btn-ghost" style="justify-content:flex-start;font-size:.84rem;color:#EF4444;border-color:#EF4444;width:100%">
               <i class="fas fa-trash" style="width:20px"></i> Purge Rejected Records
             </button>

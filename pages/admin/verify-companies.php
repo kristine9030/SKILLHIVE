@@ -4,10 +4,13 @@ if (($_SESSION['role'] ?? '') !== 'admin') {
     header('Location: /SkillHive/layout.php'); exit;
 }
 
+$baseUrl = $baseUrl ?? '/SkillHive';
+
 // Filter params
 $filterStatus = $_GET['status'] ?? '';
 $filterIndustry = $_GET['industry'] ?? '';
 $search = trim($_GET['q'] ?? '');
+$currentUri = $_SERVER['REQUEST_URI'] ?? '/SkillHive/layout.php?page=admin/verify-companies';
 
 // Build query
 $where = ['1=1'];
@@ -182,14 +185,14 @@ $summary = $pdo->query("SELECT verification_status, COUNT(*) cnt FROM employer G
           <input type="hidden" name="action" value="verify_company">
           <input type="hidden" name="employer_id" value="<?= $co['employer_id'] ?>">
           <input type="hidden" name="decision" value="Approved">
-          <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+          <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
           <button type="submit" class="btn btn-primary" style="font-size:.78rem;padding:6px 14px"><i class="fas fa-check"></i> Approve</button>
         </form>
         <form method="post" action="<?= $baseUrl ?>/pages/admin/admin_actions.php" style="display:contents">
           <input type="hidden" name="action" value="verify_company">
           <input type="hidden" name="employer_id" value="<?= $co['employer_id'] ?>">
           <input type="hidden" name="decision" value="Rejected">
-          <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+          <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
           <button type="submit" class="btn btn-ghost" style="font-size:.78rem;padding:6px 14px;color:#EF4444;border-color:#EF4444"><i class="fas fa-times"></i> Reject</button>
         </form>
         <?php elseif ($co['verification_status'] === 'Approved'): ?>
@@ -197,14 +200,14 @@ $summary = $pdo->query("SELECT verification_status, COUNT(*) cnt FROM employer G
           <input type="hidden" name="action" value="verify_company">
           <input type="hidden" name="employer_id" value="<?= $co['employer_id'] ?>">
           <input type="hidden" name="decision" value="Flagged">
-          <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+          <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
           <button type="submit" class="btn btn-ghost" style="font-size:.78rem;padding:6px 14px;color:#F59E0B;border-color:#F59E0B"><i class="fas fa-flag"></i> Flag</button>
         </form>
         <form method="post" action="<?= $baseUrl ?>/pages/admin/admin_actions.php" style="display:contents">
           <input type="hidden" name="action" value="award_badge">
           <input type="hidden" name="employer_id" value="<?= $co['employer_id'] ?>">
           <input type="hidden" name="badge" value="Verified Partner">
-          <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+          <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
           <button type="submit" class="btn btn-ghost" style="font-size:.78rem;padding:6px 14px"><i class="fas fa-star"></i> Badge</button>
         </form>
         <?php elseif ($co['verification_status'] === 'Rejected' || $co['verification_status'] === 'Flagged'): ?>
@@ -212,7 +215,7 @@ $summary = $pdo->query("SELECT verification_status, COUNT(*) cnt FROM employer G
           <input type="hidden" name="action" value="verify_company">
           <input type="hidden" name="employer_id" value="<?= $co['employer_id'] ?>">
           <input type="hidden" name="decision" value="Approved">
-          <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+          <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
           <button type="submit" class="btn btn-primary" style="font-size:.78rem;padding:6px 14px"><i class="fas fa-check"></i> Re-approve</button>
         </form>
         <?php endif; ?>
@@ -229,7 +232,7 @@ $summary = $pdo->query("SELECT verification_status, COUNT(*) cnt FROM employer G
         <form method="post" action="<?= $baseUrl ?>/pages/admin/admin_actions.php">
           <input type="hidden" name="action" value="add_notes">
           <input type="hidden" name="employer_id" value="<?= $co['employer_id'] ?>">
-          <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+          <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
           <textarea name="notes" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:.82rem;resize:vertical;min-height:60px" placeholder="Risk assessment notes..."><?= htmlspecialchars($co['risk_assessment_notes'] ?? '') ?></textarea>
           <button type="submit" class="btn btn-primary" style="font-size:.78rem;width:100%;justify-content:center;margin-top:6px"><i class="fas fa-save"></i> Save Notes</button>
         </form>
