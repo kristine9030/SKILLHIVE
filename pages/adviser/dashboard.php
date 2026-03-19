@@ -1,3 +1,42 @@
+<?php
+require_once __DIR__ . '/../../backend/db_connect.php';
+require_once __DIR__ . '/dashboard/data.php';
+
+$adviserId = (int)($_SESSION['adviser_id'] ?? ($userId ?? ($_SESSION['user_id'] ?? 0)));
+
+$dashboardData = [
+  'profile' => [
+    'adviser_id' => $adviserId,
+    'first_name' => '',
+    'last_name' => '',
+    'department' => '',
+    'email' => '',
+  ],
+  'stats' => [
+    'my_students' => 0,
+    'endorsed' => 0,
+    'pending_review' => 0,
+    'partner_companies' => 0,
+  ],
+  'departments' => [],
+  'recent_activity' => [],
+  'pending_endorsements' => [],
+];
+
+if ($adviserId > 0) {
+  try {
+    $dashboardData = getAdviserDashboardData($pdo, $adviserId);
+  } catch (Throwable $e) {
+    $dashboardData = $dashboardData;
+  }
+}
+
+$stats = $dashboardData['stats'];
+$departments = $dashboardData['departments'];
+$recentActivity = $dashboardData['recent_activity'];
+$pendingEndorsements = $dashboardData['pending_endorsements'];
+?>
+
 <div class="page-header">
   <div>
     <h2 class="page-title">Adviser Dashboard</h2>
@@ -9,19 +48,19 @@
 <div class="stat-cards">
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(6,182,212,.1)"><i class="fas fa-user-graduate" style="color:#06B6D4"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num">42</div><div class="stat-card-label">My Students</div></div>
+    <div class="stat-card-info"><div class="stat-card-num"><?php echo (int)$stats['my_students']; ?></div><div class="stat-card-label">My Students</div></div>
   </div>
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-stamp" style="color:#10B981"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num">28</div><div class="stat-card-label">Endorsed</div></div>
+    <div class="stat-card-info"><div class="stat-card-num"><?php echo (int)$stats['endorsed']; ?></div><div class="stat-card-label">Endorsed</div></div>
   </div>
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-clock" style="color:#F59E0B"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num">8</div><div class="stat-card-label">Pending Review</div></div>
+    <div class="stat-card-info"><div class="stat-card-num"><?php echo (int)$stats['pending_review']; ?></div><div class="stat-card-label">Pending Review</div></div>
   </div>
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-building" style="color:#10B981"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num">15</div><div class="stat-card-label">Partner Companies</div></div>
+    <div class="stat-card-info"><div class="stat-card-num"><?php echo (int)$stats['partner_companies']; ?></div><div class="stat-card-label">Partner Companies</div></div>
   </div>
 </div>
 
@@ -31,22 +70,19 @@
     <div class="panel-card">
       <div class="panel-card-header"><h3>Students by Department</h3></div>
       <div style="display:flex;flex-direction:column;gap:12px">
-        <div>
-          <div class="skill-bar-header"><span>CICS — Computer Science</span><span>18 students</span></div>
-          <div class="dept-bar"><div class="dept-bar-fill" style="width:100%;background:linear-gradient(90deg,#06B6D4,#10B981)"></div></div>
-        </div>
-        <div>
-          <div class="skill-bar-header"><span>CICS — Information Technology</span><span>12 students</span></div>
-          <div class="dept-bar"><div class="dept-bar-fill" style="width:67%;background:linear-gradient(90deg,#F59E0B,#10B981)"></div></div>
-        </div>
-        <div>
-          <div class="skill-bar-header"><span>COE — Engineering</span><span>8 students</span></div>
-          <div class="dept-bar"><div class="dept-bar-fill" style="width:44%;background:linear-gradient(90deg,#EF4444,#F59E0B)"></div></div>
-        </div>
-        <div>
-          <div class="skill-bar-header"><span>CBA — Business Admin</span><span>4 students</span></div>
-          <div class="dept-bar"><div class="dept-bar-fill" style="width:22%;background:linear-gradient(90deg,#6F42C1,#06B6D4)"></div></div>
-        </div>
+        <?php if (!empty($departments)): ?>
+          <?php foreach ($departments as $departmentRow): ?>
+            <div>
+              <div class="skill-bar-header"><span><?php echo adviser_dashboard_escape($departmentRow['department']); ?> — <?php echo adviser_dashboard_escape($departmentRow['program']); ?></span><span><?php echo (int)($departmentRow['student_count'] ?? 0); ?> students</span></div>
+              <div class="dept-bar"><div class="dept-bar-fill" style="width:<?php echo (int)($departmentRow['bar_width'] ?? 0); ?>%;background:<?php echo adviser_dashboard_escape($departmentRow['bar_gradient'] ?? 'linear-gradient(90deg,#06B6D4,#10B981)'); ?>"></div></div>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div>
+            <div class="skill-bar-header"><span>No assigned students yet</span><span>0 students</span></div>
+            <div class="dept-bar"><div class="dept-bar-fill" style="width:0%;background:linear-gradient(90deg,#06B6D4,#10B981)"></div></div>
+          </div>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -62,34 +98,21 @@
             <tr><th>Student</th><th>Company</th><th>Hours</th><th>Progress</th><th>Status</th></tr>
           </thead>
           <tbody>
-            <tr>
-              <td><div style="display:flex;align-items:center;gap:8px"><div class="topbar-avatar" style="width:28px;height:28px;font-size:.65rem">JD</div>Juan dela Cruz</div></td>
-              <td>Google PH</td>
-              <td>248/400</td>
-              <td><div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:62%;background:#10B981"></div></div></td>
-              <td><span class="status-pill status-accepted">On Track</span></td>
-            </tr>
-            <tr>
-              <td><div style="display:flex;align-items:center;gap:8px"><div class="topbar-avatar" style="width:28px;height:28px;font-size:.65rem;background:#10B981">MR</div>Maria Reyes</div></td>
-              <td>Accenture PH</td>
-              <td>180/400</td>
-              <td><div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:45%;background:#F59E0B"></div></div></td>
-              <td><span class="status-pill status-shortlisted">Progressing</span></td>
-            </tr>
-            <tr>
-              <td><div style="display:flex;align-items:center;gap:8px"><div class="topbar-avatar" style="width:28px;height:28px;font-size:.65rem;background:#F59E0B">AL</div>Andre Lopez</div></td>
-              <td>Shopee PH</td>
-              <td>90/400</td>
-              <td><div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:22%;background:#EF4444"></div></div></td>
-              <td><span class="status-pill status-pending">Behind</span></td>
-            </tr>
-            <tr>
-              <td><div style="display:flex;align-items:center;gap:8px"><div class="topbar-avatar" style="width:28px;height:28px;font-size:.65rem;background:#6F42C1">KP</div>Kristine Padilla</div></td>
-              <td>Grab PH</td>
-              <td>320/400</td>
-              <td><div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:80%;background:#10B981"></div></div></td>
-              <td><span class="status-pill status-accepted">On Track</span></td>
-            </tr>
+            <?php if (!empty($recentActivity)): ?>
+              <?php foreach ($recentActivity as $activity): ?>
+                <tr>
+                  <td><div style="display:flex;align-items:center;gap:8px"><div class="topbar-avatar" style="width:28px;height:28px;font-size:.65rem"><?php echo adviser_dashboard_escape($activity['initials']); ?></div><?php echo adviser_dashboard_escape(trim((string)($activity['first_name'] ?? '') . ' ' . (string)($activity['last_name'] ?? ''))); ?></div></td>
+                  <td><?php echo adviser_dashboard_escape($activity['company_name'] ?? 'N/A'); ?></td>
+                  <td><?php echo number_format((float)($activity['hours_completed'] ?? 0), 0); ?>/<?php echo number_format((float)($activity['hours_required'] ?? 0), 0); ?></td>
+                  <td><div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:<?php echo (int)($activity['progress_percent'] ?? 0); ?>%;background:<?php echo (($activity['progress_percent'] ?? 0) >= 75) ? '#10B981' : ((($activity['progress_percent'] ?? 0) >= 35) ? '#F59E0B' : '#EF4444'); ?>"></div></div></td>
+                  <td><span class="status-pill <?php echo adviser_dashboard_escape($activity['status_class'] ?? 'status-pending'); ?>"><?php echo adviser_dashboard_escape($activity['status_label'] ?? 'Pending'); ?></span></td>
+                </tr>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <tr>
+                <td colspan="5" style="text-align:center;color:#999;">No OJT activity found for your assigned students.</td>
+              </tr>
+            <?php endif; ?>
           </tbody>
         </table>
       </div>
@@ -101,22 +124,27 @@
     <div class="panel-card">
       <div class="panel-card-header"><h3>Pending Endorsements</h3></div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <div style="padding:12px;background:#f9fafb;border-radius:10px">
-          <div style="font-weight:600;font-size:.85rem">Juan dela Cruz</div>
-          <div style="font-size:.75rem;color:#999;margin:4px 0 8px">→ Google PH — UI/UX Design</div>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-primary btn-sm" style="flex:1">Endorse</button>
-            <button class="btn btn-ghost btn-sm" style="flex:1">Review</button>
+        <?php if (!empty($pendingEndorsements)): ?>
+          <?php foreach ($pendingEndorsements as $endorsement): ?>
+            <div style="padding:12px;background:#f9fafb;border-radius:10px">
+              <div style="font-weight:600;font-size:.85rem"><?php echo adviser_dashboard_escape(trim((string)($endorsement['first_name'] ?? '') . ' ' . (string)($endorsement['last_name'] ?? ''))); ?></div>
+              <div style="font-size:.75rem;color:#999;margin:4px 0 8px">→ <?php echo adviser_dashboard_escape($endorsement['company_name'] ?? 'Company'); ?> — <?php echo adviser_dashboard_escape($endorsement['internship_title'] ?? 'Internship'); ?></div>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-primary btn-sm" style="flex:1" type="button" onclick="window.location.href='<?php echo $baseUrl; ?>/layout.php?page=adviser/endorsement'">Endorse</button>
+                <button class="btn btn-ghost btn-sm" style="flex:1" type="button" onclick="window.location.href='<?php echo $baseUrl; ?>/layout.php?page=adviser/endorsement'">Review</button>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div style="padding:12px;background:#f9fafb;border-radius:10px">
+            <div style="font-weight:600;font-size:.85rem">No pending endorsements</div>
+            <div style="font-size:.75rem;color:#999;margin:4px 0 8px">All endorsement requests are currently cleared.</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-primary btn-sm" style="flex:1" type="button" onclick="window.location.href='<?php echo $baseUrl; ?>/layout.php?page=adviser/endorsement'">Endorse</button>
+              <button class="btn btn-ghost btn-sm" style="flex:1" type="button" onclick="window.location.href='<?php echo $baseUrl; ?>/layout.php?page=adviser/endorsement'">Review</button>
+            </div>
           </div>
-        </div>
-        <div style="padding:12px;background:#f9fafb;border-radius:10px">
-          <div style="font-weight:600;font-size:.85rem">Maria Reyes</div>
-          <div style="font-size:.75rem;color:#999;margin:4px 0 8px">→ Accenture — Software Eng.</div>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-primary btn-sm" style="flex:1">Endorse</button>
-            <button class="btn btn-ghost btn-sm" style="flex:1">Review</button>
-          </div>
-        </div>
+        <?php endif; ?>
       </div>
     </div>
 

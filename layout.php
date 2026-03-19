@@ -48,6 +48,8 @@ $allowedPages = [
         'adviser/analytics',
         'adviser/companies',
         'adviser/evaluation',
+        'adviser/settings',
+        'adviser/students',
     ],
     'admin' => [
         'admin/dashboard',
