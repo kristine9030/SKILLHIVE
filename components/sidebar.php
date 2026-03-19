@@ -48,10 +48,17 @@ if ($role === 'student') {
 } elseif ($role === 'admin') {
     $navItems = [
         ['label' => 'MAIN', 'items' => [
-            ['icon' => 'fas fa-house',        'text' => 'Dashboard',  'page' => 'admin/dashboard'],
-            ['icon' => 'fas fa-building',     'text' => 'Companies',  'page' => 'admin/verify-companies'],
-            ['icon' => 'fas fa-users',        'text' => 'Users',      'page' => 'admin/users'],
-            ['icon' => 'fas fa-gear',         'text' => 'Settings',   'page' => 'admin/settings'],
+            ['icon' => 'fas fa-tachometer-alt', 'text' => 'Dashboard',  'page' => 'admin/dashboard'],
+      ['icon' => 'fas fa-university',     'text' => 'Universities','page' => 'admin/universities'],
+            ['icon' => 'fas fa-building',       'text' => 'Companies',  'page' => 'admin/verify-companies'],
+            ['icon' => 'fas fa-users',          'text' => 'Users',      'page' => 'admin/users'],
+        ]],
+        ['label' => 'ANALYTICS', 'items' => [
+            ['icon' => 'fas fa-chart-bar',      'text' => 'Reports',    'page' => 'admin/reports'],
+            ['icon' => 'fas fa-history',        'text' => 'Audit Logs', 'page' => 'admin/audit-logs'],
+        ]],
+        ['label' => 'SYSTEM', 'items' => [
+            ['icon' => 'fas fa-gear',           'text' => 'Settings',   'page' => 'admin/settings'],
         ]],
     ];
 }
