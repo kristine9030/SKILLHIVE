@@ -1,3 +1,34 @@
+<?php
+require_once __DIR__ . '/../../backend/db_connect.php';
+require_once __DIR__ . '/monitoring/data.php';
+
+$adviserId = (int)($_SESSION['adviser_id'] ?? ($userId ?? ($_SESSION['user_id'] ?? 0)));
+
+$currentFilters = [
+  'search' => trim((string)($_GET['search'] ?? '')),
+  'company' => trim((string)($_GET['company'] ?? '')),
+  'progress' => trim((string)($_GET['progress'] ?? '')),
+];
+
+$pageData = [
+  'selected' => ['search' => '', 'company' => '', 'progress' => ''],
+  'filter_options' => ['companies' => [], 'progresses' => []],
+  'rows' => [],
+];
+
+if ($adviserId > 0) {
+  try {
+    $pageData = getAdviserMonitoringPageData($pdo, $adviserId, $currentFilters);
+  } catch (Throwable $e) {
+    $pageData = $pageData;
+  }
+}
+
+$selected = $pageData['selected'];
+$filterOptions = $pageData['filter_options'];
+$rows = $pageData['rows'];
+?>
+
 <div class="page-header">
   <div>
     <h2 class="page-title">OJT Monitoring</h2>
@@ -6,113 +37,72 @@
 </div>
 
 <!-- Filters -->
-<div class="filter-row">
+<form method="get" action="<?php echo $baseUrl; ?>/layout.php" class="filter-row">
+  <input type="hidden" name="page" value="adviser/monitoring">
+
   <div class="topbar-search" style="flex:1;max-width:250px">
     <i class="fas fa-search"></i>
-    <input type="text" placeholder="Search students...">
+    <input type="text" name="search" placeholder="Search students..." value="<?php echo adviser_monitoring_escape($selected['search'] ?? ''); ?>">
   </div>
-  <select class="filter-select">
-    <option>All Companies</option>
-    <option>Google PH</option>
-    <option>Accenture PH</option>
-    <option>Shopee PH</option>
-    <option>Grab PH</option>
+
+  <select class="filter-select" name="company" onchange="this.form.submit()">
+    <option value="">All Companies</option>
+    <?php foreach (($filterOptions['companies'] ?? []) as $companyOption): ?>
+      <option value="<?php echo adviser_monitoring_escape($companyOption); ?>" <?php echo ($selected['company'] ?? '') === $companyOption ? 'selected' : ''; ?>><?php echo adviser_monitoring_escape($companyOption); ?></option>
+    <?php endforeach; ?>
   </select>
-  <select class="filter-select">
-    <option>All Progress</option>
-    <option>On Track</option>
-    <option>Progressing</option>
-    <option>Behind</option>
+
+  <select class="filter-select" name="progress" onchange="this.form.submit()">
+    <option value="">All Progress</option>
+    <?php foreach (($filterOptions['progresses'] ?? []) as $progressOption): ?>
+      <option value="<?php echo adviser_monitoring_escape($progressOption); ?>" <?php echo ($selected['progress'] ?? '') === $progressOption ? 'selected' : ''; ?>><?php echo adviser_monitoring_escape($progressOption); ?></option>
+    <?php endforeach; ?>
   </select>
-</div>
+
+  <button class="btn btn-ghost btn-sm" type="submit">Apply</button>
+</form>
 
 <!-- Student Monitoring Cards -->
 <div class="cards-grid" style="grid-template-columns:repeat(auto-fill,minmax(340px,1fr))">
-  <div class="panel-card">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <div class="topbar-avatar" style="width:44px;height:44px;font-size:.85rem">JD</div>
-      <div style="flex:1">
-        <div style="font-weight:700;font-size:.95rem">Juan dela Cruz</div>
-        <div style="font-size:.78rem;color:#999">Google PH — UI/UX Design</div>
+  <?php if (!empty($rows)): ?>
+    <?php foreach ($rows as $row): ?>
+      <?php
+      $studentName = trim((string)($row['first_name'] ?? '') . ' ' . (string)($row['last_name'] ?? ''));
+      $companyName = trim((string)($row['company_name'] ?? ''));
+      $internshipTitle = trim((string)($row['internship_title'] ?? ''));
+      $hoursCompleted = (float)($row['hours_completed'] ?? 0);
+      $hoursRequired = (float)($row['hours_required'] ?? 0);
+      $latestLog = trim((string)($row['latest_accomplishment'] ?? ''));
+      ?>
+      <div class="panel-card">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div class="topbar-avatar" style="width:44px;height:44px;font-size:.85rem"><?php echo adviser_monitoring_escape((string)($row['initials'] ?? 'NA')); ?></div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:.95rem"><?php echo adviser_monitoring_escape($studentName !== '' ? $studentName : 'Unnamed Student'); ?></div>
+            <div style="font-size:.78rem;color:#999"><?php echo adviser_monitoring_escape($companyName !== '' ? $companyName : 'No Company'); ?> — <?php echo adviser_monitoring_escape($internshipTitle !== '' ? $internshipTitle : 'No Internship'); ?></div>
+          </div>
+          <span class="status-pill <?php echo adviser_monitoring_escape((string)($row['status_class'] ?? 'status-pending')); ?>"><?php echo adviser_monitoring_escape((string)($row['status_label'] ?? 'Pending')); ?></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:6px">
+          <span><?php echo (int)round($hoursCompleted); ?> / <?php echo (int)round($hoursRequired); ?> hours</span><span style="font-weight:700;color:#06B6D4"><?php echo (int)($row['progress_percent'] ?? 0); ?>%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:<?php echo (int)($row['progress_percent'] ?? 0); ?>%;background:<?php echo adviser_monitoring_escape((string)($row['progress_gradient'] ?? 'linear-gradient(90deg,#06B6D4,#10B981)')); ?>"></div></div>
+        <div style="margin-top:12px;font-size:.78rem;color:#999">
+          <strong>Latest log:</strong> <?php echo adviser_monitoring_escape($latestLog !== '' ? $latestLog : 'No daily log yet'); ?> (<?php echo adviser_monitoring_escape((string)($row['latest_log_date_label'] ?? 'No date')); ?>)
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <a class="btn btn-ghost btn-sm" style="flex:1" href="<?php echo $baseUrl; ?>/layout.php?page=adviser/students&amp;search=<?php echo urlencode($studentName); ?>"><i class="fas fa-eye"></i> View Logs</a>
+          <?php if (!empty($row['email'])): ?>
+            <a class="btn btn-ghost btn-sm" style="flex:1" href="mailto:<?php echo adviser_monitoring_escape((string)$row['email']); ?>"><i class="fas fa-comment"></i> Feedback</a>
+          <?php else: ?>
+            <button class="btn btn-ghost btn-sm" style="flex:1" type="button" disabled><i class="fas fa-comment"></i> Feedback</button>
+          <?php endif; ?>
+        </div>
       </div>
-      <span class="status-pill status-accepted">On Track</span>
+    <?php endforeach; ?>
+  <?php else: ?>
+    <div class="panel-card" style="grid-column:1/-1;text-align:center;color:#9ca3af;">
+      No monitoring records found for the selected filters.
     </div>
-    <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:6px">
-      <span>248 / 400 hours</span><span style="font-weight:700;color:#06B6D4">62%</span>
-    </div>
-    <div class="progress-bar"><div class="progress-fill" style="width:62%;background:linear-gradient(90deg,#06B6D4,#10B981)"></div></div>
-    <div style="margin-top:12px;font-size:.78rem;color:#999">
-      <strong>Latest log:</strong> Developed login module with session management (Jan 20)
-    </div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn btn-ghost btn-sm" style="flex:1"><i class="fas fa-eye"></i> View Logs</button>
-      <button class="btn btn-ghost btn-sm" style="flex:1"><i class="fas fa-comment"></i> Feedback</button>
-    </div>
-  </div>
-
-  <div class="panel-card">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <div class="topbar-avatar" style="width:44px;height:44px;font-size:.85rem;background:#10B981">MR</div>
-      <div style="flex:1">
-        <div style="font-weight:700;font-size:.95rem">Maria Reyes</div>
-        <div style="font-size:.78rem;color:#999">Accenture PH — Software Eng.</div>
-      </div>
-      <span class="status-pill status-shortlisted">Progressing</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:6px">
-      <span>180 / 400 hours</span><span style="font-weight:700;color:#F59E0B">45%</span>
-    </div>
-    <div class="progress-bar"><div class="progress-fill" style="width:45%;background:linear-gradient(90deg,#F59E0B,#10B981)"></div></div>
-    <div style="margin-top:12px;font-size:.78rem;color:#999">
-      <strong>Latest log:</strong> Created wireframes for dashboard redesign (Jan 19)
-    </div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn btn-ghost btn-sm" style="flex:1"><i class="fas fa-eye"></i> View Logs</button>
-      <button class="btn btn-ghost btn-sm" style="flex:1"><i class="fas fa-comment"></i> Feedback</button>
-    </div>
-  </div>
-
-  <div class="panel-card">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <div class="topbar-avatar" style="width:44px;height:44px;font-size:.85rem;background:#F59E0B">AL</div>
-      <div style="flex:1">
-        <div style="font-weight:700;font-size:.95rem">Andre Lopez</div>
-        <div style="font-size:.78rem;color:#999">Shopee PH — Data Analyst</div>
-      </div>
-      <span class="status-pill status-pending">Behind</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:6px">
-      <span>90 / 400 hours</span><span style="font-weight:700;color:#EF4444">22%</span>
-    </div>
-    <div class="progress-bar"><div class="progress-fill" style="width:22%;background:linear-gradient(90deg,#EF4444,#F59E0B)"></div></div>
-    <div style="margin-top:12px;font-size:.78rem;color:#999">
-      <strong>Latest log:</strong> Unit testing of API endpoints (Jan 18)
-    </div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn btn-ghost btn-sm" style="flex:1"><i class="fas fa-eye"></i> View Logs</button>
-      <button class="btn btn-ghost btn-sm" style="flex:1"><i class="fas fa-comment"></i> Feedback</button>
-    </div>
-  </div>
-
-  <div class="panel-card">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <div class="topbar-avatar" style="width:44px;height:44px;font-size:.85rem;background:#6F42C1">KP</div>
-      <div style="flex:1">
-        <div style="font-weight:700;font-size:.95rem">Kristine Padilla</div>
-        <div style="font-size:.78rem;color:#999">Grab PH — Mobile Dev</div>
-      </div>
-      <span class="status-pill status-accepted">On Track</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:6px">
-      <span>320 / 400 hours</span><span style="font-weight:700;color:#10B981">80%</span>
-    </div>
-    <div class="progress-bar"><div class="progress-fill" style="width:80%;background:linear-gradient(90deg,#10B981,#06B6D4)"></div></div>
-    <div style="margin-top:12px;font-size:.78rem;color:#999">
-      <strong>Latest log:</strong> Sprint review and demo presentation (Jan 20)
-    </div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn btn-ghost btn-sm" style="flex:1"><i class="fas fa-eye"></i> View Logs</button>
-      <button class="btn btn-ghost btn-sm" style="flex:1"><i class="fas fa-comment"></i> Feedback</button>
-    </div>
-  </div>
+  <?php endif; ?>
 </div>

@@ -114,9 +114,13 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
   </div>
 
   <select class="filter-select" name="position" onchange="this.form.submit()">
-    <option value="">All Positions</option>
+    <option value="">Posted Applications</option>
     <?php foreach ($positions as $position): ?>
-      <option value="<?php echo dashboard_escape($position); ?>" <?php echo $selected['position'] === $position ? 'selected' : ''; ?>><?php echo dashboard_escape($position); ?></option>
+      <?php
+      $positionId = (string)($position['internship_id'] ?? '');
+      $positionTitle = (string)($position['title'] ?? 'Untitled Internship');
+      ?>
+      <option value="<?php echo dashboard_escape($positionId); ?>" <?php echo (string)$selected['position'] === $positionId ? 'selected' : ''; ?>><?php echo dashboard_escape($positionTitle); ?></option>
     <?php endforeach; ?>
   </select>
 
@@ -503,10 +507,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
-      // Convert datetime-local to separate date and time
-      var dt = new Date(dateTimeInput);
-      var dateStr = dt.toISOString().split('T')[0];
-      var timeStr = String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
+      var dateTimeParts = dateTimeInput.split('T');
+      if (dateTimeParts.length !== 2) {
+        alert('Invalid interview date/time format');
+        return;
+      }
+      var dateStr = dateTimeParts[0];
+      var timeStr = dateTimeParts[1].length === 5 ? (dateTimeParts[1] + ':00') : dateTimeParts[1];
 
       var mode = form.querySelector('select[name="interview_mode"]').value || 'Online';
       var meetingLink = form.querySelector('input[name="meeting_link"]').value || '';
@@ -524,8 +531,20 @@ document.addEventListener('DOMContentLoaded', function() {
         body: formData
       })
         .then(function(response) {
-          if (!response.ok) throw new Error('API error');
-          return response.json();
+          return response.text().then(function(text) {
+            var data = null;
+            try {
+              data = JSON.parse(text);
+            } catch (parseErr) {
+              throw new Error('Invalid API response: ' + text.slice(0, 180));
+            }
+
+            if (!response.ok) {
+              throw new Error(data && data.error ? data.error : 'API error');
+            }
+
+            return data;
+          });
         })
         .then(function(data) {
           if (data.ok) {

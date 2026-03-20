@@ -34,8 +34,8 @@ if (!function_exists('candidates_get_candidate_rows')) {
         }
 
         if ($parsedFilters['position'] !== '') {
-            $sql .= ' AND i.title = :position';
-            $params[':position'] = $parsedFilters['position'];
+            $sql .= ' AND a.internship_id = :position_internship_id';
+            $params[':position_internship_id'] = (int)$parsedFilters['position'];
         }
 
         if ($parsedFilters['status'] !== '') {

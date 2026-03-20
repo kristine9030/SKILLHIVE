@@ -194,8 +194,8 @@ if (!function_exists('candidates_schedule_interview')) {
             return ['success' => false, 'error' => 'Application not found for your account.'];
         }
 
-        if (!candidates_can_transition($currentStatus, 'Interview Scheduled')) {
-            return ['success' => false, 'error' => 'Candidate must be Shortlisted before scheduling an interview.'];
+        if (!in_array($currentStatus, ['Pending', 'Shortlisted', 'Interview Scheduled'], true)) {
+            return ['success' => false, 'error' => 'Only pending or shortlisted candidates can be scheduled for interview.'];
         }
 
         $interviewDateRaw = trim((string)($payload['interview_date'] ?? ''));
@@ -216,7 +216,8 @@ if (!function_exists('candidates_schedule_interview')) {
             return ['success' => false, 'error' => 'Please provide a valid interview date and time.'];
         }
 
-        $interviewDate = date('Y-m-d H:i:s', $timestamp);
+            $interviewDate = date('Y-m-d', $timestamp);
+            $interviewTime = date('H:i:s', $timestamp);
         $meetingLink = $interviewMode === 'Online' ? $meetingTarget : null;
         $venue = $interviewMode === 'In-Person' ? $meetingTarget : null;
 
@@ -226,6 +227,7 @@ if (!function_exists('candidates_schedule_interview')) {
             $updateStmt = $pdo->prepare(
                 'UPDATE interview
                  SET interview_date = :interview_date,
+                        interview_time = :interview_time,
                      interview_mode = :interview_mode,
                      meeting_link = :meeting_link,
                      venue = :venue,
@@ -235,6 +237,7 @@ if (!function_exists('candidates_schedule_interview')) {
             );
             $updateStmt->execute([
                 ':interview_date' => $interviewDate,
+                   ':interview_time' => $interviewTime,
                 ':interview_mode' => $interviewMode,
                 ':meeting_link' => $meetingLink,
                 ':venue' => $venue,
@@ -244,12 +247,13 @@ if (!function_exists('candidates_schedule_interview')) {
 
             if ($updateStmt->rowCount() === 0) {
                 $insertStmt = $pdo->prepare(
-                    'INSERT INTO interview (application_id, interview_date, interview_mode, meeting_link, venue, notes, interview_status, created_at)
-                     VALUES (:application_id, :interview_date, :interview_mode, :meeting_link, :venue, NULL, :interview_status, NOW())'
+                        'INSERT INTO interview (application_id, interview_date, interview_time, interview_mode, meeting_link, venue, notes, interview_status, created_at)
+                         VALUES (:application_id, :interview_date, :interview_time, :interview_mode, :meeting_link, :venue, NULL, :interview_status, NOW())'
                 );
                 $insertStmt->execute([
                     ':application_id' => $applicationId,
                     ':interview_date' => $interviewDate,
+                       ':interview_time' => $interviewTime,
                     ':interview_mode' => $interviewMode,
                     ':meeting_link' => $meetingLink,
                     ':venue' => $venue,

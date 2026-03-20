@@ -191,6 +191,11 @@ $rows = $pageData['rows'];
 
 <script>
 var requirementsEndpoint = '<?php echo $baseUrl; ?>/pages/adviser/students/requirements_data.php';
+var requirementsContext = {
+	studentId: 0,
+	internshipId: '',
+	canEdit: false
+};
 
 function escapeHtml(value) {
 	return String(value == null ? '' : value)
@@ -208,6 +213,10 @@ function renderRequirementsChecklist(phases) {
 	var orderedPhases = ['Pre-OJT', 'During OJT', 'Post-OJT'];
 	var html = '';
 
+	if (!requirementsContext.canEdit) {
+		html += '<div style="border:1px solid #fde68a;background:#fffbeb;border-radius:12px;padding:12px 14px;color:#92400e;font-size:.8rem;">This student has no internship context yet. Checklist is view-only for now.</div>';
+	}
+
 	orderedPhases.forEach(function (phaseName) {
 		var phaseRows = (phases && phases[phaseName]) ? phases[phaseName] : [];
 		html += '<p style="font-size:.72rem;font-weight:700;color:#9ca3af;margin:10px 0 0;letter-spacing:.06em;">' + escapeHtml(phaseName.toUpperCase()) + ' PHASE</p>';
@@ -224,10 +233,11 @@ function renderRequirementsChecklist(phases) {
 			var statusColor = isSubmitted ? '#16a34a' : '#ef4444';
 			var statusText = item.status || (isSubmitted ? 'Submitted' : 'Pending');
 			var dateText = item.date_label ? ('📅 ' + item.date_label) : statusText;
+			var requirementId = Number(item.requirement_id || 0);
 
 			html += '<div style="display:flex;align-items:center;justify-content:space-between;border:1px solid ' + boxBorder + ';background:' + boxBg + ';border-radius:12px;padding:12px 14px;">';
 			html += '<div style="display:flex;align-items:center;gap:10px;">';
-			html += '<input type="checkbox" ' + (isSubmitted ? 'checked' : '') + ' disabled style="width:18px;height:18px;' + (isSubmitted ? 'accent-color:#22c55e;' : '') + '">';
+			html += '<input type="checkbox" class="js-requirement-checkbox" data-requirement-id="' + requirementId + '" ' + (isSubmitted ? 'checked' : '') + ' ' + (requirementsContext.canEdit ? '' : 'disabled') + ' style="width:18px;height:18px;' + (requirementsContext.canEdit ? 'cursor:pointer;' : 'cursor:not-allowed;') + (isSubmitted ? 'accent-color:#22c55e;' : '') + '">';
 			html += '<p style="font-size:.85rem;margin:0;">' + escapeHtml(item.name || 'Requirement') + '</p>';
 			html += '</div>';
 			html += '<div style="display:flex;align-items:center;gap:8px;font-size:.72rem;">';
@@ -239,6 +249,109 @@ function renderRequirementsChecklist(phases) {
 	});
 
 	container.innerHTML = html;
+
+	if (requirementsContext.canEdit) {
+		var checkboxes = container.querySelectorAll('.js-requirement-checkbox');
+		checkboxes.forEach(function (checkbox) {
+			checkbox.addEventListener('change', function () {
+				toggleRequirementCheckbox(checkbox);
+			});
+		});
+	}
+}
+
+function setRequirementsSummary(summary) {
+	var submittedEl = document.getElementById('requirementsSubmitted');
+	var pendingEl = document.getElementById('requirementsPending');
+	var completionEl = document.getElementById('requirementsCompletion');
+	var progressBarEl = document.getElementById('requirementsProgressBar');
+
+	var submittedValue = Number((summary && summary.submitted) || 0);
+	var pendingValue = Number((summary && summary.pending) || 0);
+	var completionValue = Number((summary && summary.completion) || 0);
+
+	if (submittedEl) submittedEl.textContent = submittedValue;
+	if (pendingEl) pendingEl.textContent = pendingValue;
+	if (completionEl) completionEl.textContent = completionValue + '%';
+	if (progressBarEl) progressBarEl.style.width = completionValue + '%';
+}
+
+function loadRequirementsData() {
+	if (requirementsContext.studentId <= 0) {
+		setRequirementsErrorState();
+		return;
+	}
+
+	var query = '?student_id=' + encodeURIComponent(requirementsContext.studentId);
+	if (requirementsContext.internshipId !== '') {
+		query += '&internship_id=' + encodeURIComponent(requirementsContext.internshipId);
+	}
+
+	fetch(requirementsEndpoint + query, { credentials: 'same-origin' })
+		.then(function (response) {
+			return response.json().then(function (payload) {
+				if (!response.ok || !payload || payload.success !== true) {
+					throw new Error((payload && payload.message) ? payload.message : 'Failed request');
+				}
+				return payload;
+			});
+		})
+		.then(function (payload) {
+			requirementsContext.canEdit = !!payload.can_edit;
+			if (!requirementsContext.internshipId && payload.internship_id_context) {
+				requirementsContext.internshipId = String(payload.internship_id_context);
+			}
+			setRequirementsSummary(payload.summary || {});
+			renderRequirementsChecklist(payload.phases || {});
+		})
+		.catch(function (error) {
+			setRequirementsErrorStateWithMessage(error && error.message ? error.message : 'Unable to load requirements right now.');
+		});
+}
+
+function toggleRequirementCheckbox(checkbox) {
+	var requirementId = Number(checkbox.getAttribute('data-requirement-id') || '0');
+	if (requirementsContext.studentId <= 0 || requirementId <= 0) {
+		checkbox.checked = !checkbox.checked;
+		return;
+	}
+
+	checkbox.disabled = true;
+
+	var formBody = new URLSearchParams();
+	formBody.append('action', 'toggle_requirement');
+	formBody.append('student_id', String(requirementsContext.studentId));
+	formBody.append('internship_id', requirementsContext.internshipId || '');
+	formBody.append('requirement_id', String(requirementId));
+	formBody.append('is_checked', checkbox.checked ? '1' : '0');
+
+	fetch(requirementsEndpoint, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+		credentials: 'same-origin',
+		body: formBody.toString()
+	})
+		.then(function (response) {
+			return response.json().then(function (payload) {
+				if (!response.ok || !payload || payload.success !== true) {
+					throw new Error((payload && payload.message) ? payload.message : 'Failed update');
+				}
+				return payload;
+			});
+		})
+		.then(function (payload) {
+			requirementsContext.canEdit = !!payload.can_edit;
+			if (!requirementsContext.internshipId && payload.internship_id_context) {
+				requirementsContext.internshipId = String(payload.internship_id_context);
+			}
+			setRequirementsSummary(payload.summary || {});
+			renderRequirementsChecklist(payload.phases || {});
+		})
+		.catch(function (error) {
+			checkbox.checked = !checkbox.checked;
+			checkbox.disabled = false;
+			setRequirementsErrorStateWithMessage(error && error.message ? error.message : 'Unable to update requirement status right now.');
+		});
 }
 
 function setRequirementsLoadingState() {
@@ -251,6 +364,12 @@ function setRequirementsErrorState() {
 	var container = document.getElementById('requirementsChecklist');
 	if (!container) return;
 	container.innerHTML = '<div style="border:1px solid #fecaca;background:#fff1f2;border-radius:12px;padding:14px;color:#b91c1c;font-size:.82rem;">Unable to load requirements right now.</div>';
+}
+
+function setRequirementsErrorStateWithMessage(message) {
+	var container = document.getElementById('requirementsChecklist');
+	if (!container) return;
+	container.innerHTML = '<div style="border:1px solid #fecaca;background:#fff1f2;border-radius:12px;padding:14px;color:#b91c1c;font-size:.82rem;">' + escapeHtml(message || 'Unable to load requirements right now.') + '</div>';
 }
 
 function openRequirementsModal(button) {
@@ -267,49 +386,20 @@ function openRequirementsModal(button) {
 
 	var titleEl = document.getElementById('requirementsTitle');
 	var subtitleEl = document.getElementById('requirementsSubtitle');
-	var submittedEl = document.getElementById('requirementsSubmitted');
-	var pendingEl = document.getElementById('requirementsPending');
-	var completionEl = document.getElementById('requirementsCompletion');
-	var progressBarEl = document.getElementById('requirementsProgressBar');
-
 	if (titleEl) titleEl.textContent = name + ' – Requirements Checklist';
 	if (subtitleEl) subtitleEl.textContent = subtitle;
-	if (submittedEl) submittedEl.textContent = submitted;
-	if (pendingEl) pendingEl.textContent = pending;
-	if (completionEl) completionEl.textContent = completion + '%';
-	if (progressBarEl) progressBarEl.style.width = completion + '%';
+	setRequirementsSummary({
+		submitted: Number(submitted || 0),
+		pending: Number(pending || 0),
+		completion: Number(completion || 0)
+	});
+	requirementsContext.studentId = Number(studentId || 0);
+	requirementsContext.internshipId = internshipId;
+	requirementsContext.canEdit = false;
 
 	setRequirementsLoadingState();
 	modal.style.display = 'flex';
-
-	var query = '?student_id=' + encodeURIComponent(studentId);
-	if (internshipId !== '') {
-		query += '&internship_id=' + encodeURIComponent(internshipId);
-	}
-
-	fetch(requirementsEndpoint + query, { credentials: 'same-origin' })
-		.then(function (response) {
-			if (!response.ok) throw new Error('Failed request');
-			return response.json();
-		})
-		.then(function (payload) {
-			if (!payload || payload.success !== true) throw new Error('Invalid payload');
-
-			var summary = payload.summary || {};
-			var submittedValue = Number(summary.submitted || 0);
-			var pendingValue = Number(summary.pending || 0);
-			var completionValue = Number(summary.completion || 0);
-
-			if (submittedEl) submittedEl.textContent = submittedValue;
-			if (pendingEl) pendingEl.textContent = pendingValue;
-			if (completionEl) completionEl.textContent = completionValue + '%';
-			if (progressBarEl) progressBarEl.style.width = completionValue + '%';
-
-			renderRequirementsChecklist(payload.phases || {});
-		})
-		.catch(function () {
-			setRequirementsErrorState();
-		});
+	loadRequirementsData();
 }
 
 function closeRequirementsModal() {

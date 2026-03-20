@@ -8,7 +8,8 @@ if (!function_exists('candidates_parse_filters')) {
     function candidates_parse_filters(array $filters): array
     {
         $search = trim((string)($filters['search'] ?? ''));
-        $position = trim((string)($filters['position'] ?? ''));
+        $positionRaw = trim((string)($filters['position'] ?? ''));
+        $position = ctype_digit($positionRaw) ? $positionRaw : '';
         $status = trim((string)($filters['status'] ?? ''));
         $sort = trim((string)($filters['sort'] ?? 'match'));
 

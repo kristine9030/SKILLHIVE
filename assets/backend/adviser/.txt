@@ -1,4 +1,0 @@
-sa bawat folder na to, gawa pa isa para sa mga page, bago sa bawat page doon ilalagay ang functions
-
-
-optional naman, kung ang page ay simple lang ang fineffetch, pwede na hijdi ilagay rito. diretso na sa pages

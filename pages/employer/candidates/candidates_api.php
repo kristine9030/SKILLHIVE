@@ -4,18 +4,40 @@
  * Handles: fetching candidates, updating status, scheduling interviews.
  */
 
-require_once __DIR__ . '/../../../backend/db_connect.php';
-require_once __DIR__ . '/candidates/data.php';
+ob_start();
 
-header('Content-Type: application/json');
+set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
+    if (!(error_reporting() & $severity)) {
+        return false;
+    }
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
+if (!function_exists('candidates_api_respond')) {
+    function candidates_api_respond(array $payload, int $statusCode = 200): void
+    {
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        if (!headers_sent()) {
+            http_response_code($statusCode);
+            header('Content-Type: application/json; charset=UTF-8');
+        }
+
+        echo json_encode($payload);
+        exit;
+    }
+}
+
+require_once __DIR__ . '/../../../backend/db_connect.php';
+require_once __DIR__ . '/data.php';
 
 $action = trim((string) ($_GET['action'] ?? $_POST['action'] ?? ''));
 $employerId = (int) ($_SESSION['employer_id'] ?? $_SESSION['user_id'] ?? 0);
 
 if ($employerId <= 0) {
-    http_response_code(401);
-    echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
-    exit;
+    candidates_api_respond(['ok' => false, 'error' => 'Unauthorized'], 401);
 }
 
 try {
@@ -89,16 +111,14 @@ try {
             }, $candidates),
         ];
 
-        echo json_encode($result);
+        candidates_api_respond($result);
     } elseif ($action === 'update_status') {
         $applicationId = (int) ($_POST['application_id'] ?? 0);
         $newStatus = trim((string) ($_POST['status'] ?? ''));
         $allowedStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted', 'Rejected'];
 
         if ($applicationId <= 0 || !in_array($newStatus, $allowedStatuses, true)) {
-            http_response_code(400);
-            echo json_encode(['ok' => false, 'error' => 'Invalid request']);
-            exit;
+            candidates_api_respond(['ok' => false, 'error' => 'Invalid request'], 400);
         }
 
         // Verify employer owns this application
@@ -110,9 +130,7 @@ try {
         $stmt->execute([$applicationId, $employerId]);
 
         if (!$stmt->fetch()) {
-            http_response_code(403);
-            echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
-            exit;
+            candidates_api_respond(['ok' => false, 'error' => 'Unauthorized'], 403);
         }
 
         // Update status
@@ -123,82 +141,32 @@ try {
         ');
         $stmt->execute([$newStatus, $applicationId]);
 
-        echo json_encode(['ok' => true, 'message' => 'Status updated']);
+        candidates_api_respond(['ok' => true, 'message' => 'Status updated']);
     } elseif ($action === 'schedule_interview') {
         $applicationId = (int) ($_POST['application_id'] ?? 0);
         $interviewDate = trim((string) ($_POST['interview_date'] ?? ''));
         $interviewTime = trim((string) ($_POST['interview_time'] ?? ''));
         $interviewMode = trim((string) ($_POST['interview_mode'] ?? 'Online'));
         $meetingLink = trim((string) ($_POST['meeting_link'] ?? ''));
-        $venue = trim((string) ($_POST['venue'] ?? ''));
 
         if ($applicationId <= 0 || !$interviewDate || !$interviewTime) {
-            http_response_code(400);
-            echo json_encode(['ok' => false, 'error' => 'Missing required fields']);
-            exit;
+            candidates_api_respond(['ok' => false, 'error' => 'Missing required fields'], 400);
         }
 
-        // Verify employer owns this application
-        $stmt = $pdo->prepare('
-            SELECT a.application_id FROM application a
-            INNER JOIN internship i ON i.internship_id = a.internship_id
-            WHERE a.application_id = ? AND i.employer_id = ?
-        ');
-        $stmt->execute([$applicationId, $employerId]);
+        $result = candidates_schedule_interview($pdo, $employerId, $applicationId, [
+            'interview_date' => $interviewDate . ' ' . $interviewTime,
+            'interview_mode' => $interviewMode,
+            'meeting_link' => $meetingLink,
+        ]);
 
-        if (!$stmt->fetch()) {
-            http_response_code(403);
-            echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
-            exit;
-        }
-
-        // Check if interview record exists
-        $stmt = $pdo->prepare('SELECT interview_id FROM interview WHERE application_id = ?');
-        $stmt->execute([$applicationId]);
-        $existingInterview = $stmt->fetch();
-
-        $pdo->beginTransaction();
-
-        try {
-            if ($existingInterview) {
-                // Update
-                $stmt = $pdo->prepare('
-                    UPDATE interview
-                    SET interview_date = ?, interview_time = ?, interview_mode = ?,
-                        meeting_link = ?, venue = ?
-                    WHERE application_id = ?
-                ');
-                $stmt->execute([$interviewDate, $interviewTime, $interviewMode, $meetingLink ?: null, $venue ?: null, $applicationId]);
-            } else {
-                // Create new
-                $stmt = $pdo->prepare('
-                    INSERT INTO interview
-                    (application_id, interview_date, interview_time, interview_mode, meeting_link, venue, interview_status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ');
-                $stmt->execute([$applicationId, $interviewDate, $interviewTime, $interviewMode, $meetingLink ?: null, $venue ?: null, 'Scheduled']);
-            }
-
-            // Update application status if needed
-            $stmt = $pdo->prepare('
-                UPDATE application
-                SET status = ?, updated_at = NOW()
-                WHERE application_id = ? AND status != ?
-            ');
-            $stmt->execute(['Interview Scheduled', $applicationId, 'Interview Scheduled']);
-
-            $pdo->commit();
-            echo json_encode(['ok' => true, 'message' => 'Interview scheduled successfully']);
-        } catch (Throwable $e) {
-            $pdo->rollBack();
-            http_response_code(500);
-            echo json_encode(['ok' => false, 'error' => 'Database error']);
+        if (!empty($result['success'])) {
+            candidates_api_respond(['ok' => true, 'message' => 'Interview scheduled successfully']);
+        } else {
+            candidates_api_respond(['ok' => false, 'error' => (string) ($result['error'] ?? 'Unable to schedule interview.')], 422);
         }
     } else {
-        http_response_code(400);
-        echo json_encode(['ok' => false, 'error' => 'Invalid action']);
+        candidates_api_respond(['ok' => false, 'error' => 'Invalid action'], 400);
     }
 } catch (Throwable $e) {
-    http_response_code(500);
-    echo json_encode(['ok' => false, 'error' => 'Server error']);
+    candidates_api_respond(['ok' => false, 'error' => 'Server error: ' . $e->getMessage()], 500);
 }
