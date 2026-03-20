@@ -119,4 +119,25 @@ try {
 } catch (Throwable $e) {
     // Non-fatal: app should continue even if DB user lacks TRIGGER privilege.
 }
+
+// Schema Migration: Ensure interview_time column exists on interview table
+try {
+    $stmt = $pdo->prepare(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+         WHERE TABLE_SCHEMA = DATABASE() 
+         AND TABLE_NAME = 'interview' 
+         AND COLUMN_NAME = 'interview_time'"
+    );
+    $stmt->execute();
+    if ($stmt->rowCount() === 0) {
+        // Column doesn't exist, add it
+        $pdo->exec(
+            "ALTER TABLE interview 
+             ADD COLUMN interview_time TIME NOT NULL DEFAULT '09:00:00' 
+             AFTER interview_date"
+        );
+    }
+} catch (Throwable $e) {
+    // Non-fatal: app should continue even if migration fails
+}
 ?>

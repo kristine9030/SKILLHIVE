@@ -21,7 +21,7 @@ if (!function_exists('validatePostInternshipPayload')) {
         $old['work_setup'] = trim((string)($post['work_setup'] ?? ''));
         $old['location'] = trim((string)($post['location'] ?? ''));
         $old['slots_available'] = trim((string)($post['slots_available'] ?? ''));
-        $old['status'] = trim((string)($post['status'] ?? 'Draft'));
+        $old['status'] = trim((string)($post['status'] ?? 'Open'));
 
         if ($old['title'] === '') $errors[] = 'Title is required.';
         if ($old['description'] === '') $errors[] = 'Description is required.';

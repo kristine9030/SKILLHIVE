@@ -326,42 +326,101 @@ function marketplace_load_data(PDO $pdo, int $userId, array $currentFilters, int
         $studentSkillNames[strtolower(trim((string) $skillRow['skill_name']))] = true;
     }
 
-    $baseQuery  = 'FROM v_internship_listings v INNER JOIN internship i ON i.internship_id = v.internship_id WHERE v.status = "Open"';
+    $skillsAggregateJoin = '
+        LEFT JOIN (
+            SELECT
+                ins.internship_id,
+                GROUP_CONCAT(
+                    DISTINCT sk.skill_name
+                    ORDER BY ins.is_mandatory DESC, sk.skill_name ASC
+                    SEPARATOR ", "
+                ) AS required_skills
+            FROM internship_skill ins
+            LEFT JOIN skill sk ON sk.skill_id = ins.skill_id
+            GROUP BY ins.internship_id
+        ) rs ON rs.internship_id = i.internship_id
+    ';
+
+    $baseQuery  = 'FROM internship i
+                   INNER JOIN employer e ON e.employer_id = i.employer_id
+                   ' . $skillsAggregateJoin . '
+                   WHERE LOWER(COALESCE(i.status, "")) = "open"';
     $whereParts = [];
     $params     = [];
 
     if ($currentFilters['q'] !== '') {
-        $whereParts[] = '(v.title LIKE ? OR v.company_name LIKE ? OR v.industry LIKE ? OR i.description LIKE ? OR v.required_skills LIKE ?)';
+        $whereParts[] = '(i.title LIKE ? OR e.company_name LIKE ? OR e.industry LIKE ? OR i.description LIKE ? OR COALESCE(rs.required_skills, "") LIKE ?)';
         $searchValue  = '%' . $currentFilters['q'] . '%';
         array_push($params, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue);
     }
     if ($currentFilters['industry'] !== '') {
-        $whereParts[] = 'v.industry = ?';
-        $params[]     = $currentFilters['industry'];
+        $whereParts[] = 'e.industry LIKE ?';
+        $params[]     = '%' . $currentFilters['industry'] . '%';
     }
     if ($currentFilters['location'] !== '') {
-        $whereParts[] = 'v.location = ?';
-        $params[]     = $currentFilters['location'];
+        $whereParts[] = 'i.location LIKE ?';
+        $params[]     = '%' . $currentFilters['location'] . '%';
     }
-    if ($currentFilters['work_setup'] !== '') {
-        $whereParts[] = 'v.work_setup = ?';
+    if (($currentFilters['work_setup'] ?? '') !== '') {
+        $whereParts[] = 'i.work_setup = ?';
         $params[]     = $currentFilters['work_setup'];
+    }
+    if (($currentFilters['duration'] ?? '') !== '') {
+        if ($currentFilters['duration'] === 'short') {
+            $whereParts[] = 'i.duration_weeks BETWEEN 1 AND 8';
+        } elseif ($currentFilters['duration'] === 'medium') {
+            $whereParts[] = 'i.duration_weeks BETWEEN 9 AND 16';
+        } elseif ($currentFilters['duration'] === 'long') {
+            $whereParts[] = 'i.duration_weeks >= 17';
+        }
+    }
+    if (($currentFilters['allowance_range'] ?? '') !== '') {
+        if ($currentFilters['allowance_range'] === 'unpaid') {
+            $whereParts[] = 'COALESCE(i.allowance, 0) = 0';
+        } elseif ($currentFilters['allowance_range'] === 'low') {
+            $whereParts[] = 'COALESCE(i.allowance, 0) BETWEEN 1 AND 3000';
+        } elseif ($currentFilters['allowance_range'] === 'mid') {
+            $whereParts[] = 'COALESCE(i.allowance, 0) BETWEEN 3001 AND 6000';
+        } elseif ($currentFilters['allowance_range'] === 'high') {
+            $whereParts[] = 'COALESCE(i.allowance, 0) > 6000';
+        }
     }
 
     $whereSql = $whereParts ? (' AND ' . implode(' AND ', $whereParts)) : '';
 
-    $stmt       = $pdo->query('SELECT DISTINCT industry FROM v_internship_listings WHERE status = "Open" ORDER BY industry ASC');
+    $stmt       = $pdo->query('SELECT DISTINCT e.industry AS industry
+                               FROM internship i
+                               INNER JOIN employer e ON e.employer_id = i.employer_id
+                               WHERE LOWER(COALESCE(i.status, "")) = "open"
+                               ORDER BY e.industry ASC');
     $industries = array_values(array_filter(array_map(static fn($row) => trim((string) $row['industry']), $stmt->fetchAll(PDO::FETCH_ASSOC))));
 
-    $stmt      = $pdo->query('SELECT DISTINCT location FROM v_internship_listings WHERE status = "Open" ORDER BY location ASC');
+    $stmt      = $pdo->query('SELECT DISTINCT i.location AS location
+                              FROM internship i
+                              WHERE LOWER(COALESCE(i.status, "")) = "open"
+                              ORDER BY i.location ASC');
     $locations = array_values(array_filter(array_map(static fn($row) => trim((string) $row['location']), $stmt->fetchAll(PDO::FETCH_ASSOC))));
 
     $stmt = $pdo->prepare('SELECT internship_id FROM application WHERE student_id = ?');
     $stmt->execute([$userId]);
     $appliedInternshipIds = array_fill_keys(array_map('intval', array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'internship_id')), true);
 
-    $sql  = 'SELECT v.internship_id, v.title, v.company_name, v.industry, v.company_badge_status, v.duration_weeks, v.allowance, v.work_setup, v.location, v.slots_available, v.status, v.posted_at, v.required_skills, i.description '
-           . $baseQuery . $whereSql . ' ORDER BY v.posted_at DESC, v.internship_id DESC';
+    $sql  = 'SELECT
+                i.internship_id,
+                i.title,
+                e.company_name,
+                e.industry,
+                e.company_badge_status,
+                i.duration_weeks,
+                i.allowance,
+                i.work_setup,
+                i.location,
+                i.slots_available,
+                i.status,
+                COALESCE(i.posted_at, i.created_at) AS posted_at,
+                COALESCE(rs.required_skills, "") AS required_skills,
+                i.description
+            ' . $baseQuery . $whereSql . ' ORDER BY posted_at DESC, i.internship_id DESC';
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $localListings = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -373,7 +432,15 @@ function marketplace_load_data(PDO $pdo, int $userId, array $currentFilters, int
     }
     unset($localListing);
 
-    $externalResult = marketplace_fetch_findwork_listings($currentFilters, 10);
+    $includeExternal = (int) ($currentFilters['include_external'] ?? 0) === 1;
+    $externalResult = [
+        'rows' => [],
+        'notice' => '',
+        'count' => 0,
+    ];
+    if ($includeExternal) {
+        $externalResult = marketplace_fetch_findwork_listings($currentFilters, 10);
+    }
     $externalListings = $externalResult['rows'] ?? [];
 
     $listings = array_merge($localListings, $externalListings);
@@ -394,12 +461,30 @@ function marketplace_load_data(PDO $pdo, int $userId, array $currentFilters, int
 
     if ($selectedDetailId > 0) {
         $stmt = $pdo->prepare(
-            'SELECT v.internship_id, v.title, v.company_name, v.industry, v.company_badge_status, v.duration_weeks, v.allowance, v.work_setup, v.location, v.slots_available, v.status, v.posted_at, v.required_skills, i.description, i.employer_id,
-                    e.company_logo, e.company_address, e.website_url, e.verification_status
-             FROM v_internship_listings v
-             INNER JOIN internship i ON i.internship_id = v.internship_id
+            'SELECT
+                i.internship_id,
+                i.title,
+                e.company_name,
+                e.industry,
+                e.company_badge_status,
+                i.duration_weeks,
+                i.allowance,
+                i.work_setup,
+                i.location,
+                i.slots_available,
+                i.status,
+                COALESCE(i.posted_at, i.created_at) AS posted_at,
+                COALESCE(rs.required_skills, "") AS required_skills,
+                i.description,
+                i.employer_id,
+                e.company_logo,
+                e.company_address,
+                e.website_url,
+                e.verification_status
+             FROM internship i
              INNER JOIN employer e ON e.employer_id = i.employer_id
-             WHERE v.internship_id = ? AND v.status = "Open"
+             ' . $skillsAggregateJoin . '
+             WHERE i.internship_id = ? AND LOWER(COALESCE(i.status, "")) = "open"
              LIMIT 1'
         );
         $stmt->execute([$selectedDetailId]);

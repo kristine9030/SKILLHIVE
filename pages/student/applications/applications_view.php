@@ -319,7 +319,7 @@ function applications_render_view(array $ctx): void
         <?php else: ?>
           <?php foreach ($applications as $application): ?>
             <?php $companyName = (string) $application['company_name']; ?>
-            <tr>
+            <tr data-app-id="<?php echo (int) $application['application_id']; ?>" data-status="<?php echo applications_e((string) $application['status']); ?>"><?php // Marking for polling ?>
               <td>
                 <div style="display:flex;align-items:center;gap:10px">
                   <div class="co-logo" style="background:<?php echo applications_company_gradient($companyName); ?>;width:32px;height:32px;font-size:.7rem"><?php echo applications_e(strtoupper(substr($companyName, 0, 1))); ?></div>
@@ -553,6 +553,173 @@ function openApplicationProgressModal(button) {
 
   modal.classList.add('open');
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// Real-time polling for application status and interview details
+// ════════════════════════════════════════════════════════════════════════════
+
+var applicationPolling = {
+  enabled: true,
+  pollInterval: 5000, // 5 seconds
+  pollTimer: null,
+  lastData: {},
+
+  start: function() {
+    if (!this.enabled) return;
+    this.poll();
+    this.pollTimer = setInterval(this.poll.bind(this), this.pollInterval);
+  },
+
+  stop: function() {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+  },
+
+  poll: function() {
+    var self = applicationPolling;
+    fetch('<?php echo applications_e($baseUrl); ?>/pages/student/applications/applications_api.php?action=fetch_applications')
+      .then(function(response) {
+        if (!response.ok) throw new Error('API error');
+        return response.json();
+      })
+      .then(function(data) {
+        if (data.ok && Array.isArray(data.applications)) {
+          self.updateApplicationsTable(data.applications);
+        }
+      })
+      .catch(function(error) {
+        console.log('Application poll error:', error);
+      });
+  },
+
+  updateApplicationsTable: function(applications) {
+    var self = this;
+    var table = document.querySelector('.app-table tbody');
+    if (!table) return;
+
+    applications.forEach(function(app) {
+      var key = 'app_' + app.application_id;
+      var lastStatus = self.lastData[key] ? self.lastData[key].status : null;
+
+      // Status changed
+      if (lastStatus && lastStatus !== app.status) {
+        console.log('Status updated:', app.application_id, lastStatus, '->', app.status);
+
+        // Flash highlight row
+        var row = table.querySelector('tr[data-app-id="' + app.application_id + '"]');
+        if (row) {
+          row.style.background = '#ecfdf5';
+          setTimeout(function() {
+            row.style.background = '';
+          }, 2000);
+
+          // Show toast notification
+          self.showStatusNotification(app);
+
+          // Reload page to show updates
+          setTimeout(function() {
+            location.reload();
+          }, 1500);
+        }
+      }
+
+      // Interview details added (status is "Interview Scheduled")
+      if (app.status === 'Interview Scheduled' && app.interview_date) {
+        var row = table.querySelector('tr[data-app-id="' + app.application_id + '"]');
+        if (row && !row.querySelector('.interview-details')) {
+          self.insertInterviewDetails(row, app);
+        }
+      }
+
+      self.lastData[key] = app;
+    });
+  },
+
+  showStatusNotification: function(app) {
+    var message = '';
+    var bgColor = '#10B981';
+
+    if (app.status === 'Shortlisted') {
+      message = '✓ Shortlisted! ' + app.company_name + ' wants to move forward.';
+      bgColor = '#06B6D4';
+    } else if (app.status === 'Interview Scheduled') {
+      message = '📅 Interview scheduled! ' + app.company_name + ' sent you details.';
+      bgColor = '#4F46E5';
+    } else if (app.status === 'Accepted') {
+      message = '🎉 Accepted! Congratulations on your internship!';
+      bgColor = '#10B981';
+    } else if (app.status === 'Rejected') {
+      message = '❌ Application not selected. Check other opportunities!';
+      bgColor = '#EF4444';
+    }
+
+    if (message) {
+      var toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:' + bgColor + ';color:#fff;padding:14px 18px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.2);z-index:9999;font-weight:600;max-width:320px';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+
+      setTimeout(function() {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(function() {
+          document.body.removeChild(toast);
+        }, 300);
+      }, 4000);
+    }
+  },
+
+  insertInterviewDetails: function(row, app) {
+    if (!app.interview_date || !app.interview_time) return;
+
+    var detailsHtml = '<tr class="interview-details" data-app-id="' + app.application_id + '">' +
+      '<td colspan="5" style="background:#f0fdf4;padding:12px;border-top:2px solid #86efac">' +
+      '<div style="display:flex;gap:16px;align-items:flex-start">' +
+      '<div style="flex:1">' +
+      '<div style="font-weight:700;color:#059669;margin-bottom:8px;display:flex;gap:6px;align-items:center">' +
+      '<i class="fas fa-calendar-check"></i> Interview Scheduled' +
+      '</div>' +
+      '<div style="display:grid;gap:6px;font-size:.82rem;color:#374151">' +
+      '<div><strong>Date:</strong> ' + applicationPolling.formatDate(app.interview_date) + '</div>' +
+      '<div><strong>Time:</strong> ' + app.interview_time + '</div>' +
+      '<div><strong>Mode:</strong> ' + app.interview_mode + '</div>' +
+      (app.venue ? '<div><strong>Venue:</strong> ' + app.venue + '</div>' : '') +
+      (app.meeting_link ? '<div><strong>Link:</strong> <a href="' + app.meeting_link + '" target="_blank" rel="noopener">Join Interview</a></div>' : '') +
+      '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button class="btn btn-primary btn-sm" onclick="alert(\'Interview RSVP: Confirm your attendance with the employer.\')">RSVP</button>' +
+      '<button class="btn btn-ghost btn-sm" onclick="alert(\'Reschedule: Contact employer to propose new time.\')">Reschedule</button>' +
+      '</div>' +
+      '</div>' +
+      '</td></tr>';
+
+    row.insertAdjacentHTML('afterend', detailsHtml);
+  },
+
+  formatDate: function(dateStr) {
+    try {
+      var date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (e) {
+      return dateStr;
+    }
+  }
+};
+
+// Start polling when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.querySelector('.app-table tbody')) {
+    applicationPolling.start();
+  }
+});
+
+// Stop polling when user leaves
+window.addEventListener('beforeunload', function() {
+  applicationPolling.stop();
+});
 </script>
 
 <?php

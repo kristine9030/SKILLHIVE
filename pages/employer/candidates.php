@@ -393,4 +393,154 @@ function quickRejectCandidate(applicationId, search, position, status, sort) {
   document.getElementById('quickRejectSort').value = sort || 'match';
   document.getElementById('quickRejectForm').submit();
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// Real-time polling for employer to see new applications
+// ════════════════════════════════════════════════════════════════════════════
+
+var candidatePolling = {
+  enabled: true,
+  pollInterval: 5000, // 5 seconds
+  pollTimer: null,
+  candidateCount: <?php echo count($candidates ?? []); ?>,
+
+  start: function() {
+    if (!this.enabled) return;
+    this.poll();
+    this.pollTimer = setInterval(this.poll.bind(this), this.pollInterval);
+  },
+
+  stop: function() {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+  },
+
+  poll: function() {
+    var self = candidatePolling;
+    var positionFilter = (new URLSearchParams(window.location.search)).get('position') || '';
+    var statusFilter = (new URLSearchParams(window.location.search)).get('status') || '';
+
+    fetch('<?php echo $baseUrl; ?>/pages/employer/candidates/candidates_api.php?action=fetch_candidates&position=' + encodeURIComponent(positionFilter) + '&status=' + encodeURIComponent(statusFilter))
+      .then(function(response) {
+        if (!response.ok) throw new Error('API error');
+        return response.json();
+      })
+      .then(function(data) {
+        if (data.ok && Array.isArray(data.candidates)) {
+          var newCount = data.candidates.length;
+          if (newCount > self.candidateCount) {
+            self.candidateCount = newCount;
+            self.showNewApplicationNotification(data.candidates);
+          }
+        }
+      })
+      .catch(function(error) {
+        console.log('Candidate poll error:', error);
+      });
+  },
+
+  showNewApplicationNotification: function(candidates) {
+    if (candidates.length === 0) return;
+
+    var latestCandidate = candidates[0];
+    var message = '🚀 New Application! ' + latestCandidate.student_name + ' (' + latestCandidate.compatibility_score + '% match) just applied.';
+
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#4F46E5;color:#fff;padding:14px 18px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.2);z-index:9999;font-weight:600;max-width:360px;cursor:pointer';
+    toast.textContent = message;
+    toast.onclick = function() {
+      location.reload();
+    };
+    document.body.appendChild(toast);
+
+    setTimeout(function() {
+      if (toast.parentNode) {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(function() {
+          if (toast.parentNode) {
+            document.body.removeChild(toast);
+          }
+        }, 300);
+      }
+    }, 5000);
+  }
+};
+
+// Start polling when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.querySelector('.cards-grid')) {
+    candidatePolling.start();
+  }
+});
+
+// Stop polling when user leaves
+window.addEventListener('beforeunload', function() {
+  candidatePolling.stop();
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// Interview form submission with API
+// ════════════════════════════════════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', function() {
+  var form = document.getElementById('interviewScheduleForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      var appId = parseInt(document.getElementById('interviewApplicationId').value || '0', 10);
+      if (appId <= 0) {
+        alert('No application selected');
+        return;
+      }
+
+      var dateTimeInput = form.querySelector('input[name="interview_date"]').value;
+      if (!dateTimeInput) {
+        alert('Please select interview date and time');
+        return;
+      }
+
+      // Convert datetime-local to separate date and time
+      var dt = new Date(dateTimeInput);
+      var dateStr = dt.toISOString().split('T')[0];
+      var timeStr = String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
+
+      var mode = form.querySelector('select[name="interview_mode"]').value || 'Online';
+      var meetingLink = form.querySelector('input[name="meeting_link"]').value || '';
+
+      var formData = new FormData();
+      formData.append('action', 'schedule_interview');
+      formData.append('application_id', appId);
+      formData.append('interview_date', dateStr);
+      formData.append('interview_time', timeStr);
+      formData.append('interview_mode', mode);
+      formData.append('meeting_link', meetingLink);
+
+      fetch('<?php echo $baseUrl; ?>/pages/employer/candidates/candidates_api.php', {
+        method: 'POST',
+        body: formData
+      })
+        .then(function(response) {
+          if (!response.ok) throw new Error('API error');
+          return response.json();
+        })
+        .then(function(data) {
+          if (data.ok) {
+            closeInterviewModal();
+            alert('Interview scheduled successfully! The student will see the details immediately.');
+            // Refresh page to show updated status
+            setTimeout(function() { location.reload(); }, 800);
+          } else {
+            alert('Error: ' + (data.error || 'Could not schedule interview'));
+          }
+        })
+        .catch(function(error) {
+          alert('Error scheduling interview: ' + error.message);
+        });
+    });
+  }
+});
 </script>

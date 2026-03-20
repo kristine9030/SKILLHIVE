@@ -79,7 +79,7 @@ function marketplace_handle_apply(PDO $pdo, string $baseUrl, int $userId, array 
         $stmt->execute([$internshipId]);
         $internshipRow = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$internshipRow || (string) $internshipRow['status'] !== 'Open') {
+        if (!$internshipRow || strtolower(trim((string) $internshipRow['status'])) !== 'open') {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }

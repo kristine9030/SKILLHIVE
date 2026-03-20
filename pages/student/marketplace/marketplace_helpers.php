@@ -79,11 +79,24 @@ function marketplace_redirect_to_applications(string $baseUrl): void
 
 function marketplace_filters_from_request(): array
 {
+    $workSetupInput = $_REQUEST['work_setup'] ?? '';
+    if (is_array($workSetupInput)) {
+        $workSetupInput = (string) ($workSetupInput[0] ?? '');
+    }
+    $workSetup = trim((string) $workSetupInput);
+    if (!in_array($workSetup, ['', 'On-site', 'Remote', 'Hybrid'], true)) {
+        $workSetup = '';
+    }
+
     return [
         'q'          => trim((string) ($_REQUEST['q'] ?? '')),
         'industry'   => trim((string) ($_REQUEST['industry'] ?? '')),
         'location'   => trim((string) ($_REQUEST['location'] ?? '')),
-        'work_setup' => trim((string) ($_REQUEST['work_setup'] ?? '')),
+        'work_setup' => $workSetup,
+        'duration'   => trim((string) ($_REQUEST['duration'] ?? '')),
+        'allowance_range' => trim((string) ($_REQUEST['allowance_range'] ?? '')),
+        'sort'       => trim((string) ($_REQUEST['sort'] ?? 'latest')),
+        'include_external' => (int) ($_REQUEST['include_external'] ?? 0) === 1 ? 1 : 0,
         'detail'     => (int) ($_REQUEST['detail'] ?? 0),
         'open_apply' => (int) ($_REQUEST['open_apply'] ?? 0),
     ];
@@ -97,6 +110,10 @@ function marketplace_detail_url(string $baseUrl, array $filters, int $detailId):
         'industry'   => $filters['industry'],
         'location'   => $filters['location'],
         'work_setup' => $filters['work_setup'],
+        'duration'   => $filters['duration'] ?? '',
+        'allowance_range' => $filters['allowance_range'] ?? '',
+        'sort'       => $filters['sort'] ?? 'latest',
+        'include_external' => (int) ($filters['include_external'] ?? 0),
         'detail'     => $detailId,
     ];
 

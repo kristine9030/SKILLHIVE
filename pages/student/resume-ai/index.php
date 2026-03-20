@@ -1,11 +1,17 @@
 <?php
+if (!isset($pdo) || !($pdo instanceof PDO)) {
+  require_once __DIR__ . '/../../../backend/db_connect.php';
+}
+
+$userId = isset($userId) ? (int) $userId : (int) ($_SESSION['user_id'] ?? 0);
+
 $resumeAiErrors = [];
 $resumeAiSuccess = '';
 $resumeFile = '';
 $resumePath = '';
 $storedReadiness = null;
 
-if (isset($pdo, $userId)) {
+if (isset($pdo) && $pdo instanceof PDO && $userId > 0) {
     $stmt = $pdo->prepare('SELECT resume_file, internship_readiness_score FROM student WHERE student_id = ? LIMIT 1');
     $stmt->execute([(int) $userId]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
@@ -14,6 +20,10 @@ if (isset($pdo, $userId)) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string) ($_POST['action'] ?? '') === 'upload_resume_ai') {
+  if (!isset($pdo) || !($pdo instanceof PDO) || $userId <= 0) {
+    $resumeAiErrors[] = 'Database connection is unavailable. Please refresh and try again.';
+  }
+
     $uploadDir = __DIR__ . '/../../../assets/backend/uploads/resumes';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);

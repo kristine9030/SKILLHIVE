@@ -358,7 +358,7 @@ function oldVal(array $old, string $key, string $default = ''): string {
       <label class="form-label">Status <span style="color:var(--red);">*</span></label>
       <select class="form-control" name="status" required>
         <?php foreach ($allowedStatus as $s): ?>
-          <option value="<?php echo e($s); ?>" <?php echo (oldVal($old,'status','Draft') === $s ? 'selected' : ''); ?>>
+          <option value="<?php echo e($s); ?>" <?php echo (oldVal($old,'status','Open') === $s ? 'selected' : ''); ?>>
             <?php echo e($s); ?>
           </option>
         <?php endforeach; ?>
