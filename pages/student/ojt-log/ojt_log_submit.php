@@ -54,8 +54,18 @@ function ojt_log_handle_submit(PDO $pdo, ?array $ojt): array
   $stmt = $pdo->prepare('INSERT INTO daily_log (record_id, log_date, accomplishment, hours_rendered, mood_tag, task_file, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())');
   $stmt->execute([(int) $ojt['record_id'], $date, $accomplishment, $hours, $mood, $fileName]);
 
-  $stmt = $pdo->prepare('UPDATE ojt_record SET hours_completed = hours_completed + ? WHERE record_id = ?');
-  $stmt->execute([$hours, (int) $ojt['record_id']]);
+  $stmt = $pdo->prepare(
+    'UPDATE ojt_record
+     SET hours_completed = LEAST(hours_required, hours_completed + ?),
+         completion_status = CASE
+           WHEN LOWER(TRIM(COALESCE(completion_status, ""))) = "completed" THEN "Completed"
+           WHEN (hours_completed + ?) >= hours_required THEN "Completed"
+           ELSE completion_status
+         END,
+         updated_at = NOW()
+     WHERE record_id = ?'
+  );
+  $stmt->execute([$hours, $hours, (int) $ojt['record_id']]);
 
   $stmt = $pdo->prepare('SELECT hours_completed, hours_required FROM ojt_record WHERE record_id = ? LIMIT 1');
   $stmt->execute([(int) $ojt['record_id']]);

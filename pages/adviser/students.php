@@ -112,14 +112,14 @@ $rows = $pageData['rows'];
 							</td>
 							<td>
 								<div style="display:flex;align-items:center;gap:8px;min-width:130px;">
-									<div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:<?php echo (int)($row['requirements_completion'] ?? 0); ?>%;background:#EF4444"></div></div>
-									<span style="font-size:.74rem;color:#EF4444;"><?php echo (int)($row['requirements_submitted'] ?? 0); ?>/<?php echo $totalRequirements > 0 ? $totalRequirements : 0; ?></span>
+									<div class="progress-bar" style="flex:1"><div class="progress-fill js-req-progress-fill" data-student-id="<?php echo (int)($row['student_id'] ?? 0); ?>" style="width:<?php echo (int)($row['requirements_completion'] ?? 0); ?>%;background:#EF4444"></div></div>
+									<span class="js-req-progress-text" data-student-id="<?php echo (int)($row['student_id'] ?? 0); ?>" data-total="<?php echo $totalRequirements > 0 ? $totalRequirements : 0; ?>" style="font-size:.74rem;color:#EF4444;"><?php echo (int)($row['requirements_submitted'] ?? 0); ?>/<?php echo $totalRequirements > 0 ? $totalRequirements : 0; ?></span>
 								</div>
 							</td>
 							<td>
 								<div style="display:flex;gap:8px;flex-wrap:wrap;">
 									<button
-										class="btn btn-primary btn-sm"
+										class="btn btn-primary btn-sm js-open-requirements-btn"
 										type="button"
 										onclick="openRequirementsModal(this)"
 										data-name="<?php echo adviser_students_escape($studentName !== '' ? $studentName : 'Student'); ?>"
@@ -184,7 +184,7 @@ $rows = $pageData['rows'];
 
 		<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;">
 			<button type="button" class="btn btn-ghost btn-sm" onclick="closeRequirementsModal()">Close</button>
-			<button type="button" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Save Changes</button>
+			<button id="requirementsSaveBtn" type="button" class="btn btn-primary btn-sm" onclick="saveRequirementsChanges()"><i class="fas fa-save"></i> Save Changes</button>
 		</div>
 	</div>
 </div>
@@ -194,7 +194,8 @@ var requirementsEndpoint = '<?php echo $baseUrl; ?>/pages/adviser/students/requi
 var requirementsContext = {
 	studentId: 0,
 	internshipId: '',
-	canEdit: false
+	canEdit: false,
+	activeButton: null
 };
 
 function escapeHtml(value) {
@@ -274,6 +275,32 @@ function setRequirementsSummary(summary) {
 	if (pendingEl) pendingEl.textContent = pendingValue;
 	if (completionEl) completionEl.textContent = completionValue + '%';
 	if (progressBarEl) progressBarEl.style.width = completionValue + '%';
+
+	syncRequirementsRowSummary(submittedValue, completionValue);
+}
+
+function syncRequirementsRowSummary(submittedValue, completionValue) {
+	var studentId = Number(requirementsContext.studentId || 0);
+	if (studentId <= 0) return;
+
+	var fillEl = document.querySelector('.js-req-progress-fill[data-student-id="' + studentId + '"]');
+	if (fillEl) {
+		fillEl.style.width = Number(completionValue || 0) + '%';
+	}
+
+	var textEl = document.querySelector('.js-req-progress-text[data-student-id="' + studentId + '"]');
+	if (textEl) {
+		var total = Number(textEl.getAttribute('data-total') || '0');
+		textEl.textContent = Number(submittedValue || 0) + '/' + (total > 0 ? total : 0);
+	}
+
+	if (requirementsContext.activeButton) {
+		requirementsContext.activeButton.setAttribute('data-submitted', String(Number(submittedValue || 0)));
+		requirementsContext.activeButton.setAttribute('data-completion', String(Number(completionValue || 0)));
+		var totalRequirements = textEl ? Number(textEl.getAttribute('data-total') || '0') : 0;
+		var pendingValue = Math.max(0, totalRequirements - Number(submittedValue || 0));
+		requirementsContext.activeButton.setAttribute('data-pending', String(pendingValue));
+	}
 }
 
 function loadRequirementsData() {
@@ -396,16 +423,34 @@ function openRequirementsModal(button) {
 	requirementsContext.studentId = Number(studentId || 0);
 	requirementsContext.internshipId = internshipId;
 	requirementsContext.canEdit = false;
+	requirementsContext.activeButton = button;
 
 	setRequirementsLoadingState();
 	modal.style.display = 'flex';
 	loadRequirementsData();
 }
 
+function saveRequirementsChanges() {
+	var button = document.getElementById('requirementsSaveBtn');
+	if (button) {
+		button.disabled = true;
+		button.innerHTML = '<i class="fas fa-check"></i> Saved';
+	}
+
+	setTimeout(function () {
+		closeRequirementsModal();
+		if (button) {
+			button.disabled = false;
+			button.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+		}
+	}, 250);
+}
+
 function closeRequirementsModal() {
 	var modal = document.getElementById('requirementsModal');
 	if (!modal) return;
 	modal.style.display = 'none';
+	requirementsContext.activeButton = null;
 }
 
 document.addEventListener('click', function (event) {
