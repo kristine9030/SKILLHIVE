@@ -22,7 +22,7 @@ $successMsg = (string) ($submitResult['successMsg'] ?? '');
 
 ?>
 <?php
-$ojtAjaxUrl = (isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '' ? rtrim($baseUrl, '/') : '/Skillhive') . '/pages/student/ojt-log.php';
+$ojtAjaxUrl = (isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '' ? rtrim($baseUrl, '/') : '/SkillHive') . '/pages/student/ojt-log/submit.php';
 ?>
 
 <div class="page-header">
