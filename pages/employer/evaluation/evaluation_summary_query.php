@@ -16,10 +16,13 @@ if (!function_exists('evaluation_get_summary')) {
                 ev.comments
              FROM employer_evaluation ev
              INNER JOIN internship i ON i.internship_id = ev.internship_id
-             WHERE ev.employer_id = :employer_id
-               AND i.employer_id = :employer_id';
+                         WHERE ev.employer_id = :employer_id_1
+                             AND i.employer_id = :employer_id_2';
 
-        $evaluationParams = [':employer_id' => $employerId];
+                $evaluationParams = [
+                        ':employer_id_1' => $employerId,
+                        ':employer_id_2' => $employerId,
+                ];
         if ($internshipId > 0) {
             $evaluationSql .= ' AND ev.internship_id = :internship_id';
             $evaluationParams[':internship_id'] = $internshipId;
@@ -47,7 +50,11 @@ if (!function_exists('evaluation_get_summary')) {
              FROM ojt_record o
              INNER JOIN internship i ON i.internship_id = o.internship_id
                          WHERE i.employer_id = :employer_id
-                             AND LOWER(COALESCE(o.completion_status, "")) = "completed"';
+                             AND (
+                    LOWER(TRIM(COALESCE(o.completion_status, ""))) IN ("completed", "complete", "done")
+                    OR LOWER(TRIM(COALESCE(o.completion_status, ""))) LIKE "complete%"
+                                        OR (COALESCE(o.hours_required, 0) > 0 AND COALESCE(o.hours_completed, 0) >= COALESCE(o.hours_required, 0))
+                             )';
         $eligibleParams = [':employer_id' => $employerId];
         if ($internshipId > 0) {
             $eligibleSql .= ' AND o.internship_id = :internship_id';
@@ -62,9 +69,12 @@ if (!function_exists('evaluation_get_summary')) {
             'SELECT COUNT(DISTINCT CONCAT(ev.student_id, ":", ev.internship_id))
              FROM employer_evaluation ev
              INNER JOIN internship i ON i.internship_id = ev.internship_id
-             WHERE ev.employer_id = :employer_id
-               AND i.employer_id = :employer_id';
-        $evaluatedParams = [':employer_id' => $employerId];
+                         WHERE ev.employer_id = :employer_id_1
+                             AND i.employer_id = :employer_id_2';
+                $evaluatedParams = [
+                        ':employer_id_1' => $employerId,
+                        ':employer_id_2' => $employerId,
+                ];
         if ($internshipId > 0) {
             $evaluatedSql .= ' AND ev.internship_id = :internship_id';
             $evaluatedParams[':internship_id'] = $internshipId;

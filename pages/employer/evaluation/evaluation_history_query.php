@@ -23,10 +23,13 @@ if (!function_exists('evaluation_get_history')) {
              FROM employer_evaluation ev
              INNER JOIN student s ON s.student_id = ev.student_id
              INNER JOIN internship i ON i.internship_id = ev.internship_id
-             WHERE ev.employer_id = :employer_id
-               AND i.employer_id  = :employer_id';
+                         WHERE ev.employer_id = :employer_id_1
+                             AND i.employer_id  = :employer_id_2';
 
-        $params = [':employer_id' => $employerId];
+                $params = [
+                        ':employer_id_1' => $employerId,
+                        ':employer_id_2' => $employerId,
+                ];
         if ($internshipId > 0) {
             $sql .= ' AND ev.internship_id = :internship_id';
             $params[':internship_id'] = $internshipId;

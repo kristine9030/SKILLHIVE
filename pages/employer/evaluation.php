@@ -5,9 +5,69 @@
  */
 require_once __DIR__ . '/../../backend/db_connect.php';
 require_once __DIR__ . '/dashboard/formatters.php';
+require_once __DIR__ . '/post_internship/auth_helpers.php';
 require_once __DIR__ . '/evaluation/data.php';
 
-$employerId = (int)($_SESSION['employer_id'] ?? ($userId ?? 0));
+$resolvedEmployerId = resolveEmployerId($_SESSION, isset($userId) ? (int)$userId : null);
+$employerId = (int)($resolvedEmployerId ?? 0);
+
+$employerIdCandidates = [];
+if ($employerId > 0) {
+  $employerIdCandidates[] = $employerId;
+}
+
+$sessionEmployerId = isset($_SESSION['employer_id']) ? (int)$_SESSION['employer_id'] : 0;
+if ($sessionEmployerId > 0) {
+  $employerIdCandidates[] = $sessionEmployerId;
+}
+
+$sessionUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+if ($sessionUserId > 0) {
+  $employerIdCandidates[] = $sessionUserId;
+}
+
+if ($employerId <= 0 && !empty($userEmail)) {
+  try {
+    $stmtEmployer = $pdo->prepare('SELECT employer_id FROM employer WHERE email = :email LIMIT 1');
+    $stmtEmployer->execute([':email' => (string)$userEmail]);
+    $employerId = (int)($stmtEmployer->fetchColumn() ?: 0);
+    if ($employerId > 0) {
+      $employerIdCandidates[] = $employerId;
+    }
+  } catch (Throwable $e) {
+    $employerId = 0;
+  }
+}
+
+// Pick the best-matching employer id based on who actually has internship postings.
+$employerIdCandidates = array_values(array_unique(array_filter(array_map('intval', $employerIdCandidates))));
+if (!empty($employerIdCandidates)) {
+  $bestEmployerId = 0;
+  $bestCount = -1;
+
+  try {
+    $stmtCount = $pdo->prepare('SELECT COUNT(*) FROM internship WHERE employer_id = :employer_id');
+    foreach ($employerIdCandidates as $candidateEmployerId) {
+      $stmtCount->execute([':employer_id' => $candidateEmployerId]);
+      $count = (int)$stmtCount->fetchColumn();
+      if ($count > $bestCount) {
+        $bestCount = $count;
+        $bestEmployerId = $candidateEmployerId;
+      }
+    }
+  } catch (Throwable $e) {
+    $bestEmployerId = $employerId;
+  }
+
+  if ($bestEmployerId > 0) {
+    $employerId = $bestEmployerId;
+  }
+}
+
+if ($employerId > 0 && $sessionEmployerId <= 0) {
+  $_SESSION['employer_id'] = $employerId;
+}
+
 $errorMessage = '';
 
 $formState = [

@@ -17,8 +17,12 @@ if (!function_exists('getEmployerInternOptions')) {
              FROM ojt_record o
              INNER JOIN internship i ON i.internship_id = o.internship_id
              INNER JOIN student s ON s.student_id = o.student_id
-                         WHERE i.employer_id = :employer_id
-                             AND LOWER(COALESCE(o.completion_status, "")) = "completed"';
+             WHERE i.employer_id = :employer_id
+                             AND (
+                     LOWER(TRIM(COALESCE(o.completion_status, ""))) IN ("completed", "complete", "done")
+                     OR LOWER(TRIM(COALESCE(o.completion_status, ""))) LIKE "complete%"
+                                        OR (COALESCE(o.hours_required, 0) > 0 AND COALESCE(o.hours_completed, 0) >= COALESCE(o.hours_required, 0))
+                             )';
 
         $params = [':employer_id' => $employerId];
         if ($internshipId > 0) {

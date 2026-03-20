@@ -41,10 +41,14 @@ if (!function_exists('saveEmployerEvaluation')) {
         $ownershipStmt = $pdo->prepare(
                             'SELECT COUNT(*)
                          FROM internship i
-                         INNER JOIN ojt_record o ON o.internship_id = i.internship_id
+                                 INNER JOIN ojt_record o ON o.internship_id = i.internship_id
                          WHERE i.internship_id = :internship_id
                              AND o.student_id    = :student_id
-                                AND LOWER(COALESCE(o.completion_status, "")) = "completed"
+                                AND (
+                                    LOWER(TRIM(COALESCE(o.completion_status, ""))) IN ("completed", "complete", "done")
+                                    OR LOWER(TRIM(COALESCE(o.completion_status, ""))) LIKE "complete%"
+                                    OR (COALESCE(o.hours_required, 0) > 0 AND COALESCE(o.hours_completed, 0) >= COALESCE(o.hours_required, 0))
+                                )
                              AND i.employer_id   = :employer_id'
         );
         $ownershipStmt->execute([
