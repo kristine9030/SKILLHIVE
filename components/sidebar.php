@@ -8,7 +8,7 @@ if ($role === 'student') {
             ['icon' => 'fas fa-user',         'text' => 'Profile',      'page' => 'student/profile'],
             ['icon' => 'fas fa-brain',        'text' => 'AI Matching',  'page' => 'student/matching'],
             ['icon' => 'fas fa-store',        'text' => 'Marketplace',  'page' => 'student/marketplace'],
-            ['icon' => 'fas fa-file-lines',   'text' => 'Resume AI',    'page' => 'student/resume-ai'],
+            ['icon' => 'fas fa-file-lines',   'text' => 'CV Builder',   'page' => 'student/resume-ai'],
         ]],
         ['label' => 'TRACKING', 'items' => [
             ['icon' => 'fas fa-paper-plane',  'text' => 'Applications', 'page' => 'student/applications'],

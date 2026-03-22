@@ -268,7 +268,7 @@ $student['internship_readiness_score'] = $readinessScore;
     <div class="panel-card">
       <div class="panel-card-header"><h3>Quick Actions</h3></div>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <a href="<?php echo $baseUrl; ?>/layout.php?page=student/resume-ai" class="btn btn-ghost btn-sm" style="justify-content:flex-start;width:100%"><i class="fas fa-file-lines"></i> Score My Resume</a>
+        <a href="<?php echo $baseUrl; ?>/layout.php?page=student/resume-ai" class="btn btn-ghost btn-sm" style="justify-content:flex-start;width:100%"><i class="fas fa-file-lines"></i> Open CV Builder</a>
         <a href="<?php echo $baseUrl; ?>/layout.php?page=student/matching" class="btn btn-ghost btn-sm" style="justify-content:flex-start;width:100%"><i class="fas fa-brain"></i> Find AI Matches</a>
         <a href="<?php echo $baseUrl; ?>/layout.php?page=student/ojt-log" class="btn btn-ghost btn-sm" style="justify-content:flex-start;width:100%"><i class="fas fa-clock"></i> Log OJT Hours</a>
       </div>

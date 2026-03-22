@@ -18,7 +18,7 @@ if ($role !== 'student' || $userId <= 0) {
 }
 
 $action = (string) ($_POST['action'] ?? '');
-if (!in_array($action, ['analyze', 'chat'], true)) {
+if (!in_array($action, ['analyze', 'chat', 'import_linkedin_cv', 'build_cv', 'load_cv', 'save_cv', 'score_cv'], true)) {
     http_response_code(400);
     echo json_encode(['ok' => false, 'message' => 'Invalid action']);
     exit;
@@ -96,6 +96,253 @@ function resume_ai_fallback_analysis(string $resumeText): array
     ];
 }
 
+function cv_builder_text_from_payload(array $cv): string
+{
+    $chunks = [];
+    $profile = (array) ($cv['profile'] ?? []);
+    foreach (['name', 'contact', 'headline', 'summary'] as $key) {
+        $value = trim((string) ($profile[$key] ?? ''));
+        if ($value !== '') {
+            $chunks[] = $value;
+        }
+    }
+
+    foreach ((array) ($cv['sections'] ?? []) as $section) {
+        if (!is_array($section)) {
+            continue;
+        }
+        $title = trim((string) ($section['title'] ?? ''));
+        if ($title !== '') {
+            $chunks[] = $title;
+        }
+
+        foreach ((array) ($section['items'] ?? []) as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            foreach (['role', 'company', 'location', 'dates', 'title', 'subtitle', 'meta'] as $key) {
+                $value = trim((string) ($item[$key] ?? ''));
+                if ($value !== '') {
+                    $chunks[] = $value;
+                }
+            }
+            foreach ((array) ($item['bullets'] ?? []) as $bullet) {
+                $value = trim((string) $bullet);
+                if ($value !== '') {
+                    $chunks[] = $value;
+                }
+            }
+        }
+    }
+
+    return trim(implode("\n", $chunks));
+}
+
+function cv_builder_default_payload(array $student, array $skills, string $linkedinUrl = ''): array
+{
+    $name = trim((string) ($student['first_name'] ?? '') . ' ' . (string) ($student['last_name'] ?? ''));
+    if ($name === '') {
+        $name = 'Student Name';
+    }
+
+    $contactParts = [];
+    if (!empty($student['email'])) {
+        $contactParts[] = (string) $student['email'];
+    }
+    if (!empty($student['program'])) {
+        $contactParts[] = (string) $student['program'];
+    }
+    if (!empty($student['department'])) {
+        $contactParts[] = (string) $student['department'];
+    }
+    if ($linkedinUrl !== '') {
+        $contactParts[] = $linkedinUrl;
+    }
+
+    $skillsText = $skills ? implode(', ', array_slice($skills, 0, 8)) : 'Communication, Problem Solving, Teamwork';
+
+    return [
+        'profile' => [
+            'name' => $name,
+            'contact' => implode(' | ', $contactParts),
+            'summary' => 'Motivated student seeking internship opportunities and focused on practical project impact.',
+            'headline' => trim((string) ($student['preferred_industry'] ?? 'Internship Candidate')),
+        ],
+        'sections' => [
+            [
+                'id' => 'experience',
+                'title' => 'Experience',
+                'type' => 'experience',
+                'items' => [
+                    [
+                        'role' => 'Intern / Project Contributor',
+                        'company' => 'Academic and Personal Projects',
+                        'location' => 'Philippines',
+                        'dates' => '(Recent)',
+                        'bullets' => [
+                            'Built portfolio projects with measurable outcomes and clear documentation.',
+                            'Worked in team settings using iterative feedback and version control.',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'id' => 'education',
+                'title' => 'Education',
+                'type' => 'education',
+                'items' => [
+                    [
+                        'title' => (string) ($student['program'] ?? 'Bachelor Degree'),
+                        'subtitle' => (string) ($student['department'] ?? 'University'),
+                        'meta' => 'Expected Graduation: TBD',
+                    ],
+                ],
+            ],
+            [
+                'id' => 'skills',
+                'title' => 'Skills',
+                'type' => 'skills',
+                'items' => [
+                    [
+                        'title' => 'Core Skills',
+                        'subtitle' => $skillsText,
+                    ],
+                ],
+            ],
+        ],
+    ];
+}
+
+function cv_builder_normalize_payload(array $candidate, array $fallback): array
+{
+    $profile = (array) ($candidate['profile'] ?? []);
+    $normalized = [
+        'profile' => [
+            'name' => trim((string) ($profile['name'] ?? $fallback['profile']['name'])),
+            'contact' => trim((string) ($profile['contact'] ?? $fallback['profile']['contact'])),
+            'summary' => trim((string) ($profile['summary'] ?? $fallback['profile']['summary'])),
+            'headline' => trim((string) ($profile['headline'] ?? $fallback['profile']['headline'])),
+        ],
+        'sections' => [],
+    ];
+
+    $sections = (array) ($candidate['sections'] ?? []);
+    foreach ($sections as $i => $section) {
+        if (!is_array($section)) {
+            continue;
+        }
+        $items = [];
+        foreach ((array) ($section['items'] ?? []) as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $bullets = [];
+            foreach ((array) ($item['bullets'] ?? []) as $bullet) {
+                $text = trim((string) $bullet);
+                if ($text !== '') {
+                    $bullets[] = $text;
+                }
+            }
+            $items[] = [
+                'role' => trim((string) ($item['role'] ?? '')),
+                'company' => trim((string) ($item['company'] ?? '')),
+                'location' => trim((string) ($item['location'] ?? '')),
+                'dates' => trim((string) ($item['dates'] ?? '')),
+                'bullets' => $bullets,
+                'title' => trim((string) ($item['title'] ?? '')),
+                'subtitle' => trim((string) ($item['subtitle'] ?? '')),
+                'meta' => trim((string) ($item['meta'] ?? '')),
+                'highlight' => (bool) ($item['highlight'] ?? false),
+            ];
+        }
+
+        $normalized['sections'][] = [
+            'id' => trim((string) ($section['id'] ?? ('section_' . $i))),
+            'title' => trim((string) ($section['title'] ?? 'Section')),
+            'type' => trim((string) ($section['type'] ?? 'generic')),
+            'items' => $items,
+        ];
+    }
+
+    if (!$normalized['sections']) {
+        $normalized['sections'] = $fallback['sections'];
+    }
+
+    return $normalized;
+}
+
+function cv_builder_ensure_table(PDO $pdo): void
+{
+    static $ensured = false;
+    if ($ensured) {
+        return;
+    }
+
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS student_cv_builder (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            student_id INT UNSIGNED NOT NULL,
+            source_mode VARCHAR(20) NOT NULL DEFAULT "scratch",
+            source_type VARCHAR(20) NOT NULL DEFAULT "",
+            source_url VARCHAR(255) NOT NULL DEFAULT "",
+            cv_json LONGTEXT NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uniq_student_id (student_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+
+    $ensured = true;
+}
+
+function cv_builder_db_load(PDO $pdo, int $studentId): ?array
+{
+    cv_builder_ensure_table($pdo);
+
+    $stmt = $pdo->prepare('SELECT source_mode, source_type, source_url, cv_json, updated_at FROM student_cv_builder WHERE student_id = ? LIMIT 1');
+    $stmt->execute([$studentId]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!is_array($row)) {
+        return null;
+    }
+
+    $decoded = json_decode((string) ($row['cv_json'] ?? ''), true);
+    if (!is_array($decoded)) {
+        return null;
+    }
+
+    return [
+        'source_mode' => (string) ($row['source_mode'] ?? 'scratch'),
+        'source_type' => (string) ($row['source_type'] ?? ''),
+        'source_url' => (string) ($row['source_url'] ?? ''),
+        'cv' => $decoded,
+        'updated_at' => (string) ($row['updated_at'] ?? ''),
+    ];
+}
+
+function cv_builder_db_save(PDO $pdo, int $studentId, string $sourceMode, string $sourceType, string $sourceUrl, array $cv): string
+{
+    cv_builder_ensure_table($pdo);
+
+    $json = json_encode($cv, JSON_UNESCAPED_UNICODE);
+    if (!is_string($json) || $json === '') {
+        throw new RuntimeException('Unable to encode CV data.');
+    }
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO student_cv_builder (student_id, source_mode, source_type, source_url, cv_json, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, NOW(), NOW())
+         ON DUPLICATE KEY UPDATE source_mode = VALUES(source_mode), source_type = VALUES(source_type), source_url = VALUES(source_url), cv_json = VALUES(cv_json), updated_at = NOW()'
+    );
+    $stmt->execute([$studentId, $sourceMode, $sourceType, $sourceUrl, $json]);
+
+    $updatedStmt = $pdo->prepare('SELECT DATE_FORMAT(updated_at, "%Y-%m-%d %H:%i:%s") AS updated_at FROM student_cv_builder WHERE student_id = ? LIMIT 1');
+    $updatedStmt->execute([$studentId]);
+    $row = $updatedStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    return (string) ($row['updated_at'] ?? '');
+}
+
 function resume_ai_extract_json_object(string $text): ?array
 {
     $text = trim($text);
@@ -168,7 +415,7 @@ function resume_ai_gemini_request(string $apiKey, string $prompt, float $tempera
     return $chunks ? implode("\n", $chunks) : null;
 }
 
-$stmt = $pdo->prepare('SELECT first_name, last_name, program, department, preferred_industry, resume_file FROM student WHERE student_id = ? LIMIT 1');
+$stmt = $pdo->prepare('SELECT first_name, last_name, email, program, department, preferred_industry, resume_file FROM student WHERE student_id = ? LIMIT 1');
 $stmt->execute([$userId]);
 $student = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
@@ -199,6 +446,236 @@ $profileSummary = sprintf(
 $apiKey = trim((string) getenv('GEMINI_API_KEY'));
 if ($apiKey === '') {
     $apiKey = trim((string) getenv('GOOGLE_API_KEY'));
+}
+
+if ($action === 'import_linkedin_cv') {
+    $action = 'build_cv';
+    $_POST['source_mode'] = 'link';
+    $_POST['source_type'] = 'linkedin';
+    $_POST['source_url'] = (string) ($_POST['linkedin_url'] ?? '');
+}
+
+if ($action === 'load_cv') {
+    $row = cv_builder_db_load($pdo, $userId);
+    if ($row === null) {
+        echo json_encode(['ok' => true, 'has_cv' => false]);
+        exit;
+    }
+
+    $fallbackCv = cv_builder_default_payload($student, $skills, (string) ($row['source_url'] ?? ''));
+    echo json_encode([
+        'ok' => true,
+        'has_cv' => true,
+        'source_mode' => (string) ($row['source_mode'] ?? 'scratch'),
+        'source_type' => (string) ($row['source_type'] ?? ''),
+        'source_url' => (string) ($row['source_url'] ?? ''),
+        'updated_at' => (string) ($row['updated_at'] ?? ''),
+        'cv' => cv_builder_normalize_payload((array) ($row['cv'] ?? []), $fallbackCv),
+    ]);
+    exit;
+}
+
+if ($action === 'save_cv') {
+    $sourceMode = trim((string) ($_POST['source_mode'] ?? 'scratch'));
+    $sourceType = trim((string) ($_POST['source_type'] ?? ''));
+    $sourceUrl = trim((string) ($_POST['source_url'] ?? ''));
+    $cvRaw = trim((string) ($_POST['cv_json'] ?? ''));
+    $decoded = json_decode($cvRaw, true);
+    if (!is_array($decoded)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'message' => 'Invalid CV payload.']);
+        exit;
+    }
+
+    if (!in_array($sourceMode, ['link', 'profile', 'scratch'], true)) {
+        $sourceMode = 'scratch';
+    }
+    if (!in_array($sourceType, ['linkedin', 'github', 'portfolio', 'other', ''], true)) {
+        $sourceType = 'other';
+    }
+
+    $fallbackCv = cv_builder_default_payload($student, $skills, $sourceUrl);
+    $normalizedCv = cv_builder_normalize_payload($decoded, $fallbackCv);
+    $updatedAt = cv_builder_db_save($pdo, $userId, $sourceMode, $sourceType, $sourceUrl, $normalizedCv);
+
+    echo json_encode([
+        'ok' => true,
+        'updated_at' => $updatedAt,
+        'cv' => $normalizedCv,
+    ]);
+    exit;
+}
+
+if ($action === 'build_cv') {
+    $sourceMode = trim((string) ($_POST['source_mode'] ?? 'link'));
+    $sourceType = trim((string) ($_POST['source_type'] ?? 'linkedin'));
+    $sourceUrl = trim((string) ($_POST['source_url'] ?? ''));
+
+    if (!in_array($sourceMode, ['link', 'profile', 'scratch'], true)) {
+        $sourceMode = 'link';
+    }
+    if (!in_array($sourceType, ['linkedin', 'github', 'portfolio', 'other'], true)) {
+        $sourceType = 'other';
+    }
+
+    if ($sourceMode === 'link' && $sourceUrl === '') {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'message' => 'Please provide a URL for link import.']);
+        exit;
+    }
+
+    if ($sourceMode === 'link' && !preg_match('#^https?://#i', $sourceUrl)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'message' => 'Please provide a valid URL.']);
+        exit;
+    }
+
+    $fallbackCv = cv_builder_default_payload($student, $skills, $sourceMode === 'link' ? $sourceUrl : '');
+
+    if ($sourceMode === 'scratch') {
+        $updatedAt = cv_builder_db_save($pdo, $userId, $sourceMode, $sourceType, $sourceUrl, $fallbackCv);
+        echo json_encode([
+            'ok' => true,
+            'source' => 'fallback',
+            'updated_at' => $updatedAt,
+            'cv' => $fallbackCv,
+            'note' => 'Started from scratch template and saved to database.',
+        ]);
+        exit;
+    }
+
+    if ($apiKey === '') {
+        $updatedAt = cv_builder_db_save($pdo, $userId, $sourceMode, $sourceType, $sourceUrl, $fallbackCv);
+        echo json_encode([
+            'ok' => true,
+            'source' => 'fallback',
+            'updated_at' => $updatedAt,
+            'cv' => $fallbackCv,
+            'note' => 'Gemini API key is not configured. Showing starter CV template.',
+        ]);
+        exit;
+    }
+
+    $sourceHint = $sourceMode === 'profile'
+        ? 'Use only SkillHive profile and resume data as source.'
+        : ('Use this external link as a hint: [' . $sourceType . '] ' . $sourceUrl);
+
+    $prompt = "You are a CV writer. Transform available data into a polished internship-ready CV JSON. Return strict JSON only with keys: profile and sections.\n\nSchema:\n{\n  \"profile\": {\"name\": string, \"contact\": string, \"summary\": string, \"headline\": string},\n  \"sections\": [\n    {\"id\": \"experience\", \"title\": \"Experience\", \"type\": \"experience\", \"items\": [{\"role\": string, \"company\": string, \"location\": string, \"dates\": string, \"bullets\": [string]}]},\n    {\"id\": \"education\", \"title\": \"Education\", \"type\": \"education\", \"items\": [{\"title\": string, \"subtitle\": string, \"meta\": string}]},\n    {\"id\": \"skills\", \"title\": \"Skills\", \"type\": \"skills\", \"items\": [{\"title\": string, \"subtitle\": string}]}\n  ]\n}\n\nData source hint:\n"
+        . $sourceHint
+        . "\n\nStudent profile:\n"
+        . $profileSummary
+        . "\n\nResume text excerpt:\n"
+        . $resumeText
+        . "\n\nConstraints:\n- Keep summary under 3 sentences.\n- Provide 2 to 4 experience entries.\n- Each experience bullet should be concise and achievement-focused.\n- Do not include markdown or comments.";
+
+    $reply = resume_ai_gemini_request($apiKey, $prompt, 0.35, 1400);
+    if ($reply === null) {
+        $updatedAt = cv_builder_db_save($pdo, $userId, $sourceMode, $sourceType, $sourceUrl, $fallbackCv);
+        echo json_encode([
+            'ok' => true,
+            'source' => 'fallback',
+            'updated_at' => $updatedAt,
+            'cv' => $fallbackCv,
+            'note' => 'Gemini request failed. Showing starter CV template.',
+        ]);
+        exit;
+    }
+
+    $parsed = resume_ai_extract_json_object($reply);
+    if (!is_array($parsed)) {
+        $updatedAt = cv_builder_db_save($pdo, $userId, $sourceMode, $sourceType, $sourceUrl, $fallbackCv);
+        echo json_encode([
+            'ok' => true,
+            'source' => 'fallback',
+            'updated_at' => $updatedAt,
+            'cv' => $fallbackCv,
+            'note' => 'Gemini response parse failed. Showing starter CV template.',
+        ]);
+        exit;
+    }
+
+    $normalizedCv = cv_builder_normalize_payload($parsed, $fallbackCv);
+    $updatedAt = cv_builder_db_save($pdo, $userId, $sourceMode, $sourceType, $sourceUrl, $normalizedCv);
+    echo json_encode([
+        'ok' => true,
+        'source' => 'ai',
+        'updated_at' => $updatedAt,
+        'cv' => $normalizedCv,
+    ]);
+    exit;
+}
+
+if ($action === 'score_cv') {
+    $cvRaw = trim((string) ($_POST['cv_json'] ?? ''));
+    $decodedCv = json_decode($cvRaw, true);
+    if (!is_array($decodedCv)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'message' => 'Invalid CV payload for scoring.']);
+        exit;
+    }
+
+    $fallbackCv = cv_builder_default_payload($student, $skills, '');
+    $normalizedCv = cv_builder_normalize_payload($decodedCv, $fallbackCv);
+    $cvText = cv_builder_text_from_payload($normalizedCv);
+    $fallback = resume_ai_fallback_analysis($cvText);
+
+    if ($apiKey === '' || $cvText === '') {
+        echo json_encode([
+            'ok' => true,
+            'source' => 'fallback',
+            'score' => $fallback['score'],
+            'breakdown' => $fallback['breakdown'],
+            'note' => $apiKey === '' ? 'Gemini key is not set. Showing fallback score.' : 'CV content is too short. Showing fallback score.',
+        ]);
+        exit;
+    }
+
+    $prompt = "You are a resume reviewer for internship applicants. Evaluate this CV and return strict JSON only with keys: score (0-100 int), breakdown (object with content, formatting, keywords, impact ints), note (string). Keep the note concise.\n\nStudent profile:\n"
+        . $profileSummary
+        . "\n\nCV text:\n"
+        . $cvText;
+
+    $reply = resume_ai_gemini_request($apiKey, $prompt, 0.2, 800);
+    if ($reply === null) {
+        echo json_encode([
+            'ok' => true,
+            'source' => 'fallback',
+            'score' => $fallback['score'],
+            'breakdown' => $fallback['breakdown'],
+            'note' => 'Gemini request failed. Showing fallback score.',
+        ]);
+        exit;
+    }
+
+    $json = resume_ai_extract_json_object($reply);
+    if (!is_array($json)) {
+        echo json_encode([
+            'ok' => true,
+            'source' => 'fallback',
+            'score' => $fallback['score'],
+            'breakdown' => $fallback['breakdown'],
+            'note' => 'Gemini response parse failed. Showing fallback score.',
+        ]);
+        exit;
+    }
+
+    $score = max(0, min(100, (int) ($json['score'] ?? $fallback['score'])));
+    $breakdown = (array) ($json['breakdown'] ?? []);
+    $normalizedBreakdown = [
+        'content' => max(0, min(100, (int) ($breakdown['content'] ?? $fallback['breakdown']['content']))),
+        'formatting' => max(0, min(100, (int) ($breakdown['formatting'] ?? $fallback['breakdown']['formatting']))),
+        'keywords' => max(0, min(100, (int) ($breakdown['keywords'] ?? $fallback['breakdown']['keywords']))),
+        'impact' => max(0, min(100, (int) ($breakdown['impact'] ?? $fallback['breakdown']['impact']))),
+    ];
+
+    echo json_encode([
+        'ok' => true,
+        'source' => 'ai',
+        'score' => $score,
+        'breakdown' => $normalizedBreakdown,
+        'note' => trim((string) ($json['note'] ?? 'Score generated from your current CV.')),
+    ]);
+    exit;
 }
 
 if ($action === 'analyze') {

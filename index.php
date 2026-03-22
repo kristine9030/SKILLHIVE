@@ -153,7 +153,7 @@ $baseUrl = '/SkillHive';
     <button class="feat-tab active" onclick="switchFeatTab(this,'ft-profile')">Digital Profile</button>
     <button class="feat-tab" onclick="switchFeatTab(this,'ft-match')">AI Matching</button>
     <button class="feat-tab" onclick="switchFeatTab(this,'ft-marketplace')">Marketplace</button>
-    <button class="feat-tab" onclick="switchFeatTab(this,'ft-resume')">Resume AI</button>
+    <button class="feat-tab" onclick="switchFeatTab(this,'ft-resume')">CV Builder</button>
     <button class="feat-tab" onclick="switchFeatTab(this,'ft-tracker')">App Tracker</button>
     <button class="feat-tab" onclick="switchFeatTab(this,'ft-ojt')">OJT Monitor</button>
   </div>
@@ -343,7 +343,7 @@ $baseUrl = '/SkillHive';
       <ul class="price-features">
         <li class="price-feature"><i class="fas fa-check"></i> Unlimited applications</li>
         <li class="price-feature"><i class="fas fa-check"></i> Full AI matching & insights</li>
-        <li class="price-feature"><i class="fas fa-check"></i> Resume AI scoring</li>
+        <li class="price-feature"><i class="fas fa-check"></i> CV Builder with AI import</li>
         <li class="price-feature"><i class="fas fa-check"></i> Mock interview chatbot</li>
         <li class="price-feature"><i class="fas fa-check"></i> OJT hour tracker</li>
         <li class="price-feature"><i class="fas fa-check"></i> AI recognition certificate</li>
