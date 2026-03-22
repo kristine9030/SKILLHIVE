@@ -169,8 +169,69 @@ function marketplace_extract_external_results($payload): array
     return [];
 }
 
+function marketplace_external_cache_key(array $currentFilters, int $maxResults): string
+{
+    $cachePayload = [
+        'q' => trim((string) ($currentFilters['q'] ?? '')),
+        'industry' => trim((string) ($currentFilters['industry'] ?? '')),
+        'location' => trim((string) ($currentFilters['location'] ?? '')),
+        'max_results' => max(1, $maxResults),
+    ];
 
-function marketplace_fetch_findwork_listings(array $currentFilters, int $maxResults = 10): array
+    return 'findwork:' . sha1(json_encode($cachePayload, JSON_UNESCAPED_UNICODE));
+}
+
+function marketplace_external_cache_get(string $cacheKey, int $ttlSeconds = 600): ?array
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return null;
+    }
+
+    $bucket = $_SESSION['marketplace_external_cache'] ?? null;
+    if (!is_array($bucket)) {
+        return null;
+    }
+
+    $entry = $bucket[$cacheKey] ?? null;
+    if (!is_array($entry)) {
+        return null;
+    }
+
+    $cachedAt = (int) ($entry['cached_at'] ?? 0);
+    if ($cachedAt <= 0 || (time() - $cachedAt) > $ttlSeconds) {
+        unset($_SESSION['marketplace_external_cache'][$cacheKey]);
+        return null;
+    }
+
+    $data = $entry['data'] ?? null;
+    return is_array($data) ? $data : null;
+}
+
+function marketplace_external_cache_set(string $cacheKey, array $payload): void
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return;
+    }
+
+    if (!isset($_SESSION['marketplace_external_cache']) || !is_array($_SESSION['marketplace_external_cache'])) {
+        $_SESSION['marketplace_external_cache'] = [];
+    }
+
+    $_SESSION['marketplace_external_cache'][$cacheKey] = [
+        'cached_at' => time(),
+        'data' => $payload,
+    ];
+
+    if (count($_SESSION['marketplace_external_cache']) > 20) {
+        uasort($_SESSION['marketplace_external_cache'], static function (array $a, array $b): int {
+            return ((int) ($a['cached_at'] ?? 0)) <=> ((int) ($b['cached_at'] ?? 0));
+        });
+        $_SESSION['marketplace_external_cache'] = array_slice($_SESSION['marketplace_external_cache'], -20, null, true);
+    }
+}
+
+
+function marketplace_fetch_findwork_listings(array $currentFilters, int $maxResults = 100): array
 {
     $creds = marketplace_findwork_credentials();
     if (!$creds['configured']) {
@@ -195,7 +256,13 @@ function marketplace_fetch_findwork_listings(array $currentFilters, int $maxResu
     if ($industryFilter !== '') {
         $params['category'] = $industryFilter;
     }
-    $params['limit'] = max(1, min(10, $maxResults)); // Reduce to 10 for performance
+    $params['limit'] = max(1, min(100, $maxResults));
+
+    $cacheKey = marketplace_external_cache_key($currentFilters, $maxResults);
+    $cached = marketplace_external_cache_get($cacheKey, 600);
+    if (is_array($cached)) {
+        return $cached;
+    }
 
     $endpoint = 'https://findwork.dev/api/jobs/?' . http_build_query($params);
     $response = marketplace_http_request_json($endpoint, 'GET', [
@@ -203,20 +270,24 @@ function marketplace_fetch_findwork_listings(array $currentFilters, int $maxResu
         'Accept: application/json',
     ], null, 10);
     if (!(bool) ($response['ok'] ?? false)) {
-        return [
+        $result = [
             'rows' => [],
             'notice' => marketplace_external_api_error_notice($response, 'Findwork'),
             'count' => 0,
         ];
+        marketplace_external_cache_set($cacheKey, $result);
+        return $result;
     }
 
     $payload = $response['data'] ?? null;
     if (!is_array($payload) || !isset($payload['results']) || !is_array($payload['results'])) {
-        return [
+        $result = [
             'rows' => [],
             'notice' => 'Unable to load external listings from Findwork - invalid API response.',
             'count' => 0,
         ];
+        marketplace_external_cache_set($cacheKey, $result);
+        return $result;
     }
 
     $rows = [];
@@ -273,11 +344,13 @@ function marketplace_fetch_findwork_listings(array $currentFilters, int $maxResu
             'external_url' => $externalUrl,
         ];
     }
-    return [
+    $result = [
         'rows' => $rows,
         'notice' => count($rows) > 0 ? ('Showing ' . count($rows) . ' external listing' . (count($rows) === 1 ? '' : 's') . ' from Findwork.') : 'No external Findwork listings found for this filter.',
         'count' => count($rows),
     ];
+    marketplace_external_cache_set($cacheKey, $result);
+    return $result;
 }
 
 function marketplace_ensure_application_consent_columns(PDO $pdo): void
@@ -439,7 +512,7 @@ function marketplace_load_data(PDO $pdo, int $userId, array $currentFilters, int
         'count' => 0,
     ];
     if ($includeExternal) {
-        $externalResult = marketplace_fetch_findwork_listings($currentFilters, 10);
+        $externalResult = marketplace_fetch_findwork_listings($currentFilters, 100);
     }
     $externalListings = $externalResult['rows'] ?? [];
 

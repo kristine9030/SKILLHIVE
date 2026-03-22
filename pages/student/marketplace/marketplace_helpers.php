@@ -97,6 +97,7 @@ function marketplace_filters_from_request(): array
         'allowance_range' => trim((string) ($_REQUEST['allowance_range'] ?? '')),
         'sort'       => trim((string) ($_REQUEST['sort'] ?? 'latest')),
         'include_external' => (int) ($_REQUEST['include_external'] ?? 0) === 1 ? 1 : 0,
+        'external_page' => max(1, (int) ($_REQUEST['external_page'] ?? 1)),
         'detail'     => (int) ($_REQUEST['detail'] ?? 0),
         'open_apply' => (int) ($_REQUEST['open_apply'] ?? 0),
     ];
@@ -114,6 +115,7 @@ function marketplace_detail_url(string $baseUrl, array $filters, int $detailId):
         'allowance_range' => $filters['allowance_range'] ?? '',
         'sort'       => $filters['sort'] ?? 'latest',
         'include_external' => (int) ($filters['include_external'] ?? 0),
+        'external_page' => max(1, (int) ($filters['external_page'] ?? 1)),
         'detail'     => $detailId,
     ];
 

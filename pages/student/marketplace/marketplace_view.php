@@ -60,6 +60,16 @@ function marketplace_render(array $data): void
     $sortListings($localListings);
     $sortListings($externalListings);
 
+    $externalPerPage = 10;
+    $externalTotalCount = count($externalListings);
+    $externalPage = max(1, (int) ($currentFilters['external_page'] ?? 1));
+    $externalTotalPages = max(1, (int) ceil($externalTotalCount / $externalPerPage));
+    if ($externalPage > $externalTotalPages) {
+      $externalPage = $externalTotalPages;
+    }
+    $externalOffset = ($externalPage - 1) * $externalPerPage;
+    $externalListingsPage = array_slice($externalListings, $externalOffset, $externalPerPage);
+
     $topPicks = $localListings;
     usort($topPicks, static function (array $a, array $b) use ($compatibilityScore): int {
       $aScore = $compatibilityScore($a);
@@ -79,6 +89,10 @@ function marketplace_render(array $data): void
 
     if (!$showExternal) {
       $externalListings = [];
+      $externalListingsPage = [];
+      $externalPage = 1;
+      $externalTotalPages = 1;
+      $externalTotalCount = 0;
     }
 
     $toggleExternalQuery = [
@@ -91,8 +105,26 @@ function marketplace_render(array $data): void
       'allowance_range' => $currentFilters['allowance_range'] ?? '',
       'sort' => $sortFilter,
       'include_external' => $showExternal ? 0 : 1,
+      'external_page' => 1,
     ];
     $toggleExternalUrl = $baseUrl . '/layout.php?' . http_build_query($toggleExternalQuery);
+
+    $buildExternalPageUrl = static function (int $targetPage) use ($baseUrl, $currentFilters, $sortFilter): string {
+      $query = [
+        'page' => 'student/marketplace',
+        'q' => $currentFilters['q'] ?? '',
+        'industry' => $currentFilters['industry'] ?? '',
+        'location' => $currentFilters['location'] ?? '',
+        'work_setup' => $currentFilters['work_setup'] ?? '',
+        'duration' => $currentFilters['duration'] ?? '',
+        'allowance_range' => $currentFilters['allowance_range'] ?? '',
+        'sort' => $sortFilter,
+        'include_external' => 1,
+        'external_page' => max(1, $targetPage),
+      ];
+
+      return $baseUrl . '/layout.php?' . http_build_query($query);
+    };
 
     $renderListings = static function (array $items, bool $isExternalSection) use ($appliedInternshipIds, $baseUrl, $currentFilters, $studentSkillNames, $compatibilityScore): void {
       if (!$items) {
@@ -306,6 +338,10 @@ function marketplace_render(array $data): void
 .market-success-box-body { padding:14px; }
 .market-success-actions { padding:0 24px 24px; display:flex; flex-direction:column; gap:10px; }
 .market-source-note { margin:6px 0 2px; font-size:.77rem; color:#475569; display:flex; align-items:center; gap:6px; }
+.market-pagination { display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:12px; }
+.market-pagination-copy { font-size:.76rem; color:#64748b; margin-right:2px; }
+.market-page-btn { text-decoration:none; border:1px solid #d1d5db; border-radius:10px; padding:6px 10px; font-size:.76rem; font-weight:700; color:#111827; background:#fff; }
+.market-page-btn.disabled { opacity:.45; pointer-events:none; }
 .market-shell .btn.btn-primary { background:#111111 !important; border-color:#111111 !important; color:#ffffff !important; }
 .market-shell .btn.btn-primary:hover { background:#000000 !important; border-color:#000000 !important; }
 .market-shell .btn.btn-ghost { color:#111111 !important; border-color:#d1d5db !important; background:#ffffff !important; }
@@ -386,6 +422,7 @@ function marketplace_render(array $data): void
         </div>
 
         <input type="hidden" name="include_external" value="<?php echo $showExternal ? '1' : '0'; ?>">
+  <input type="hidden" name="external_page" value="1">
 
         <div class="market-filter-group">
           <div class="market-filter-title">Sort</div>
@@ -504,7 +541,7 @@ function marketplace_render(array $data): void
         <?php endif; ?>
 
         <div class="market-subhead">
-          <div class="market-subhead-copy">Showing <strong><?php echo count($localListings) + count($externalListings); ?></strong> result<?php echo (count($localListings) + count($externalListings)) === 1 ? '' : 's'; ?>.</div>
+          <div class="market-subhead-copy">Showing <strong><?php echo count($localListings) + count($externalListingsPage); ?></strong> result<?php echo (count($localListings) + count($externalListingsPage)) === 1 ? '' : 's'; ?>.</div>
           <div style="display:flex;align-items:center;gap:8px;">
             <a href="<?php echo marketplace_e($toggleExternalUrl); ?>" class="market-toggle-btn<?php echo $showExternal ? '' : ' off'; ?>">
               <?php echo $showExternal ? 'External Module: ON' : 'Enable External Module'; ?>
@@ -534,9 +571,19 @@ function marketplace_render(array $data): void
             <section class="market-section">
               <div class="market-section-head">
                 <div class="market-section-title">External API Opportunities</div>
-                <span class="market-section-pill"><?php echo count($externalListings); ?> listing<?php echo count($externalListings) === 1 ? '' : 's'; ?></span>
+                <span class="market-section-pill"><?php echo count($externalListingsPage); ?> of <?php echo $externalTotalCount; ?> listing<?php echo $externalTotalCount === 1 ? '' : 's'; ?></span>
               </div>
-              <?php $renderListings($externalListings, true); ?>
+              <?php $renderListings($externalListingsPage, true); ?>
+
+              <?php if ($externalTotalCount > $externalPerPage): ?>
+                <div class="market-pagination">
+                  <span class="market-pagination-copy">Page <?php echo $externalPage; ?> of <?php echo $externalTotalPages; ?></span>
+                  <?php $prevUrl = $buildExternalPageUrl($externalPage - 1); ?>
+                  <?php $nextUrl = $buildExternalPageUrl($externalPage + 1); ?>
+                  <a class="market-page-btn<?php echo $externalPage <= 1 ? ' disabled' : ''; ?>" href="<?php echo marketplace_e($prevUrl); ?>">Prev</a>
+                  <a class="market-page-btn<?php echo $externalPage >= $externalTotalPages ? ' disabled' : ''; ?>" href="<?php echo marketplace_e($nextUrl); ?>">Next</a>
+                </div>
+              <?php endif; ?>
             </section>
           <?php endif; ?>
         <?php endif; ?>
@@ -722,6 +769,7 @@ function marketplace_render(array $data): void
             <input type="hidden" name="allowance_range" value="<?php echo marketplace_e((string) ($currentFilters['allowance_range'] ?? '')); ?>">
             <input type="hidden" name="sort" value="<?php echo marketplace_e($sortFilter); ?>">
             <input type="hidden" name="include_external" value="<?php echo $showExternal ? '1' : '0'; ?>">
+            <input type="hidden" name="external_page" value="<?php echo (int) ($currentFilters['external_page'] ?? 1); ?>">
 
             <div class="market-modal-body">
               <div class="market-modal-grid">
