@@ -80,7 +80,11 @@ if (!function_exists('adviser_monitoring_get_rows')) {
         $mapped = [];
         foreach ($rows as $row) {
             $percent = adviser_monitoring_progress_percent($row['hours_completed'] ?? 0, $row['hours_required'] ?? 0);
-            $badge = adviser_monitoring_status_badge((string)($row['completion_status'] ?? ''), $percent);
+            $badge = adviser_monitoring_status_badge(
+                (string)($row['completion_status'] ?? ''),
+                $percent,
+                (string)($row['latest_log_date'] ?? '')
+            );
 
             if ($progressFilter !== '' && $badge['label'] !== $progressFilter) {
                 continue;

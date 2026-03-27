@@ -22,7 +22,7 @@ if (!function_exists('adviser_monitoring_get_filter_options')) {
 
         return [
             'companies' => $companies,
-            'progresses' => ['On Track', 'Progressing', 'Behind', 'Pending', 'Completed'],
+            'progresses' => ['On Track', 'Warning', 'At Risk'],
         ];
     }
 }

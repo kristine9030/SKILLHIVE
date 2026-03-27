@@ -44,36 +44,45 @@ if (!function_exists('adviser_monitoring_progress_percent')) {
 }
 
 if (!function_exists('adviser_monitoring_status_badge')) {
-    function adviser_monitoring_status_badge(?string $completionStatus, int $progressPercent): array
+    function adviser_monitoring_status_badge(?string $completionStatus, int $progressPercent, ?string $latestLogDate = null): array
     {
         $status = strtolower(trim((string)($completionStatus ?? '')));
+        $daysSinceLog = null;
+
+        if ($latestLogDate) {
+            $timestamp = strtotime($latestLogDate);
+            if ($timestamp !== false) {
+                $daysSinceLog = (int)floor((time() - $timestamp) / 86400);
+            }
+        }
+
         if ($status === 'completed') {
-            return ['label' => 'Completed', 'class' => 'status-accepted'];
+            return ['label' => 'On Track', 'class' => 'monitoring-status-ontrack'];
         }
 
-        if ($progressPercent >= 75) {
-            return ['label' => 'On Track', 'class' => 'status-accepted'];
-        }
-        if ($progressPercent >= 35) {
-            return ['label' => 'Progressing', 'class' => 'status-shortlisted'];
-        }
-        if ($progressPercent > 0) {
-            return ['label' => 'Behind', 'class' => 'status-pending'];
+        if ($progressPercent <= 15 || $daysSinceLog === null || $daysSinceLog > 21) {
+            return ['label' => 'At Risk', 'class' => 'monitoring-status-risk'];
         }
 
-        return ['label' => 'Pending', 'class' => 'status-pending'];
+        if ($progressPercent < 40 || $daysSinceLog > 10) {
+            return ['label' => 'Warning', 'class' => 'monitoring-status-warning'];
+        }
+
+        return ['label' => 'On Track', 'class' => 'monitoring-status-ontrack'];
     }
 }
 
 if (!function_exists('adviser_monitoring_progress_gradient')) {
     function adviser_monitoring_progress_gradient(string $statusLabel): string
     {
-        if ($statusLabel === 'Completed' || $statusLabel === 'On Track') {
+        if ($statusLabel === 'On Track') {
             return 'linear-gradient(90deg,#06B6D4,#10B981)';
         }
-        if ($statusLabel === 'Progressing') {
+
+        if ($statusLabel === 'Warning') {
             return 'linear-gradient(90deg,#F59E0B,#10B981)';
         }
+
         return 'linear-gradient(90deg,#EF4444,#F59E0B)';
     }
 }
@@ -90,6 +99,6 @@ if (!function_exists('adviser_monitoring_format_log_date')) {
             return 'No date';
         }
 
-        return date('M j', $timestamp);
+        return date('M j, Y', $timestamp);
     }
 }
