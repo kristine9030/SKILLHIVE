@@ -259,7 +259,7 @@ $baseUrl = '/SkillHive';
     <div class="feat-visual">
       <div class="mini-card" style="text-align:center">
         <div class="mini-label" style="margin-bottom:8px">Resume Score</div>
-        <div style="font-family:'Inter',sans-serif;font-size:2.5rem;font-weight:800;color:#111">92</div>
+        <div style="font-family:'Poppins', sans-serif;font-size:2.5rem;font-weight:600;color:#111">92</div>
         <div style="font-size:.75rem;color:#999">/100 · Excellent</div>
         <div style="margin-top:10px;font-size:.78rem;color:#10B981"><i class="fas fa-arrow-up"></i> +8 pts from last version</div>
       </div>
@@ -305,7 +305,7 @@ $baseUrl = '/SkillHive';
       <div class="mini-card">
         <div class="mini-label" style="margin-bottom:10px">OJT Progress</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div><div style="font-family:'Inter',sans-serif;font-weight:800;font-size:1.4rem;color:#111">248</div><div style="font-size:.72rem;color:#999">of 400 hours</div></div>
+          <div><div style="font-family:'Poppins', sans-serif;font-weight:600;font-size:1.4rem;color:#111">248</div><div style="font-size:.72rem;color:#999">of 400 hours</div></div>
           <div style="font-size:.78rem;color:#10B981">62% complete</div>
         </div>
         <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:62%;background:linear-gradient(90deg,#06B6D4,#10B981);height:10px;border-radius:50px"></div></div>

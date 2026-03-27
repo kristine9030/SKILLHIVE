@@ -56,12 +56,14 @@ function get_error($field) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sign In — SkillHive</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
   height: 100vh;
   display: flex;
   align-items: center;
@@ -107,11 +109,11 @@ body {
   display: flex; align-items: center; justify-content: center;
   color: #0f1729; font-size: 1rem;
 }
-.auth-brand-name { font-family: 'Inter',sans-serif; font-weight: 800; font-size: 1.25rem; color: #fff; }
-.auth-tagline { font-family: 'Inter',sans-serif; font-weight: 800; font-size: 1.65rem; line-height: 1.2; color: #fff; margin-bottom: 12px; }
+.auth-brand-name { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1.25rem; color: #fff; }
+.auth-tagline { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1.65rem; line-height: 1.4; color: #fff; margin-bottom: 12px; }
 .auth-sub { color: rgba(255,255,255,.55); font-size: .84rem; line-height: 1.6; margin-bottom: 28px; }
 .auth-stats-row { display: flex; gap: 20px; margin-bottom: 28px; }
-.auth-stat-num { font-family: 'Inter',sans-serif; font-weight: 800; font-size: 1.3rem; color: #fff; }
+.auth-stat-num { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1.3rem; color: #fff; }
 .auth-stat-lbl { font-size: .72rem; color: rgba(255,255,255,.45); margin-top: 2px; }
 .auth-people-row { display: flex; align-items: center; }
 .auth-people-row img {
@@ -131,8 +133,8 @@ body {
 }
 
 .auth-form-header { margin-bottom: 22px; }
-.auth-form-title { font-family: 'Inter',sans-serif; font-weight: 800; font-size: 1.5rem; color: #111; margin-bottom: 4px; }
-.auth-form-sub { color: #999; font-size: .88rem; }
+.auth-form-title { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1.5rem; color: #111; margin-bottom: 4px; }
+.auth-form-sub { color: #999; font-size: .88rem; font-weight: 500; }
 
 .auth-divider { display: flex; align-items: center; gap: 12px; margin: 14px 0; }
 .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: #EBEBEB; }
@@ -141,7 +143,7 @@ body {
 .auth-field { margin-bottom: 14px; }
 .auth-label {
   display: flex; justify-content: space-between; align-items: center;
-  font-size: .8rem; font-weight: 600; color: #444; margin-bottom: 7px;
+  font-size: .8rem; font-weight: 500; color: #444; margin-bottom: 7px;
 }
 .auth-forgot { font-size: .78rem; color: #888; text-decoration: none; font-weight: 500; }
 .auth-forgot:hover { color: #333; }
@@ -150,7 +152,7 @@ body {
 .auth-input {
   width: 100%; padding: 11px 14px 11px 38px;
   border: 1.5px solid #E5E5E5; border-radius: 10px;
-  font-family: 'Inter',sans-serif; font-size: .88rem; color: #111;
+  font-family: 'Poppins', sans-serif; font-size: .88rem; color: #111;
   outline: none; transition: border-color .2s, box-shadow .2s; background: #fff;
 }
 .auth-input:focus { border-color: #111; box-shadow: 0 0 0 3px rgba(0,0,0,.05); }
@@ -182,7 +184,7 @@ body {
   width: 100%; padding: 12px 24px; border-radius: 12px;
   background: #111;
   color: #fff; border: none; cursor: pointer;
-  font-family: 'Inter',sans-serif; font-size: .92rem; font-weight: 700;
+  font-family: 'Poppins', sans-serif; font-size: .92rem; font-weight: 600;
   display: flex; align-items: center; justify-content: center; gap: 10px;
   transition: all .2s; margin-bottom: 14px;
 }

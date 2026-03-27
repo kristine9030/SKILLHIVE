@@ -224,16 +224,47 @@ function marketplace_render(array $data): void
 .market-radio-tile { border:1px solid var(--mk-border); background:#f8f9fc; color:#555d73; border-radius:10px; padding:9px 10px; font-size:.78rem; font-weight:700; text-align:center; cursor:pointer; transition:all .18s ease; }
 .market-radio-tile.active { border-color:#111111; background:#111111; color:#ffffff; }
 .market-main-panel { min-width:0; }
-.market-hero { background:linear-gradient(110deg,#eceffd 0%,#e5eefb 46%,#cabdff 100%); border:1px solid #dbe0f4; border-radius:16px; padding:20px; margin-bottom:12px; position:relative; overflow:hidden; }
-.market-hero::after { content:""; position:absolute; inset:0; background-image:radial-gradient(circle at 84% 28%, rgba(255,255,255,.95) 0 2px, transparent 3px), radial-gradient(circle at 76% 40%, rgba(255,255,255,.75) 0 2px, transparent 3px), radial-gradient(circle at 90% 44%, rgba(255,255,255,.72) 0 2px, transparent 3px); pointer-events:none; }
-.market-hero h2 { margin:0; font-size:2rem; line-height:1.05; color:#212638; font-weight:800; }
-.market-hero p { margin:8px 0 0; max-width:620px; color:#4f5871; font-size:.92rem; }
+.market-hero {
+  background:linear-gradient(115deg,#f8fcff 0%, #dff0ff 48%, #9fd1ff 100%);
+  border:1px solid #c8def5;
+  border-radius:16px;
+  padding:20px;
+  margin-bottom:12px;
+  position:relative;
+  overflow:hidden;
+}
+.market-hero::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:
+    radial-gradient(circle at 84% 28%, rgba(255,255,255,.9) 0 2px, transparent 3px),
+    radial-gradient(circle at 76% 40%, rgba(255,255,255,.7) 0 2px, transparent 3px),
+    radial-gradient(circle at 90% 44%, rgba(255,255,255,.65) 0 2px, transparent 3px);
+  pointer-events:none;
+}
+.market-hero h2 {
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  font-size:2rem;
+  line-height:1.2;
+  color:#111111;
+  font-weight:600;
+  letter-spacing:-0.01em;
+}
+.market-hero p {
+  margin:6px 0 0;
+  max-width:760px;
+  color:#555555;
+  font-size:.95rem;
+  font-weight:500;
+}
 .market-search-row { display:grid; grid-template-columns:1fr 110px; gap:10px; margin-bottom:10px; }
 .market-search-wrap { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--mk-border); border-radius:12px; padding:0 12px; }
 .market-search-wrap i { color:#8d93a7; }
 .market-search-wrap input { border:none; outline:none; width:100%; padding:11px 0; background:transparent; font-size:.88rem; }
 .market-action-btn { border:none; border-radius:12px; background:#111111; color:#ffffff; font-weight:700; font-size:.86rem; cursor:pointer; }
-.market-top-picks { border:1px solid #e4e6ef; border-radius:16px; background:linear-gradient(120deg,#fffaf5 0%,#f7f7ff 50%,#f2fbf6 100%); padding:14px; margin:8px 0 12px; }
+.market-top-picks { border:1px solid #e4e6ef; border-radius:16px; background:linear-gradient(120deg,#ffffff 0%,#f2f8ff 45%,#e8f3ff 100%); padding:14px; margin:8px 0 12px; }
 .market-top-picks-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
 .market-top-picks-title { font-size:1.05rem; color:#1f2937; font-weight:700; line-height:1.25; letter-spacing:.01em; }
 .market-top-picks-sub { font-size:.8rem; color:#6b7280; margin-top:3px; font-weight:500; }
@@ -360,6 +391,11 @@ function marketplace_render(array $data): void
   <form method="get" action="<?php echo marketplace_e($baseUrl); ?>/layout.php" id="marketFilterForm">
     <input type="hidden" name="page" value="student/marketplace">
 
+    <div class="market-hero">
+      <h2>Find your dream internship here</h2>
+      <p>Explore opportunities from SkillHive partner employers and verified external API listings in one place.</p>
+    </div>
+
     <div class="market-layout">
       <aside class="market-filter-panel">
         <div class="market-filter-head">Filter</div>
@@ -449,11 +485,6 @@ function marketplace_render(array $data): void
       </aside>
 
       <div class="market-main-panel">
-        <div class="market-hero">
-          <h2>Find your dream internship here</h2>
-          <p>Explore opportunities from SkillHive partner employers and verified external API listings in one place.</p>
-        </div>
-
         <div class="market-search-row">
           <div class="market-search-wrap">
             <i class="fas fa-search"></i>

@@ -117,7 +117,7 @@ if (!$pageTitle) $pageTitle = 'Dashboard';
   <link rel="stylesheet" href="<?php echo $baseUrl; ?>/assets/css/skillhive.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="role-<?php echo htmlspecialchars((string) $role); ?>">
 
 <div class="app-shell">
   <?php include __DIR__ . '/components/sidebar.php'; ?>

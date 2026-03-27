@@ -193,9 +193,9 @@ $levelPercent = [
 ?>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
 
-#page-profile { overflow-y: auto; background:#fff; color:var(--text); font-family:'Inter',sans-serif; }
+#page-profile { overflow-y: auto; background:#fff; color:var(--text); font-family:'Poppins', sans-serif; font-size:15px; line-height:1.5; }
 .pf-cover { width:100%; height:160px; position:relative; overflow:hidden; cursor:pointer; background:linear-gradient(135deg,#FDE047 0%,#38BDF8 100%); }
 .pf-cover.custom-cover { background-size:cover; background-position:center; background-repeat:no-repeat; }
 .pf-cover-overlay { position:absolute; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; gap:8px; opacity:0; transition:.2s; font-size:.82rem; font-weight:700; color:#fff; }
@@ -207,7 +207,39 @@ $levelPercent = [
 .pf-cover-actions { display:flex; gap:8px; align-items:center; margin-top:14px; flex-wrap:wrap; }
 .pf-upload-cover-btn { display:inline-flex; align-items:center; gap:7px; border:1px solid #d1d5db; padding:8px 12px; border-radius:10px; background:#fff; cursor:pointer; font-size:.78rem; font-weight:600; color:#111827; }
 .pf-upload-cover-btn input { display:none; }
-.pf-header { background:#fff; margin:0 20px; border-radius:22px; padding:0 24px 18px; margin-top:-24px; position:relative; z-index:2; box-shadow:0 10px 30px rgba(15,23,42,.08); }
+.pf-header { background:#fff; margin:0 20px; border-radius:22px; padding:0 24px 18px; margin-top:-24px; position:relative; z-index:2; box-shadow:0 10px 30px rgba(15,23,42,.08); overflow:visible; }
+.pf-header::before {
+  content:'';
+  position:absolute;
+  top:10px;
+  right:12px;
+  width:132px;
+  height:132px;
+  border-radius:50%;
+  background:rgba(107,114,128,.07);
+  box-shadow:
+    -50px 30px 0 -26px rgba(107,114,128,.06),
+    -82px 0 0 -36px rgba(156,163,175,.05);
+  pointer-events:none;
+  z-index:0;
+}
+.pf-header::after {
+  content:'';
+  position:absolute;
+  bottom:10px;
+  left:12px;
+  width:86px;
+  height:86px;
+  border-radius:50%;
+  background:rgba(156,163,175,.09);
+  box-shadow:
+    54px -18px 0 -24px rgba(107,114,128,.07),
+    96px 8px 0 -34px rgba(156,163,175,.04);
+  pointer-events:none;
+  z-index:0;
+}
+.pf-header-top,
+.pf-meta-stack { position:relative; z-index:1; }
 .pf-header-top { display:flex; align-items:center; gap:16px; margin-bottom:12px; }
 .pf-avatar-wrap { position:relative; flex-shrink:0; margin-top:-32px; }
 .pf-avatar { width:86px; height:86px; border-radius:50%; border:5px solid #fff; background:linear-gradient(135deg,#FDE68A,#F9A8D4,#C4B5FD); display:flex; align-items:center; justify-content:center; font-size:1.25rem; font-weight:800; box-shadow:0 6px 18px rgba(15,23,42,.14); color:#111; position:relative; overflow:hidden; cursor:pointer; }
@@ -217,7 +249,11 @@ $levelPercent = [
 .pf-avatar:hover .pf-avatar-edit-layer { opacity:1; }
 .pf-online-dot { position:absolute; bottom:7px; right:7px; width:14px; height:14px; background:#22C55E; border:3px solid #fff; border-radius:50%; }
 .pf-header-info { flex:1; padding-top:16px; min-width:0; }
-.pf-name { font-family:'Poppins','Inter',sans-serif; font-size:1.22rem; font-weight:700; color:#0F172A; line-height:1.2; letter-spacing:-0.01em; }
+.pf-name { font-family:'Poppins',sans-serif; font-size:1.22rem; font-weight:600; color:#0F172A; line-height:1.4; letter-spacing:-0.01em; }
+.pf-follow-summary { display:flex; align-items:center; gap:8px; margin-top:4px; font-size:.95rem; color:#475569; font-weight:600; flex-wrap:wrap; }
+.pf-follow-link { color:inherit; text-decoration:none; cursor:pointer; }
+.pf-follow-link:hover { color:#0F172A; }
+.pf-follow-dot { color:#94A3B8; font-size:.75rem; }
 .pf-role-line { font-size:.9rem; color:#64748B; margin-top:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .pf-role-dot { width:4px; height:4px; border-radius:50%; background:#CBD5E1; }
 .pf-header-actions { display:flex; gap:10px; align-items:center; padding-top:4px; margin-left:auto; }
@@ -236,15 +272,12 @@ $levelPercent = [
 .pf-meta-stat.active-nav .pf-meta-stat-val,
 .pf-meta-stat.clickable:hover .pf-meta-stat-lbl { color:var(--text); }
 .pf-meta-stat.active-nav .pf-meta-stat-lbl { color:var(--text); }
-.pf-meta-stat-val { font-size:1.22rem; font-weight:800; color:#0F172A; line-height:1; }
+.pf-meta-stat-val { font-size:1.22rem; font-weight:600; color:#0F172A; line-height:1.4; }
 .pf-meta-stat-lbl { font-size:.86rem; color:#64748B; }
-.pf-social-strip { display:flex; gap:8px; padding:12px 20px 4px; flex-wrap:wrap; }
-.pf-soc-chip { display:flex; align-items:center; gap:6px; padding:5px 12px; border-radius:50px; font-size:.72rem; font-weight:600; border:1.5px solid #E2E8F0; background:#fff; text-decoration:none; font-family:inherit; cursor:pointer; }
-.pf-soc-chip.placeholder-link { cursor:pointer; opacity:1; }
-.pf-body { display:grid; grid-template-columns:230px 1fr; gap:16px; padding:16px 20px 24px; }
+.pf-body { display:grid; grid-template-columns:230px 1fr; gap:16px; padding:12px 20px 24px; }
 .pf-col-left, .pf-col-main { display:flex; flex-direction:column; gap:12px; }
 .pf-card { background:#fff; border-radius:14px; padding:16px 18px; box-shadow:0 1px 6px rgba(0,0,0,.05); border:1px solid #F1F5F9; }
-.pf-card-title { font-size:.7rem; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:.08em; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
+.pf-card-title { font-size:.7rem; font-weight:600; color:#0F172A; text-transform:uppercase; letter-spacing:.08em; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
 .pf-card-title-edit { font-size:.65rem; color:var(--text); font-weight:600; cursor:pointer; text-transform:none; letter-spacing:0; }
 .pf-tags { display:flex; flex-wrap:wrap; gap:5px; }
 .pf-tag { padding:4px 10px; border-radius:50px; font-size:.71rem; font-weight:600; background:#F8FAFC; color:#475569; border:1px solid #E2E8F0; display:inline-flex; align-items:center; gap:6px; }
@@ -284,7 +317,7 @@ $levelPercent = [
 .pf-rec-approve { flex:1; padding:8px; border-radius:8px; border:none; background:#22C55E; color:#fff; font-size:.74rem; font-weight:700; }
 .pf-rec-decline { padding:8px 14px; border-radius:8px; border:1px solid #E2E8F0; background:#fff; color:#64748B; font-size:.74rem; }
 .pf-search-bar { display:flex; align-items:center; gap:8px; border:1.5px solid #E2E8F0; border-radius:11px; padding:9px 14px; background:#fff; }
-.pf-search-bar input { border:none; outline:none; font-family:'Inter',sans-serif; font-size:.82rem; flex:1; color:#0F172A; background:transparent; }
+.pf-search-bar input { border:none; outline:none; font-family:'Poppins', sans-serif; font-size:.82rem; flex:1; color:#0F172A; background:transparent; }
 .pf-filter-pills { display:flex; gap:6px; margin-top:8px; }
 .pf-filter-pill { padding:5px 14px; border-radius:50px; font-size:.72rem; font-weight:600; border:1.5px solid #E2E8F0; background:#fff; color:#64748B; }
 .pf-filter-pill.active { background:#111827; color:#fff; border-color:#111827; }
@@ -325,14 +358,38 @@ $levelPercent = [
 .pf-modal-scroll { overflow-y:auto; padding:20px 24px; flex:1; }
 .pf-modal-foot { display:flex; gap:8px; justify-content:flex-end; padding:14px 24px 18px; border-top:1px solid #F1F5F9; }
 .pf-empty-link-copy { font-size:.84rem; color:#475569; line-height:1.7; }
+
+/* Dashboard-like profile typography scale */
+.pf-body { --pf-font-scale: 1.15; }
+.pf-body .pf-card-title { font-size: calc(.7rem * var(--pf-font-scale)); }
+.pf-body .pf-card-title-edit { font-size: calc(.65rem * var(--pf-font-scale)); }
+.pf-body .pf-tag { font-size: calc(.71rem * var(--pf-font-scale)); }
+.pf-body .pf-vlabel { font-size: calc(.75rem * var(--pf-font-scale)); }
+.pf-body .pf-plabel { font-size: calc(.74rem * var(--pf-font-scale)); }
+.pf-body .pf-ppct { font-size: calc(.7rem * var(--pf-font-scale)); }
+.pf-body .pf-tab-btn { font-size: calc(.78rem * var(--pf-font-scale)); }
+.pf-body .pf-about-intro { font-size: calc(.83rem * var(--pf-font-scale)); }
+.pf-body .pf-about-point { font-size: calc(.8rem * var(--pf-font-scale)); }
+.pf-body .pf-exp-title { font-size: calc(.84rem * var(--pf-font-scale)); }
+.pf-body .pf-exp-sub { font-size: calc(.75rem * var(--pf-font-scale)); }
+.pf-body .pf-exp-date { font-size: calc(.71rem * var(--pf-font-scale)); }
 .pf-field { margin-bottom:12px; }
 .pf-field label { display:block; font-size:.76rem; font-weight:600; color:#374151; margin-bottom:4px; }
-.pf-field input, .pf-field select, .pf-field textarea { width:100%; padding:9px 13px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:.83rem; color:#0F172A; outline:none; font-family:'Inter',sans-serif; background:#FAFAFA; }
+.pf-field input, .pf-field select, .pf-field textarea { width:100%; padding:9px 13px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:.83rem; color:#0F172A; outline:none; font-family:'Poppins', sans-serif; background:#FAFAFA; }
 .pf-field-2col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .pf-cancel-btn { padding:9px 22px; border-radius:50px; border:1.5px solid #E2E8F0; background:#fff; font-size:.8rem; font-weight:600; cursor:pointer; color:#374151; }
 .pf-save-btn { padding:9px 26px; border-radius:50px; border:none; background:linear-gradient(135deg,#111827,#374151); color:#fff; font-size:.8rem; font-weight:700; cursor:pointer; }
 .pf-chip-action { background:none; border:none; color:#6b7280; cursor:pointer; font-size:.78rem; }
 .pf-upload-input { margin-top:8px; }
+.pf-resume-file { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid #E2E8F0; border-radius:12px; background:linear-gradient(135deg,#ffffff,#F8FAFC); margin-bottom:10px; }
+.pf-resume-file .pf-vlabel { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pf-resume-upload-card { margin-top:10px; border:1px dashed #CBD5E1; border-radius:12px; background:#F8FAFC; padding:12px; display:flex; flex-direction:column; gap:10px; }
+.pf-resume-upload-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.pf-resume-picker { display:inline-flex; align-items:center; gap:8px; border:1.5px solid #D1D5DB; border-radius:10px; background:#fff; color:#111827; font-size:.76rem; font-weight:700; padding:8px 12px; cursor:pointer; }
+.pf-resume-picker:hover { border-color:#9CA3AF; background:#F9FAFB; }
+.pf-resume-picker input { display:none; }
+.pf-resume-selected { font-size:.74rem; color:#64748B; font-weight:500; }
+.pf-resume-hint { font-size:.7rem; color:#94A3B8; }
 @media (max-width: 980px) {
   .pf-body { grid-template-columns:1fr; }
   .pf-header { margin:0 12px; margin-top:-24px; }
@@ -375,6 +432,11 @@ $levelPercent = [
     </div>
     <div class="pf-header-info">
       <div class="pf-name"><?php echo htmlspecialchars($fullName); ?></div>
+      <div class="pf-follow-summary">
+        <a class="pf-follow-link" id="pfFollowersShortcut" onclick="openFollowersPanel()"><span id="pfHeaderFollowersCount"><?php echo $followersCount; ?></span> followers</a>
+        <span class="pf-follow-dot">&bull;</span>
+        <a class="pf-follow-link" id="pfFollowingShortcut" onclick="openFollowingPanel()"><span id="pfHeaderFollowingCount"><?php echo $followingCount; ?></span> following</a>
+      </div>
       <div class="pf-role-line">
         <span><?php echo htmlspecialchars(($student['headline'] ?? ($student['program'] ?? 'Student'))); ?></span>
         <div class="pf-role-dot"></div>
@@ -395,30 +457,7 @@ $levelPercent = [
       <div class="pf-meta-item"><i class="fas fa-graduation-cap"></i><span><?php echo htmlspecialchars($student['program'] ?? 'Program not set'); ?></span></div>
       <div class="pf-meta-item"><i class="fas fa-phone"></i><span><?php echo htmlspecialchars($student['student_number'] ?? 'Student number not set'); ?></span></div>
     </div>
-    <div class="pf-meta-row">
-      <div class="pf-meta-stat"><div class="pf-meta-stat-val"><?php echo count($studentSkills); ?></div><div class="pf-meta-stat-lbl">Skills</div></div>
-      <div class="pf-meta-stat clickable" id="pfFollowingShortcut" onclick="openFollowingPanel()"><div class="pf-meta-stat-val" id="pfHeaderFollowingCount"><?php echo $followingCount; ?></div><div class="pf-meta-stat-lbl">Following</div></div>
-      <div class="pf-meta-stat clickable" id="pfFollowersShortcut" onclick="openFollowersPanel()"><div class="pf-meta-stat-val" id="pfHeaderFollowersCount"><?php echo $followersCount; ?></div><div class="pf-meta-stat-lbl">Followers</div></div>
-    </div>
   </div>
-</div>
-
-<div class="pf-social-strip">
-  <?php if ($googleUrl !== ''): ?>
-    <a class="pf-soc-chip" style="color:#4285F4;border-color:#DBEAFE" href="<?php echo htmlspecialchars($googleUrl); ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-google"></i>Google</a>
-  <?php else: ?>
-    <button class="pf-soc-chip placeholder-link" style="color:#4285F4;border-color:#DBEAFE" type="button" onclick="openMissingLinkModal('Google')" title="Google link not added"><i class="fab fa-google"></i>Google</button>
-  <?php endif; ?>
-  <?php if ($gmailUrl !== ''): ?>
-    <a class="pf-soc-chip" style="color:#EA4335;border-color:#FEE2E2" href="<?php echo htmlspecialchars($gmailUrl); ?>"><i class="fas fa-envelope"></i>Gmail</a>
-  <?php else: ?>
-    <button class="pf-soc-chip placeholder-link" style="color:#EA4335;border-color:#FEE2E2" type="button" onclick="openMissingLinkModal('Gmail')" title="Gmail link not added"><i class="fas fa-envelope"></i>Gmail</button>
-  <?php endif; ?>
-  <?php if ($discordUrl !== ''): ?>
-    <a class="pf-soc-chip" style="color:#5865F2;border-color:#E0E7FF" href="<?php echo htmlspecialchars($discordUrl); ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-discord"></i>Discord</a>
-  <?php else: ?>
-    <button class="pf-soc-chip placeholder-link" style="color:#5865F2;border-color:#E0E7FF" type="button" onclick="openMissingLinkModal('Discord')" title="Discord link not added"><i class="fab fa-discord"></i>Discord</button>
-  <?php endif; ?>
 </div>
 
 <div class="pf-body">
@@ -499,7 +538,7 @@ $levelPercent = [
     <div class="pf-card">
       <div class="pf-card-title">Resume</div>
       <?php if ($resumeFile !== ''): ?>
-        <div class="pf-vitem">
+        <div class="pf-resume-file">
           <div class="pf-vicon" style="background:#FFF7ED"><i class="fas fa-file-pdf" style="color:#F97316"></i></div>
           <span class="pf-vlabel"><?php echo htmlspecialchars($resumeFile); ?></span>
           <a href="<?php echo htmlspecialchars($resumePath); ?>" target="_blank" class="pf-vcheck">View</a>
@@ -507,8 +546,18 @@ $levelPercent = [
       <?php endif; ?>
       <form method="post" enctype="multipart/form-data" class="pf-upload-input">
         <input type="hidden" name="action" value="upload_resume">
-        <input type="file" name="resume" accept=".pdf,.doc,.docx" required>
-        <button class="pf-save-btn" style="margin-top:8px;" type="submit">Upload Resume</button>
+        <div class="pf-resume-upload-card">
+          <div class="pf-resume-upload-row">
+            <label class="pf-resume-picker">
+              <i class="fas fa-paperclip"></i>
+              <span>Choose File</span>
+              <input id="pfResumeFileInput" type="file" name="resume" accept=".pdf,.doc,.docx" required>
+            </label>
+            <span id="pfResumeSelectedText" class="pf-resume-selected">No file selected</span>
+          </div>
+          <div class="pf-resume-hint">Accepted formats: PDF, DOC, DOCX</div>
+          <button class="pf-save-btn" type="submit">Upload Resume</button>
+        </div>
       </form>
     </div>
 
@@ -1126,6 +1175,16 @@ document.addEventListener('DOMContentLoaded', function () {
         preview.style.background = 'url(' + e.target.result + ') center / cover no-repeat';
       };
       reader.readAsDataURL(file);
+    });
+  }
+
+  var resumeFileInput = document.getElementById('pfResumeFileInput');
+  if (resumeFileInput) {
+    resumeFileInput.addEventListener('change', function () {
+      var selectedText = document.getElementById('pfResumeSelectedText');
+      if (!selectedText) return;
+      var file = resumeFileInput.files && resumeFileInput.files[0] ? resumeFileInput.files[0] : null;
+      selectedText.textContent = file ? file.name : 'No file selected';
     });
   }
 });

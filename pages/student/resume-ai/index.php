@@ -862,7 +862,7 @@ $defaultContact = trim((string) ($student['email'] ?? ($_SESSION['user_email'] ?
       + '<!doctype html><html><head><meta charset="utf-8">'
       + '<title>SkillHive CV</title>'
       + '<style>'
-      + 'body{margin:0;background:#f3f4f6;font-family:Segoe UI,Arial,sans-serif;padding:24px;}'
+      + 'body{margin:0;background:#f3f4f6;font-family:Poppins,sans-serif;padding:24px;}'
       + '.paper{max-width:794px;min-height:1123px;margin:0 auto;background:#fffefc;border:1px solid #cbd5e1;box-shadow:none;padding:28px;}'
       + '.cvb-header{border-bottom:1px solid #e2e8f0;padding-bottom:10px;margin-bottom:12px;}'
       + '.cvb-name{font-size:1.1rem;font-weight:700;color:#0f172a;}'
