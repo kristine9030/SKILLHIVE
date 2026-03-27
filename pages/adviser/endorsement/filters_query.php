@@ -25,7 +25,7 @@ if (!function_exists('adviser_endorsement_get_filter_options')) {
         }
 
         usort($statusOptions, static function (string $a, string $b): int {
-            $weight = ['Pending' => 1, 'Endorsed' => 2, 'Declined' => 3];
+            $weight = ['Pending' => 1, 'Approved' => 2, 'Rejected' => 3];
             $wa = $weight[$a] ?? 99;
             $wb = $weight[$b] ?? 99;
             return $wa === $wb ? strcmp($a, $b) : ($wa <=> $wb);

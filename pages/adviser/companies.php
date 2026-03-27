@@ -29,6 +29,51 @@ $filterOptions = $pageData['filter_options'];
 $rows = $pageData['rows'];
 ?>
 
+<style>
+  .company-grid .company-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .company-grid .company-card-header-main {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .company-grid .company-name {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.3;
+    min-height: 2.6em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .company-grid .company-meta {
+    display: block;
+    font-size: .78rem;
+    color: var(--text-light);
+    line-height: 1.35;
+    min-height: 2.1em;
+    overflow: hidden;
+  }
+
+  .company-grid .company-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+  }
+
+  .company-grid .company-status-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+  }
+</style>
+
 <div class="page-header">
   <div>
     <h2 class="page-title">Partner Companies</h2>
@@ -73,20 +118,22 @@ $rows = $pageData['rows'];
       $ratingText = adviser_companies_rating_text($row['avg_rating'] ?? null);
       ?>
       <div class="company-card">
-        <div class="company-card-header" style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+        <div class="company-card-header" style="display:flex;align-items:center;gap:14px;margin-bottom:8px">
           <div class="avatar-placeholder" style="width:50px;height:50px;border-radius:12px;background:<?php echo adviser_companies_escape(adviser_companies_gradient((int)$index)); ?>;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.1rem"><?php echo adviser_companies_escape(adviser_companies_initial($companyName)); ?></div>
-          <div>
-            <h4 style="margin:0;font-size:1rem"><?php echo adviser_companies_escape($companyName); ?></h4>
-            <span style="font-size:.78rem;color:var(--text-light)"><?php echo adviser_companies_escape($industry !== '' ? $industry : 'Unspecified'); ?> &middot; <?php echo adviser_companies_escape($location !== '' ? $location : 'No address provided'); ?></span>
+          <div class="company-card-header-main">
+            <h4 class="company-name"><?php echo adviser_companies_escape($companyName); ?></h4>
+            <span class="company-meta"><?php echo adviser_companies_escape($industry !== '' ? $industry : 'Unspecified'); ?> &middot; <?php echo adviser_companies_escape($location !== '' ? $location : 'No address provided'); ?></span>
           </div>
-          <span class="status-badge <?php echo adviser_companies_escape($badgeClass); ?>" style="margin-left:auto"><?php echo adviser_companies_escape($statusLabel); ?></span>
+        </div>
+        <div class="company-status-row">
+          <span class="status-badge <?php echo adviser_companies_escape($badgeClass); ?>"><?php echo adviser_companies_escape($statusLabel); ?></span>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;font-size:.83rem;color:var(--text-light);margin-bottom:12px">
           <div><i class="fas fa-users" style="width:18px;color:var(--text-lighter)"></i> <?php echo (int)($row['current_interns'] ?? 0); ?> current interns</div>
           <div><i class="fas fa-star" style="width:18px;color:#F59E0B"></i> <?php echo adviser_companies_escape($ratingText); ?> average rating</div>
           <div><i class="fas fa-globe" style="width:18px;color:var(--text-lighter)"></i> <?php echo adviser_companies_escape($website !== '' ? $website : 'N/A'); ?></div>
         </div>
-        <div style="display:flex;gap:8px">
+        <div class="company-card-actions">
           <?php if ($website !== ''): ?>
             <a class="btn-outline" style="flex:1;text-align:center" href="<?php echo adviser_companies_escape(preg_match('/^https?:\/\//i', $website) ? $website : ('https://' . $website)); ?>" target="_blank" rel="noopener noreferrer"><i class="fas fa-eye"></i> View</a>
           <?php else: ?>

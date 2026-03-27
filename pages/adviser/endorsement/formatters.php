@@ -40,10 +40,12 @@ if (!function_exists('adviser_endorsement_normalize_status')) {
             'reviewing' => 'Pending',
             'for review' => 'Pending',
             'submitted' => 'Pending',
-            'endorsed' => 'Endorsed',
-            'approved' => 'Endorsed',
-            'declined' => 'Declined',
-            'rejected' => 'Declined',
+            'endorsed' => 'Approved',
+            'approved' => 'Approved',
+            'declined' => 'Rejected',
+            'rejected' => 'Rejected',
+            'request more docs' => 'Pending',
+            'needs more docs' => 'Pending',
         ];
 
         return $map[$raw] ?? 'Pending';
@@ -54,10 +56,10 @@ if (!function_exists('adviser_endorsement_status_class')) {
     function adviser_endorsement_status_class(?string $status): string
     {
         $normalized = adviser_endorsement_normalize_status($status);
-        if ($normalized === 'Endorsed') {
+        if ($normalized === 'Approved') {
             return 'status-accepted';
         }
-        if ($normalized === 'Declined') {
+        if ($normalized === 'Rejected') {
             return 'status-rejected';
         }
         return 'status-pending';
