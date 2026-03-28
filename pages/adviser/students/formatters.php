@@ -99,3 +99,50 @@ if (!function_exists('adviser_students_requirements_summary')) {
         ];
     }
 }
+
+if (!function_exists('adviser_students_year_level_label')) {
+    function adviser_students_year_level_label($value): string
+    {
+        $raw = trim((string)($value ?? ''));
+        if ($raw === '') {
+            return 'N/A';
+        }
+
+        if (preg_match('/^\d+$/', $raw) === 1) {
+            $number = (int)$raw;
+            $suffix = 'th';
+            if (($number % 100 < 11 || $number % 100 > 13)) {
+                if ($number % 10 === 1) {
+                    $suffix = 'st';
+                } elseif ($number % 10 === 2) {
+                    $suffix = 'nd';
+                } elseif ($number % 10 === 3) {
+                    $suffix = 'rd';
+                }
+            }
+
+            return $number . $suffix;
+        }
+
+        return $raw;
+    }
+}
+
+if (!function_exists('adviser_students_avatar_gradient')) {
+    function adviser_students_avatar_gradient($seed): string
+    {
+        $gradients = [
+            'linear-gradient(135deg,#4f46e5 0%,#3b82f6 100%)',
+            'linear-gradient(135deg,#f97316 0%,#f43f5e 100%)',
+            'linear-gradient(135deg,#14b8a6 0%,#22c55e 100%)',
+            'linear-gradient(135deg,#7c3aed 0%,#2563eb 100%)',
+            'linear-gradient(135deg,#ef4444 0%,#f59e0b 100%)',
+            'linear-gradient(135deg,#8b5cf6 0%,#6366f1 100%)',
+            'linear-gradient(135deg,#0ea5e9 0%,#3b82f6 100%)',
+            'linear-gradient(135deg,#eab308 0%,#22c55e 100%)',
+        ];
+
+        $index = abs((int)$seed) % count($gradients);
+        return $gradients[$index];
+    }
+}

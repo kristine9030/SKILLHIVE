@@ -12,6 +12,10 @@ if (!function_exists('adviser_dashboard_get_stats')) {
                 (SELECT COUNT(DISTINCT aa.student_id)
                  FROM adviser_assignment aa
                  WHERE aa.adviser_id = :students_adviser_id) AS my_students,
+                (SELECT COUNT(DISTINCT o.student_id)
+                 FROM (SELECT DISTINCT student_id FROM adviser_assignment WHERE adviser_id = :placed_adviser_id) aa
+                 INNER JOIN ojt_record o ON o.student_id = aa.student_id
+                ) AS placed_students,
                 (SELECT COUNT(*)
                  FROM endorsement e
                  WHERE e.adviser_id = :endorsed_adviser_id
@@ -24,10 +28,11 @@ if (!function_exists('adviser_dashboard_get_stats')) {
                  FROM (SELECT DISTINCT student_id FROM adviser_assignment WHERE adviser_id = :partners_adviser_id) aa
                  INNER JOIN ojt_record o ON o.student_id = aa.student_id
                  INNER JOIN internship i ON i.internship_id = o.internship_id
-                 ) AS partner_companies'
+                ) AS partner_companies'
         );
         $stmt->execute([
             ':students_adviser_id' => $adviserId,
+            ':placed_adviser_id' => $adviserId,
             ':endorsed_adviser_id' => $adviserId,
             ':pending_adviser_id' => $adviserId,
             ':partners_adviser_id' => $adviserId,
@@ -36,6 +41,7 @@ if (!function_exists('adviser_dashboard_get_stats')) {
         $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
         return [
             'my_students' => (int)($row['my_students'] ?? 0),
+            'placed_students' => (int)($row['placed_students'] ?? 0),
             'endorsed' => (int)($row['endorsed'] ?? 0),
             'pending_review' => (int)($row['pending_review'] ?? 0),
             'partner_companies' => (int)($row['partner_companies'] ?? 0),

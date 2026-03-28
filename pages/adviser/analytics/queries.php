@@ -11,7 +11,8 @@ function adviser_analytics_get_stats($pdo, $adviser_id) {
         'placed' => 0,
         'searching' => 0,
         'completed_ojt' => 0,
-        'in_progress' => 0
+        'in_progress' => 0,
+        'hiring_companies' => 0
     ];
 
     try {
@@ -23,6 +24,16 @@ function adviser_analytics_get_stats($pdo, $adviser_id) {
         ');
         $stmtTotal->execute([$adviser_id]);
         $stats['total_students'] = (int)$stmtTotal->fetchColumn();
+
+        $stmtCompanies = $pdo->prepare('
+            SELECT COUNT(DISTINCT i.employer_id) as count
+            FROM adviser_assignment aa
+            INNER JOIN ojt_record ojt ON ojt.student_id = aa.student_id
+            INNER JOIN internship i ON i.internship_id = ojt.internship_id
+            WHERE aa.adviser_id = ?
+        ');
+        $stmtCompanies->execute([$adviser_id]);
+        $stats['hiring_companies'] = (int)$stmtCompanies->fetchColumn();
 
         // Students with completed OJT
         $stmtCompleted = $pdo->prepare('
@@ -130,6 +141,9 @@ function adviser_analytics_get_top_companies($pdo, $adviser_id) {
             SELECT 
                 e.employer_id,
                 e.company_name,
+                COALESCE(NULLIF(TRIM(e.industry), \'\'), \'General\') as industry,
+                COALESCE(NULLIF(TRIM(e.verification_status), \'\'), \'Pending\') as verification_status,
+                COALESCE(NULLIF(TRIM(e.company_badge_status), \'\'), \'None\') as company_badge_status,
                 COUNT(DISTINCT ojt.student_id) as intern_count,
                 ROUND(AVG((COALESCE(ae.final_grade, 0) + COALESCE((ee.technical_score + ee.behavioral_score) / 2, 0)) / 2), 1) as avg_rating,
                 ROUND((COUNT(DISTINCT CASE WHEN LOWER(TRIM(ojt.completion_status)) = \'completed\' THEN ojt.student_id END) / 
@@ -141,9 +155,9 @@ function adviser_analytics_get_top_companies($pdo, $adviser_id) {
             LEFT JOIN adviser_evaluation ae ON ae.student_id = ojt.student_id AND ae.internship_id = ojt.internship_id
             LEFT JOIN employer_evaluation ee ON ee.student_id = ojt.student_id AND ee.internship_id = ojt.internship_id
             WHERE aa.adviser_id = ?
-            GROUP BY e.employer_id, e.company_name
+            GROUP BY e.employer_id, e.company_name, e.industry, e.verification_status, e.company_badge_status
             ORDER BY intern_count DESC
-            LIMIT 5
+            LIMIT 8
         ');
         $stmt->execute([$adviser_id]);
         $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);

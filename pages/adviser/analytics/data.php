@@ -4,16 +4,27 @@
 require_once __DIR__ . '/queries.php';
 require_once __DIR__ . '/formatters.php';
 
-$adviser_id = $_SESSION['user_id'] ?? null;
+$adviser_id = (int)($_SESSION['adviser_id'] ?? ($_SESSION['user_id'] ?? 0));
 $data = [
-    'stats' => [],
+    'stats' => [
+        'placement_rate' => 0,
+        'avg_eval_rating' => 0,
+        'avg_ojt_hours' => 0,
+        'completion_rate' => 0,
+        'total_students' => 0,
+        'placed' => 0,
+        'searching' => 0,
+        'completed_ojt' => 0,
+        'in_progress' => 0,
+        'hiring_companies' => 0,
+    ],
     'placement_by_dept' => [],
     'top_companies' => [],
     'top_skills' => [],
-    'trends' => []
+    'trends' => [],
 ];
 
-if ($adviser_id) {
+if ($adviser_id > 0) {
     try {
         $data['stats'] = adviser_analytics_get_stats($pdo, $adviser_id);
         $data['placement_by_dept'] = adviser_analytics_get_placement_by_dept($pdo, $adviser_id);

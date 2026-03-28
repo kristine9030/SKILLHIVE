@@ -7,6 +7,7 @@
 require_once __DIR__ . '/formatters.php';
 require_once __DIR__ . '/filters_query.php';
 require_once __DIR__ . '/companies_query.php';
+require_once __DIR__ . '/actions.php';
 
 if (!function_exists('getAdviserCompaniesPageData')) {
     function getAdviserCompaniesPageData(PDO $pdo, int $adviserId, array $filters = []): array

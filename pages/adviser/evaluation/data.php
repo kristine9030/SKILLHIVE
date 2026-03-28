@@ -26,7 +26,7 @@ if (!function_exists('getAdviserEvaluationPageData')) {
                 $gradeTargets[] = [
                     'student_id' => (int)($row['student_id'] ?? 0),
                     'internship_id' => (int)($row['internship_id'] ?? 0),
-                    'label' => trim((string)($row['student_name'] ?? 'Student') . ' — ' . (string)($row['program'] ?? 'N/A') . ' (' . (string)($row['company_name'] ?? 'Company') . ')'),
+                    'label' => trim((string)($row['student_name'] ?? 'Student') . ' - ' . (string)($row['company_name'] ?? 'Company')),
                 ];
             }
         }

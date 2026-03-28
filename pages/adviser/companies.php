@@ -3,153 +3,747 @@ require_once __DIR__ . '/../../backend/db_connect.php';
 require_once __DIR__ . '/companies/data.php';
 
 $adviserId = (int)($_SESSION['adviser_id'] ?? ($userId ?? ($_SESSION['user_id'] ?? 0)));
+$errorMessage = '';
 
 $currentFilters = [
-  'industry' => trim((string)($_GET['industry'] ?? '')),
-  'status' => trim((string)($_GET['status'] ?? '')),
-  'search' => trim((string)($_GET['search'] ?? '')),
+    'industry' => trim((string)($_GET['industry'] ?? '')),
+    'status' => trim((string)($_GET['status'] ?? '')),
+    'search' => trim((string)($_GET['search'] ?? '')),
 ];
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $adviserId > 0) {
+    $action = trim((string)($_POST['action'] ?? ''));
+    $employerId = (int)($_POST['employer_id'] ?? 0);
+
+    if ($action === 'approve' || $action === 'reject') {
+        try {
+            $result = adviser_companies_update_verification_status($pdo, $employerId, $action);
+            if (empty($result['success'])) {
+                $errorMessage = (string)($result['error'] ?? 'Unable to update company status.');
+            }
+        } catch (Throwable $e) {
+            $errorMessage = 'Action failed. Please try again.';
+        }
+    }
+
+    if ($errorMessage === '') {
+        $query = http_build_query([
+            'page' => 'adviser/companies',
+            'industry' => trim((string)($_POST['industry'] ?? $currentFilters['industry'] ?? '')),
+            'status' => trim((string)($_POST['status'] ?? $currentFilters['status'] ?? '')),
+            'search' => trim((string)($_POST['search'] ?? $currentFilters['search'] ?? '')),
+        ]);
+        header('Location: ' . $baseUrl . '/layout.php?' . $query);
+        exit;
+    }
+}
+
 $pageData = [
-  'selected' => ['industry' => '', 'status' => '', 'search' => ''],
-  'filter_options' => ['industries' => [], 'statuses' => []],
-  'rows' => [],
+    'selected' => ['industry' => '', 'status' => '', 'search' => ''],
+    'filter_options' => ['industries' => [], 'statuses' => []],
+    'rows' => [],
 ];
 
 if ($adviserId > 0) {
-  try {
-    $pageData = getAdviserCompaniesPageData($pdo, $adviserId, $currentFilters);
-  } catch (Throwable $e) {
-    $pageData = $pageData;
-  }
+    try {
+        $pageData = getAdviserCompaniesPageData($pdo, $adviserId, $currentFilters);
+    } catch (Throwable $e) {
+        $pageData = $pageData;
+    }
 }
 
 $selected = $pageData['selected'];
-$filterOptions = $pageData['filter_options'];
 $rows = $pageData['rows'];
+
+if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="adviser-company-verification-queue.csv"');
+
+    $output = fopen('php://output', 'w');
+    if ($output !== false) {
+        fputcsv($output, ['Company', 'Industry', 'Submitted', 'Documents', 'Risk', 'Suggested Action']);
+        foreach ($rows as $row) {
+            $documents = adviser_companies_documents_meta($row);
+            $risk = adviser_companies_risk_meta($row);
+            $actionMeta = adviser_companies_action_meta($row);
+
+            fputcsv($output, [
+                trim((string)($row['company_name'] ?? 'Company')),
+                trim((string)($row['industry'] ?? 'Unspecified')),
+                adviser_companies_format_date((string)($row['created_at'] ?? '')),
+                $documents['label'],
+                $risk['label'],
+                $actionMeta['label'],
+            ]);
+        }
+        fclose($output);
+    }
+    exit;
+}
 ?>
 
 <style>
-  .company-grid .company-card {
+  .adviser-companies-page {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    gap: 18px;
+    color: var(--text);
+    font-size: var(--font-size-body);
   }
 
-  .company-grid .company-card-header-main {
-    min-width: 0;
-    flex: 1;
+  .adviser-companies-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 22px;
   }
 
-  .company-grid .company-name {
+  .adviser-companies-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .adviser-companies-title {
     margin: 0;
     font-size: 1rem;
-    line-height: 1.3;
-    min-height: 2.6em;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-weight: 700;
+    color: var(--text);
   }
 
-  .company-grid .company-meta {
-    display: block;
-    font-size: .78rem;
-    color: var(--text-light);
-    line-height: 1.35;
-    min-height: 2.1em;
-    overflow: hidden;
+  .adviser-companies-subtitle {
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+    color: var(--text3);
   }
 
-  .company-grid .company-card-actions {
-    display: flex;
+  .adviser-companies-export {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     gap: 8px;
-    margin-top: auto;
+    min-height: 36px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: #111;
+    color: #fff;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
   }
 
-  .company-grid .company-status-row {
+  .adviser-companies-export:hover {
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .adviser-companies-table-wrap {
+    overflow-x: auto;
+  }
+
+  .adviser-companies-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .adviser-companies-table th {
+    padding: 10px 14px 12px;
+    text-align: left;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text3);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .adviser-companies-table td {
+    padding: 14px;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.86rem;
+    color: var(--text);
+  }
+
+  .adviser-companies-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .adviser-companies-company {
     display: flex;
-    justify-content: flex-end;
-    margin-bottom: 12px;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+  }
+
+  .adviser-companies-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.86rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .adviser-companies-company-name {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .adviser-companies-company-link {
+    display: inline-flex;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .adviser-companies-company-link:hover .adviser-companies-company-name {
+    color: var(--text2);
+  }
+
+  .adviser-companies-meta {
+    margin: 4px 0 0;
+    font-size: 0.76rem;
+    color: var(--text3);
+  }
+
+  .adviser-companies-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 76px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .adviser-companies-badge.is-success {
+    background: #e1f8ee;
+    color: #10a56f;
+  }
+
+  .adviser-companies-badge.is-warning {
+    background: #fff2dd;
+    color: #ef9a17;
+  }
+
+  .adviser-companies-badge.is-danger {
+    background: #ffe8e6;
+    color: #ff4d4f;
+  }
+
+  .adviser-companies-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text2);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .adviser-companies-action.primary {
+    background: #111;
+    border-color: #111;
+    color: #fff;
+  }
+
+  .adviser-companies-action.secondary {
+    background: #fff;
+    color: #4b5563;
+  }
+
+  .adviser-companies-action.danger {
+    border-color: #ff4d4f;
+    color: #ff4d4f;
+    background: #fff;
+  }
+
+  .adviser-companies-empty {
+    padding: 22px;
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    background: #fafafa;
+    color: #6b7280;
+    font-size: 0.82rem;
+  }
+
+  .adviser-companies-error {
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid #fecaca;
+    background: #fff1f2;
+    color: #b91c1c;
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+
+  .company-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, .28);
+    backdrop-filter: blur(3px);
+    z-index: 1200;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .24s ease, visibility .24s ease;
+  }
+
+  .company-modal.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .company-modal-dialog {
+    width: min(620px, 100%);
+    max-height: calc(100vh - 40px);
+    overflow: auto;
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, .22);
+    padding: 18px;
+    transform: translateY(8px) scale(.986);
+    opacity: 0;
+    transition: transform .26s cubic-bezier(.2,.8,.2,1), opacity .22s ease;
+  }
+
+  .company-modal.is-open .company-modal-dialog {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+
+  .company-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .company-modal-title {
+    margin: 0;
+    font-size: 1.04rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .company-modal-subtitle {
+    margin-top: 5px;
+    font-size: .84rem;
+    color: var(--text3);
+  }
+
+  .company-modal-close {
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text2);
+    font-size: .82rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  .company-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .company-modal-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 11px;
+    background: #fff;
+  }
+
+  .company-modal-item.full {
+    grid-column: 1 / -1;
+  }
+
+  .company-modal-label {
+    font-size: .74rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 3px;
+  }
+
+  .company-modal-value {
+    font-size: .88rem;
+    color: var(--text2);
+    font-weight: 700;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .company-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .company-modal-btn {
+    flex: 1;
+    min-height: 40px;
+    border-radius: 999px;
+    font-size: .92rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text2);
+    cursor: pointer;
+  }
+
+  .company-modal-btn.approve {
+    background: #111;
+    border-color: #111;
+    color: #fff;
+  }
+
+  .company-modal-btn.reject {
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  @media (max-width: 900px) {
+    .adviser-companies-panel-head {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .adviser-companies-export {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .adviser-companies-panel {
+      padding: 18px;
+      border-radius: 16px;
+    }
+
+    .adviser-companies-table th,
+    .adviser-companies-table td {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    .company-modal-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .company-modal-actions {
+      flex-direction: column;
+    }
   }
 </style>
 
-<div class="page-header">
-  <div>
-    <h2 class="page-title">Partner Companies</h2>
-    <p class="page-subtitle">Manage and verify partner companies for internship placements.</p>
-  </div>
-</div>
-
-<!-- Filter Row -->
-<form method="get" action="<?php echo $baseUrl; ?>/layout.php" class="filter-row" style="margin-bottom:20px">
-  <input type="hidden" name="page" value="adviser/companies">
-
-  <select class="filter-select" name="industry">
-    <option value="">All Industries</option>
-    <?php foreach (($filterOptions['industries'] ?? []) as $industryOption): ?>
-      <option value="<?php echo adviser_companies_escape($industryOption); ?>" <?php echo ($selected['industry'] ?? '') === $industryOption ? 'selected' : ''; ?>><?php echo adviser_companies_escape($industryOption); ?></option>
-    <?php endforeach; ?>
-  </select>
-
-  <select class="filter-select" name="status">
-    <option value="">All Status</option>
-    <?php foreach (($filterOptions['statuses'] ?? []) as $statusOption): ?>
-      <option value="<?php echo adviser_companies_escape($statusOption); ?>" <?php echo ($selected['status'] ?? '') === $statusOption ? 'selected' : ''; ?>><?php echo adviser_companies_escape($statusOption); ?></option>
-    <?php endforeach; ?>
-  </select>
-
-  <div style="flex:1"></div>
-  <input type="text" name="search" placeholder="Search companies..." class="search-input" style="max-width:260px" value="<?php echo adviser_companies_escape($selected['search'] ?? ''); ?>">
-  <button class="btn btn-ghost btn-sm" type="submit">Apply</button>
-</form>
-
-<div class="company-grid">
-  <?php if (!empty($rows)): ?>
-    <?php foreach ($rows as $index => $row): ?>
-      <?php
-      $companyName = trim((string)($row['company_name'] ?? 'Company'));
-      $industry = trim((string)($row['industry'] ?? ''));
-      $location = trim((string)($row['company_address'] ?? ''));
-      $statusLabel = adviser_companies_verification_label((string)($row['verification_status'] ?? 'Pending'));
-      $badgeClass = adviser_companies_verification_badge_class((string)($row['verification_status'] ?? 'Pending'));
-      $website = trim((string)($row['website_url'] ?? ''));
-      $contactEmail = trim((string)($row['email'] ?? ''));
-      $ratingText = adviser_companies_rating_text($row['avg_rating'] ?? null);
-      ?>
-      <div class="company-card">
-        <div class="company-card-header" style="display:flex;align-items:center;gap:14px;margin-bottom:8px">
-          <div class="avatar-placeholder" style="width:50px;height:50px;border-radius:12px;background:<?php echo adviser_companies_escape(adviser_companies_gradient((int)$index)); ?>;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.1rem"><?php echo adviser_companies_escape(adviser_companies_initial($companyName)); ?></div>
-          <div class="company-card-header-main">
-            <h4 class="company-name"><?php echo adviser_companies_escape($companyName); ?></h4>
-            <span class="company-meta"><?php echo adviser_companies_escape($industry !== '' ? $industry : 'Unspecified'); ?> &middot; <?php echo adviser_companies_escape($location !== '' ? $location : 'No address provided'); ?></span>
-          </div>
-        </div>
-        <div class="company-status-row">
-          <span class="status-badge <?php echo adviser_companies_escape($badgeClass); ?>"><?php echo adviser_companies_escape($statusLabel); ?></span>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;font-size:.83rem;color:var(--text-light);margin-bottom:12px">
-          <div><i class="fas fa-users" style="width:18px;color:var(--text-lighter)"></i> <?php echo (int)($row['current_interns'] ?? 0); ?> current interns</div>
-          <div><i class="fas fa-star" style="width:18px;color:#F59E0B"></i> <?php echo adviser_companies_escape($ratingText); ?> average rating</div>
-          <div><i class="fas fa-globe" style="width:18px;color:var(--text-lighter)"></i> <?php echo adviser_companies_escape($website !== '' ? $website : 'N/A'); ?></div>
-        </div>
-        <div class="company-card-actions">
-          <?php if ($website !== ''): ?>
-            <a class="btn-outline" style="flex:1;text-align:center" href="<?php echo adviser_companies_escape(preg_match('/^https?:\/\//i', $website) ? $website : ('https://' . $website)); ?>" target="_blank" rel="noopener noreferrer"><i class="fas fa-eye"></i> View</a>
-          <?php else: ?>
-            <button class="btn-outline" style="flex:1" type="button" disabled><i class="fas fa-eye"></i> View</button>
-          <?php endif; ?>
-          <?php if ($contactEmail !== ''): ?>
-            <a class="btn-outline" style="flex:1;text-align:center" href="mailto:<?php echo adviser_companies_escape($contactEmail); ?>"><i class="fas fa-envelope"></i> Contact</a>
-          <?php else: ?>
-            <button class="btn-outline" style="flex:1" type="button" disabled><i class="fas fa-envelope"></i> Contact</button>
-          <?php endif; ?>
-        </div>
-      </div>
-    <?php endforeach; ?>
-  <?php else: ?>
-    <div class="company-card" style="grid-column:1 / -1;display:flex;align-items:center;justify-content:center;color:var(--text-light);min-height:120px;">
-      No companies found for the selected filters.
+<div class="adviser-companies-page">
+  <?php if ($errorMessage !== ''): ?>
+    <div class="adviser-companies-error">
+      <?php echo adviser_companies_escape($errorMessage); ?>
     </div>
   <?php endif; ?>
+
+  <section class="adviser-companies-panel">
+    <div class="adviser-companies-panel-head">
+      <div>
+        <h2 class="adviser-companies-title">Company Verification Queue</h2>
+        <p class="adviser-companies-subtitle">Review partner company details and update verification status.</p>
+      </div>
+
+      <a
+        class="adviser-companies-export"
+        href="<?php echo $baseUrl; ?>/layout.php?<?php echo adviser_companies_escape(http_build_query([
+            'page' => 'adviser/companies',
+            'industry' => $selected['industry'] ?? '',
+            'status' => $selected['status'] ?? '',
+            'search' => $selected['search'] ?? '',
+            'export' => 'csv',
+        ])); ?>"
+      >
+        <i class="fas fa-download"></i>
+        Export Report
+      </a>
+    </div>
+
+    <?php if (!empty($rows)): ?>
+      <div class="adviser-companies-table-wrap">
+        <table class="adviser-companies-table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Industry</th>
+              <th>Submitted</th>
+              <th>Documents</th>
+              <th>Risk</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($rows as $index => $row): ?>
+              <?php
+              $companyName = trim((string)($row['company_name'] ?? 'Company'));
+              $industry = trim((string)($row['industry'] ?? '')) ?: 'Unspecified';
+              $createdAtLabel = adviser_companies_format_date((string)($row['created_at'] ?? ''));
+              $documentsMeta = adviser_companies_documents_meta($row);
+              $riskMeta = adviser_companies_risk_meta($row);
+              $actionMeta = adviser_companies_action_meta($row);
+              $contactEmail = trim((string)($row['email'] ?? ''));
+              $modalId = 'company-review-modal-' . $index;
+              $requestDocsSubject = rawurlencode('SkillHive company verification documents');
+              $requestDocsBody = rawurlencode(
+                  'Hello ' . $companyName . ',' . "\n\n"
+                  . 'We are reviewing your company profile in SkillHive. Please send the missing verification documents so we can continue the approval process.' . "\n\n"
+                  . 'Thank you.'
+              );
+              ?>
+              <tr>
+                <td>
+                  <div class="adviser-companies-company">
+                    <span class="adviser-companies-avatar" style="background:<?php echo adviser_companies_escape(adviser_companies_gradient((int)$index)); ?>;">
+                      <?php echo adviser_companies_escape(adviser_companies_initial($companyName)); ?>
+                    </span>
+                    <div>
+                      <button class="adviser-companies-company-link" type="button" data-open-company-modal="<?php echo adviser_companies_escape($modalId); ?>">
+                        <span class="adviser-companies-company-name"><?php echo adviser_companies_escape($companyName); ?></span>
+                      </button>
+                      <p class="adviser-companies-meta"><?php echo adviser_companies_escape((string)($row['current_interns'] ?? 0)); ?> active interns</p>
+                    </div>
+                  </div>
+                </td>
+                <td><?php echo adviser_companies_escape($industry); ?></td>
+                <td><?php echo adviser_companies_escape($createdAtLabel); ?></td>
+                <td>
+                  <span class="adviser-companies-badge <?php echo adviser_companies_escape($documentsMeta['class']); ?>">
+                    <?php echo adviser_companies_escape($documentsMeta['label']); ?>
+                  </span>
+                </td>
+                <td>
+                  <span class="adviser-companies-badge <?php echo adviser_companies_escape($riskMeta['class']); ?>">
+                    <?php echo adviser_companies_escape($riskMeta['label']); ?>
+                  </span>
+                </td>
+                <td>
+                  <?php if ($actionMeta['action'] === 'approve' || $actionMeta['action'] === 'reject'): ?>
+                    <form method="post" style="margin:0;">
+                      <input type="hidden" name="action" value="<?php echo adviser_companies_escape($actionMeta['action']); ?>">
+                      <input type="hidden" name="employer_id" value="<?php echo (int)($row['employer_id'] ?? 0); ?>">
+                      <input type="hidden" name="industry" value="<?php echo adviser_companies_escape((string)($selected['industry'] ?? '')); ?>">
+                      <input type="hidden" name="status" value="<?php echo adviser_companies_escape((string)($selected['status'] ?? '')); ?>">
+                      <input type="hidden" name="search" value="<?php echo adviser_companies_escape((string)($selected['search'] ?? '')); ?>">
+                      <button class="adviser-companies-action <?php echo adviser_companies_escape($actionMeta['class']); ?>" type="submit">
+                        <?php echo adviser_companies_escape($actionMeta['label']); ?>
+                      </button>
+                    </form>
+                  <?php elseif ($actionMeta['action'] === 'mailto' && $contactEmail !== ''): ?>
+                    <a class="adviser-companies-action <?php echo adviser_companies_escape($actionMeta['class']); ?>" href="mailto:<?php echo adviser_companies_escape($contactEmail); ?>?subject=<?php echo $requestDocsSubject; ?>&body=<?php echo $requestDocsBody; ?>">
+                      <?php echo adviser_companies_escape($actionMeta['label']); ?>
+                    </a>
+                  <?php else: ?>
+                    <button class="adviser-companies-action <?php echo adviser_companies_escape($actionMeta['class']); ?>" type="button" data-open-company-modal="<?php echo adviser_companies_escape($modalId); ?>">
+                      <?php echo adviser_companies_escape($actionMeta['label']); ?>
+                    </button>
+                  <?php endif; ?>
+                </td>
+              </tr>
+
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+
+      <?php foreach ($rows as $index => $row): ?>
+        <?php
+        $companyName = trim((string)($row['company_name'] ?? 'Company'));
+        $industry = trim((string)($row['industry'] ?? '')) ?: 'Unspecified';
+        $createdAtLabel = adviser_companies_format_date((string)($row['created_at'] ?? ''));
+        $documentsMeta = adviser_companies_documents_meta($row);
+        $riskMeta = adviser_companies_risk_meta($row);
+        $contactEmail = trim((string)($row['email'] ?? ''));
+        $ratingText = adviser_companies_rating_text($row['avg_rating'] ?? null);
+        $website = trim((string)($row['website_url'] ?? ''));
+        $location = trim((string)($row['company_address'] ?? ''));
+        $contactNumber = trim((string)($row['contact_number'] ?? ''));
+        $statusLabel = adviser_companies_verification_label((string)($row['verification_status'] ?? 'Pending'));
+        $modalId = 'company-review-modal-' . $index;
+        ?>
+        <div class="company-modal" id="<?php echo adviser_companies_escape($modalId); ?>" aria-hidden="true">
+          <div class="company-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="<?php echo adviser_companies_escape($modalId); ?>-title">
+            <div class="company-modal-head">
+              <div>
+                <h3 class="company-modal-title" id="<?php echo adviser_companies_escape($modalId); ?>-title"><?php echo adviser_companies_escape($companyName); ?></h3>
+                <div class="company-modal-subtitle">Review company details and update verification status.</div>
+              </div>
+              <button class="company-modal-close" type="button" data-close-company-modal aria-label="Close">Close</button>
+            </div>
+
+            <div class="company-modal-grid">
+              <div class="company-modal-item">
+                <div class="company-modal-label">Industry</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape($industry); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Current Status</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape($statusLabel); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Documents</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape($documentsMeta['label']); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Risk Level</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape($riskMeta['label']); ?></div>
+              </div>
+              <div class="company-modal-item full">
+                <div class="company-modal-label">Address</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape($location !== '' ? $location : 'No address provided'); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Website</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape($website !== '' ? $website : 'N/A'); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Contact Number</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape($contactNumber !== '' ? $contactNumber : 'N/A'); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Email</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape($contactEmail !== '' ? $contactEmail : 'N/A'); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Average Rating</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape($ratingText); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Current Interns</div>
+                <div class="company-modal-value"><?php echo (int)($row['current_interns'] ?? 0); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Submitted</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape($createdAtLabel); ?></div>
+              </div>
+            </div>
+
+            <div class="company-modal-actions">
+              <form method="post" style="flex:1;margin:0;">
+                <input type="hidden" name="action" value="reject">
+                <input type="hidden" name="employer_id" value="<?php echo (int)($row['employer_id'] ?? 0); ?>">
+                <input type="hidden" name="industry" value="<?php echo adviser_companies_escape((string)($selected['industry'] ?? '')); ?>">
+                <input type="hidden" name="status" value="<?php echo adviser_companies_escape((string)($selected['status'] ?? '')); ?>">
+                <input type="hidden" name="search" value="<?php echo adviser_companies_escape((string)($selected['search'] ?? '')); ?>">
+                <button class="company-modal-btn reject" type="submit"><i class="fas fa-times"></i> Reject</button>
+              </form>
+
+              <form method="post" style="flex:1;margin:0;">
+                <input type="hidden" name="action" value="approve">
+                <input type="hidden" name="employer_id" value="<?php echo (int)($row['employer_id'] ?? 0); ?>">
+                <input type="hidden" name="industry" value="<?php echo adviser_companies_escape((string)($selected['industry'] ?? '')); ?>">
+                <input type="hidden" name="status" value="<?php echo adviser_companies_escape((string)($selected['status'] ?? '')); ?>">
+                <input type="hidden" name="search" value="<?php echo adviser_companies_escape((string)($selected['search'] ?? '')); ?>">
+                <button class="company-modal-btn approve" type="submit"><i class="fas fa-check"></i> Approve</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      <?php endforeach; ?>
+    <?php else: ?>
+      <div class="adviser-companies-empty">
+        No companies found for the current adviser queue yet.
+      </div>
+    <?php endif; ?>
+  </section>
 </div>
+
+<script>
+  (function () {
+    function closeModal(modal) {
+      if (!modal) {
+        return;
+      }
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function openModal(modal) {
+      if (!modal) {
+        return;
+      }
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    document.querySelectorAll('[data-open-company-modal]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var modalId = button.getAttribute('data-open-company-modal');
+        if (!modalId) {
+          return;
+        }
+        openModal(document.getElementById(modalId));
+      });
+    });
+
+    document.querySelectorAll('.company-modal').forEach(function (modal) {
+      modal.addEventListener('click', function (event) {
+        if (event.target === modal) {
+          closeModal(modal);
+        }
+      });
+
+      modal.querySelectorAll('[data-close-company-modal]').forEach(function (closeButton) {
+        closeButton.addEventListener('click', function () {
+          closeModal(modal);
+        });
+      });
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      var openModalElement = document.querySelector('.company-modal.is-open');
+      if (openModalElement) {
+        closeModal(openModalElement);
+      }
+    });
+  })();
+</script>

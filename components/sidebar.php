@@ -32,7 +32,7 @@ if ($role === 'student') {
     $navItems = [
         ['label' => 'MAIN', 'items' => [
             ['icon' => 'fas fa-house',            'text' => 'Dashboard',     'page' => 'adviser/dashboard'],
-            ['icon' => 'fas fa-house',            'text' => 'Students',      'page' => 'adviser/students'],
+            ['icon' => 'fas fa-house',            'text' => 'My Students',   'page' => 'adviser/students'],
             ['icon' => 'fas fa-stamp',            'text' => 'Endorsements',  'page' => 'adviser/endorsement'],
             ['icon' => 'fas fa-eye',              'text' => 'OJT Monitoring','page' => 'adviser/monitoring'],
             ['icon' => 'fas fa-chart-pie',        'text' => 'Analytics',     'page' => 'adviser/analytics'],

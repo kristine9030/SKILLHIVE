@@ -88,3 +88,73 @@ if (!function_exists('adviser_companies_format_date')) {
         return date('M j, Y', $timestamp);
     }
 }
+
+if (!function_exists('adviser_companies_documents_meta')) {
+    function adviser_companies_documents_meta(array $row): array
+    {
+        $filled = 0;
+        $fields = [
+            trim((string)($row['website_url'] ?? '')),
+            trim((string)($row['email'] ?? '')),
+            trim((string)($row['contact_number'] ?? '')),
+            trim((string)($row['company_address'] ?? '')),
+        ];
+
+        foreach ($fields as $field) {
+            if ($field !== '') {
+                $filled++;
+            }
+        }
+
+        if ($filled >= 4) {
+            return ['label' => 'Complete', 'class' => 'is-success'];
+        }
+
+        if ($filled >= 2) {
+            return ['label' => 'Partial', 'class' => 'is-warning'];
+        }
+
+        return ['label' => 'Incomplete', 'class' => 'is-danger'];
+    }
+}
+
+if (!function_exists('adviser_companies_risk_meta')) {
+    function adviser_companies_risk_meta(array $row): array
+    {
+        $status = strtolower(trim((string)($row['verification_status'] ?? 'pending')));
+        $documents = adviser_companies_documents_meta($row);
+
+        if ($status === 'rejected' || $status === 'flagged' || $documents['label'] === 'Incomplete') {
+            return ['label' => 'High', 'class' => 'is-danger'];
+        }
+
+        if ($status === 'approved' || $documents['label'] === 'Complete') {
+            return ['label' => 'Low', 'class' => 'is-success'];
+        }
+
+        return ['label' => 'Medium', 'class' => 'is-warning'];
+    }
+}
+
+if (!function_exists('adviser_companies_action_meta')) {
+    function adviser_companies_action_meta(array $row): array
+    {
+        $documents = adviser_companies_documents_meta($row);
+        $risk = adviser_companies_risk_meta($row);
+        $email = trim((string)($row['email'] ?? ''));
+
+        if ($documents['label'] === 'Complete' && $risk['label'] === 'Low') {
+            return ['label' => 'Approve', 'class' => 'primary', 'action' => 'approve'];
+        }
+
+        if ($documents['label'] === 'Incomplete' || $risk['label'] === 'High') {
+            return ['label' => 'Reject', 'class' => 'danger', 'action' => 'reject'];
+        }
+
+        if ($email !== '') {
+            return ['label' => 'Request Docs', 'class' => 'secondary', 'action' => 'mailto'];
+        }
+
+        return ['label' => 'Review', 'class' => 'secondary', 'action' => 'modal'];
+    }
+}

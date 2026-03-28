@@ -100,6 +100,87 @@ if (!function_exists('adviser_monitoring_get_rows')) {
             $mapped[] = $row;
         }
 
+        $recordIds = [];
+        foreach ($mapped as $row) {
+            $recordId = (int)($row['record_id'] ?? 0);
+            if ($recordId > 0) {
+                $recordIds[] = $recordId;
+            }
+        }
+
+        $logsByRecord = adviser_monitoring_get_recent_logs_by_record($pdo, $recordIds, 6);
+
+        foreach ($mapped as &$row) {
+            $recordId = (int)($row['record_id'] ?? 0);
+            $row['recent_logs'] = $recordId > 0 ? ($logsByRecord[$recordId] ?? []) : [];
+        }
+        unset($row);
+
         return $mapped;
+    }
+}
+
+if (!function_exists('adviser_monitoring_get_recent_logs_by_record')) {
+    function adviser_monitoring_get_recent_logs_by_record(PDO $pdo, array $recordIds, int $maxPerRecord = 6): array
+    {
+        $cleanIds = [];
+        foreach ($recordIds as $recordId) {
+            $id = (int)$recordId;
+            if ($id > 0) {
+                $cleanIds[$id] = $id;
+            }
+        }
+
+        if (empty($cleanIds)) {
+            return [];
+        }
+
+        $ids = array_values($cleanIds);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        $sql = 'SELECT
+                    d.record_id,
+                    d.log_id,
+                    d.log_date,
+                    d.accomplishment,
+                    d.hours_rendered,
+                    d.mood_tag,
+                    d.task_file,
+                    d.created_at
+                FROM daily_log d
+                WHERE d.record_id IN (' . $placeholders . ')
+                ORDER BY d.record_id ASC, d.log_date DESC, d.log_id DESC';
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($ids);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $grouped = [];
+        foreach ($rows as $row) {
+            $recordId = (int)($row['record_id'] ?? 0);
+            if ($recordId <= 0) {
+                continue;
+            }
+
+            if (!isset($grouped[$recordId])) {
+                $grouped[$recordId] = [];
+            }
+
+            if (count($grouped[$recordId]) >= $maxPerRecord) {
+                continue;
+            }
+
+            $grouped[$recordId][] = [
+                'log_id' => (int)($row['log_id'] ?? 0),
+                'log_date' => (string)($row['log_date'] ?? ''),
+                'accomplishment' => trim((string)($row['accomplishment'] ?? '')),
+                'hours_rendered' => (float)($row['hours_rendered'] ?? 0),
+                'mood_tag' => trim((string)($row['mood_tag'] ?? '')),
+                'task_file' => trim((string)($row['task_file'] ?? '')),
+                'created_at' => (string)($row['created_at'] ?? ''),
+            ];
+        }
+
+        return $grouped;
     }
 }
