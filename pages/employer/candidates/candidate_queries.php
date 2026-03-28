@@ -19,6 +19,21 @@ if (!function_exists('candidates_get_candidate_rows')) {
                 s.program,
                 s.year_level,
                 s.internship_readiness_score,
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM adviser_assignment aa
+                        LEFT JOIN endorsement e ON e.endorsement_id = (
+                            SELECT MAX(e2.endorsement_id)
+                            FROM endorsement e2
+                            WHERE e2.application_id = a.application_id
+                              AND e2.adviser_id = aa.adviser_id
+                        )
+                        WHERE aa.student_id = a.student_id
+                          AND COALESCE(NULLIF(TRIM(aa.status), ""), "Active") = "Active"
+                          AND LOWER(COALESCE(e.status, "")) = "approved"
+                    ) THEN 1 ELSE 0
+                END AS endorsement_approved,
                 i.title AS internship_title
             FROM application a
             INNER JOIN internship i ON i.internship_id = a.internship_id

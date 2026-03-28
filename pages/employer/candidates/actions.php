@@ -26,6 +26,23 @@ if (!function_exists('candidates_normalize_status')) {
     }
 }
 
+if (!function_exists('candidates_status_display_label')) {
+    function candidates_status_display_label(?string $status): string
+    {
+        $normalized = candidates_normalize_status($status);
+
+        $labels = [
+            'Pending' => 'Under Review',
+            'Shortlisted' => 'Shortlisted',
+            'Interview Scheduled' => 'Interview Scheduled',
+            'Accepted' => 'Accepted',
+            'Rejected' => 'Not Selected',
+        ];
+
+        return $labels[$normalized] ?? $normalized;
+    }
+}
+
 if (!function_exists('candidates_can_transition')) {
     function candidates_can_transition(string $current, string $next): bool
     {
@@ -70,6 +87,47 @@ if (!function_exists('candidates_get_owned_application_status')) {
     }
 }
 
+if (!function_exists('candidates_has_approved_endorsement')) {
+    function candidates_has_approved_endorsement(PDO $pdo, int $applicationId): bool
+    {
+        if ($applicationId <= 0) {
+            return false;
+        }
+
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*)
+             FROM application a
+             INNER JOIN adviser_assignment aa ON aa.student_id = a.student_id
+             LEFT JOIN endorsement e ON e.endorsement_id = (
+                SELECT MAX(e2.endorsement_id)
+                FROM endorsement e2
+                WHERE e2.application_id = a.application_id
+                  AND e2.adviser_id = aa.adviser_id
+             )
+             WHERE a.application_id = :application_id
+               AND COALESCE(NULLIF(TRIM(aa.status), ""), "Active") = "Active"
+               AND LOWER(COALESCE(e.status, "")) = "approved"'
+        );
+        $stmt->execute([':application_id' => $applicationId]);
+
+        return ((int)$stmt->fetchColumn()) > 0;
+    }
+}
+
+if (!function_exists('candidates_validate_interview_gate')) {
+    function candidates_validate_interview_gate(PDO $pdo, int $applicationId): array
+    {
+        if (!candidates_has_approved_endorsement($pdo, $applicationId)) {
+            return [
+                'success' => false,
+                'error' => 'Interview is locked until the adviser approves the endorsement.',
+            ];
+        }
+
+        return ['success' => true, 'error' => null];
+    }
+}
+
 if (!function_exists('candidates_update_application_status')) {
     function candidates_update_application_status(PDO $pdo, int $employerId, int $applicationId, string $nextStatus): array
     {
@@ -92,22 +150,95 @@ if (!function_exists('candidates_update_application_status')) {
             return ['success' => false, 'error' => 'Invalid status transition: ' . $currentStatus . ' → ' . $normalizedNext . '.'];
         }
 
-        $stmt = $pdo->prepare(
-            'UPDATE application
-             SET status = :status,
-                 updated_at = NOW()
-             WHERE application_id = :application_id'
-        );
-        $stmt->execute([
-            ':status' => $normalizedNext,
-            ':application_id' => $applicationId,
-        ]);
-
-        if ($normalizedNext === 'Accepted') {
-            $ojtResult = candidates_ensure_ojt_record($pdo, $employerId, $applicationId);
-            if (empty($ojtResult['success'])) {
-                return $ojtResult;
+        if ($normalizedNext === 'Interview Scheduled') {
+            $gateResult = candidates_validate_interview_gate($pdo, $applicationId);
+            if (empty($gateResult['success'])) {
+                return $gateResult;
             }
+        }
+
+        $ownsTransaction = !$pdo->inTransaction();
+
+        try {
+            if ($ownsTransaction) {
+                $pdo->beginTransaction();
+            }
+
+            $stmt = $pdo->prepare(
+                'UPDATE application
+                 SET status = :status,
+                     updated_at = NOW()
+                 WHERE application_id = :application_id'
+            );
+            $stmt->execute([
+                ':status' => $normalizedNext,
+                ':application_id' => $applicationId,
+            ]);
+
+            if ($normalizedNext === 'Shortlisted') {
+                $endorsementResult = candidates_ensure_pending_endorsements_for_application($pdo, $applicationId);
+                if (empty($endorsementResult['success'])) {
+                    if ($ownsTransaction && $pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+                    return $endorsementResult;
+                }
+            }
+
+            if ($normalizedNext === 'Accepted') {
+                $ojtResult = candidates_ensure_ojt_record($pdo, $employerId, $applicationId);
+                if (empty($ojtResult['success'])) {
+                    if ($ownsTransaction && $pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+                    return $ojtResult;
+                }
+            }
+
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->commit();
+            }
+        } catch (Throwable $e) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            return ['success' => false, 'error' => 'Unable to update candidate status right now.'];
+        }
+
+        return ['success' => true, 'error' => null];
+    }
+}
+
+if (!function_exists('candidates_ensure_pending_endorsements_for_application')) {
+    function candidates_ensure_pending_endorsements_for_application(PDO $pdo, int $applicationId): array
+    {
+        if ($applicationId <= 0) {
+            return ['success' => false, 'error' => 'Invalid application selected for endorsement sync.'];
+        }
+
+        try {
+            $stmt = $pdo->prepare(
+                'INSERT INTO endorsement (application_id, adviser_id, status, moa_status, notes, created_at)
+                 SELECT seed.application_id, seed.adviser_id, "Pending", "Not Started", NULL, NOW()
+                 FROM (
+                    SELECT DISTINCT
+                        a.application_id,
+                        aa.adviser_id
+                    FROM application a
+                    INNER JOIN adviser_assignment aa ON aa.student_id = a.student_id
+                    WHERE a.application_id = :application_id
+                      AND COALESCE(NULLIF(TRIM(aa.status), ""), "Active") = "Active"
+                 ) AS seed
+                 WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM endorsement e
+                    WHERE e.application_id = seed.application_id
+                      AND e.adviser_id = seed.adviser_id
+                 )'
+            );
+            $stmt->execute([':application_id' => $applicationId]);
+        } catch (Throwable $e) {
+            return ['success' => false, 'error' => 'Unable to sync adviser endorsements for shortlisted candidate.'];
         }
 
         return ['success' => true, 'error' => null];
@@ -196,6 +327,11 @@ if (!function_exists('candidates_schedule_interview')) {
 
         if (!in_array($currentStatus, ['Pending', 'Shortlisted', 'Interview Scheduled'], true)) {
             return ['success' => false, 'error' => 'Only pending or shortlisted candidates can be scheduled for interview.'];
+        }
+
+        $gateResult = candidates_validate_interview_gate($pdo, $applicationId);
+        if (empty($gateResult['success'])) {
+            return $gateResult;
         }
 
         $interviewDateRaw = trim((string)($payload['interview_date'] ?? ''));

@@ -10,7 +10,27 @@
       <i class="fas fa-search"></i>
       <input type="text" placeholder="Search...">
     </div>
-    <button class="topbar-btn" title="Notifications"><i class="fas fa-bell"></i></button>
+
+    <div class="topbar-notification-dropdown" id="topbarNotifWrap">
+      <button class="topbar-btn topbar-notification-toggle" id="topbarNotifToggle" type="button" aria-expanded="false" aria-label="Notifications" title="Notifications" onclick="toggleTopbarNotifications(event)">
+        <i class="fas fa-bell"></i>
+        <span class="notif-badge topbar-notif-badge" id="topbarNotifBadge" style="display:none">0</span>
+      </button>
+
+      <div class="topbar-dropdown-menu topbar-notification-menu" id="topbarNotifMenu">
+        <div class="topbar-notification-head">
+          <div class="topbar-notification-head-main">
+            <strong>Notifications</strong>
+            <span class="topbar-notification-unread-text" id="topbarNotifUnreadText" style="display:none">0 unread</span>
+          </div>
+          <button type="button" class="topbar-notification-mark-read" id="topbarNotifMarkAll">Mark all read</button>
+        </div>
+        <div class="topbar-notification-list" id="topbarNotifList">
+          <div class="topbar-notification-empty">No notifications yet.</div>
+        </div>
+      </div>
+    </div>
+
     <button class="topbar-btn" title="Messages"><i class="fas fa-comment-dots"></i></button>
     
     <div class="topbar-profile-dropdown" id="topbarProfileWrap">

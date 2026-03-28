@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $employerId > 0) {
       $result = candidates_update_application_status($pdo, $employerId, $applicationId, $nextStatus);
 
       if (!empty($result['success'])) {
-        $_SESSION['status'] = 'Candidate status updated to ' . candidates_normalize_status($nextStatus) . '.';
+        $_SESSION['status'] = 'Candidate stage updated to ' . candidates_status_display_label($nextStatus) . '.';
       } else {
         $errorMessage = (string)($result['error'] ?? 'Unable to update candidate status.');
       }
@@ -125,9 +125,13 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
   </select>
 
   <select class="filter-select" name="status" onchange="this.form.submit()">
-    <option value="">All Status</option>
+    <option value="">All Application Stages</option>
     <?php foreach ($statuses as $status): ?>
-      <option value="<?php echo dashboard_escape($status); ?>" <?php echo $selected['status'] === $status ? 'selected' : ''; ?>><?php echo dashboard_escape(dashboard_status_label($status)); ?></option>
+      <?php
+      $normalizedFilterStatus = candidates_normalize_status((string)$status);
+      $filterStatusLabel = candidates_status_display_label($normalizedFilterStatus);
+      ?>
+      <option value="<?php echo dashboard_escape($status); ?>" <?php echo $selected['status'] === $status ? 'selected' : ''; ?>><?php echo dashboard_escape($filterStatusLabel); ?></option>
     <?php endforeach; ?>
   </select>
 
@@ -158,7 +162,9 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
       $readinessText = is_numeric($readiness) ? ((int)round((float)$readiness) . '/100') : 'N/A';
       $statusRaw = (string)($candidate['status'] ?? 'pending');
       $statusCanonical = candidates_normalize_status($statusRaw);
+      $statusDisplay = candidates_status_display_label($statusCanonical);
       $pipelineFlow = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted', 'Rejected'];
+      $isEndorsementApproved = !empty($candidate['endorsement_approved']);
       $chipSkills = $skillsByStudent[$studentId] ?? [];
       $skillsTextList = [];
       foreach ($chipSkills as $chip) {
@@ -180,16 +186,17 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
         <div style="font-size:.82rem;color:#666;margin:10px 0">Applied for <strong><?php echo dashboard_escape($candidate['internship_title'] ?? 'N/A'); ?></strong></div>
 
         <div style="margin:6px 0 10px;">
-          <div style="font-size:.72rem;color:#777;margin-bottom:6px;">Current Stage: <strong><?php echo dashboard_escape($statusCanonical); ?></strong></div>
+          <div style="font-size:.72rem;color:#777;margin-bottom:6px;">Current Stage: <strong><?php echo dashboard_escape($statusDisplay); ?></strong></div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;">
             <?php foreach ($pipelineFlow as $stage): ?>
               <?php
               $isActiveStage = $stage === $statusCanonical;
+              $stageDisplay = candidates_status_display_label($stage);
               $stageStyle = $isActiveStage
                 ? 'background:rgba(139,0,0,.1);color:#8b0000;border:1px solid rgba(139,0,0,.25);'
                 : 'background:rgba(0,0,0,.04);color:#666;border:1px solid rgba(0,0,0,.08);';
               ?>
-              <span style="font-size:.68rem;padding:3px 8px;border-radius:999px;<?php echo $stageStyle; ?>"><?php echo dashboard_escape($stage); ?></span>
+              <span style="font-size:.68rem;padding:3px 8px;border-radius:999px;<?php echo $stageStyle; ?>"><?php echo dashboard_escape($stageDisplay); ?></span>
             <?php endforeach; ?>
           </div>
         </div>
@@ -223,7 +230,11 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
             <input type="hidden" name="sort" value="<?php echo dashboard_escape($selected['sort']); ?>">
             <select name="next_status" class="btn btn-primary btn-sm" style="width:100%;text-align:left;" onchange="handleStatusChange(this)">
               <?php foreach ($pipelineStatuses as $pipelineStatus): ?>
-                <option value="<?php echo dashboard_escape($pipelineStatus); ?>" <?php echo $statusCanonical === $pipelineStatus ? 'selected' : ''; ?>><?php echo dashboard_escape($pipelineStatus); ?></option>
+                <?php
+                $pipelineDisplay = candidates_status_display_label($pipelineStatus);
+                $isInterviewOptionLocked = !$isEndorsementApproved && $pipelineStatus === 'Interview Scheduled' && $statusCanonical !== 'Interview Scheduled';
+                ?>
+                <option value="<?php echo dashboard_escape($pipelineStatus); ?>" <?php echo $statusCanonical === $pipelineStatus ? 'selected' : ''; ?> <?php echo $isInterviewOptionLocked ? 'disabled' : ''; ?>><?php echo dashboard_escape($pipelineDisplay); ?><?php echo $isInterviewOptionLocked ? ' (Locked)' : ''; ?></option>
               <?php endforeach; ?>
             </select>
           </form>
@@ -238,13 +249,19 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
             data-year-level="<?php echo dashboard_escape($yearLevel); ?>"
             data-readiness="<?php echo dashboard_escape($readinessText); ?>"
             data-match="<?php echo dashboard_escape($scoreText); ?>"
-            data-status="<?php echo dashboard_escape($statusCanonical); ?>"
+            data-status="<?php echo dashboard_escape($statusDisplay); ?>"
             data-position="<?php echo dashboard_escape((string)($candidate['internship_title'] ?? 'N/A')); ?>"
             data-skills="<?php echo dashboard_escape($skillsText !== '' ? $skillsText : 'No skills listed'); ?>"
           >View Profile</button>
 
           <button class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#EF4444" type="button" onclick="quickRejectCandidate(<?php echo (int)($candidate['application_id'] ?? 0); ?>, '<?php echo dashboard_escape($selected['search']); ?>', '<?php echo dashboard_escape($selected['position']); ?>', '<?php echo dashboard_escape($selected['status']); ?>', '<?php echo dashboard_escape($selected['sort']); ?>')"><i class="fas fa-times"></i></button>
         </div>
+
+        <?php if (!$isEndorsementApproved && in_array($statusCanonical, ['Pending', 'Shortlisted'], true)): ?>
+          <div style="margin-top:10px;font-size:.75rem;color:#B45309;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);padding:8px 10px;border-radius:8px;">
+            Interview is locked until adviser endorsement is approved.
+          </div>
+        <?php endif; ?>
       </div>
     <?php endforeach; ?>
   <?php else: ?>

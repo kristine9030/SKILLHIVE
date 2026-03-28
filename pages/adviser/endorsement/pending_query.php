@@ -9,16 +9,17 @@ if (!function_exists('adviser_endorsement_get_pending')) {
     {
         $sql = '
             SELECT
-                e.endorsement_id,
-                e.status,
-                e.created_at,
+                COALESCE(e.endorsement_id, 0) AS endorsement_id,
+                COALESCE(NULLIF(TRIM(e.status), ""), "Pending") AS status,
+                COALESCE(e.created_at, a.updated_at, a.application_date) AS created_at,
                 e.reviewed_at,
                 e.notes,
                 e.endorsement_file,
-                e.moa_status,
+                COALESCE(NULLIF(TRIM(e.moa_status), ""), "Not Started") AS moa_status,
                 a.application_id,
                 a.internship_id,
                 a.cover_letter,
+                a.status AS application_status,
                 s.student_id,
                 s.first_name,
                 s.last_name,
@@ -39,14 +40,19 @@ if (!function_exists('adviser_endorsement_get_pending')) {
                 END AS has_application_form,
                 COALESCE(doc_flags.has_parent_consent, 0) AS has_parent_consent,
                 COALESCE(doc_flags.has_medical_certificate, 0) AS has_medical_certificate
-             FROM endorsement e
-             INNER JOIN application a ON a.application_id = e.application_id
+                 FROM application a
              INNER JOIN student s ON s.student_id = a.student_id
              INNER JOIN internship i ON i.internship_id = a.internship_id
              INNER JOIN employer emp ON emp.employer_id = i.employer_id
              INNER JOIN adviser_assignment aa ON aa.student_id = s.student_id
-                AND aa.adviser_id = :aa_adviser_id
+                     AND aa.adviser_id = :adviser_id
                 AND COALESCE(NULLIF(TRIM(aa.status), ""), "Active") = "Active"
+                 LEFT JOIN endorsement e ON e.endorsement_id = (
+                     SELECT MAX(e2.endorsement_id)
+                     FROM endorsement e2
+                     WHERE e2.application_id = a.application_id
+                        AND e2.adviser_id = aa.adviser_id
+                 )
              LEFT JOIN (
                 SELECT
                     sr.student_id,
@@ -59,18 +65,10 @@ if (!function_exists('adviser_endorsement_get_pending')) {
                 INNER JOIN requirement r ON r.requirement_id = sr.requirement_id
                 GROUP BY sr.student_id, sr.internship_id
              ) doc_flags ON doc_flags.student_id = s.student_id AND doc_flags.internship_id = a.internship_id
-             WHERE e.adviser_id = :adviser_id
-                             AND e.endorsement_id = (
-                                        SELECT MAX(e2.endorsement_id)
-                                        FROM endorsement e2
-                                        WHERE e2.application_id = e.application_id
-                                            AND e2.adviser_id = e.adviser_id
-                             )
-               AND LOWER(COALESCE(e.status, \'\')) IN (\'pending\', \'reviewing\', \'for review\', \'submitted\')';
+             WHERE LOWER(COALESCE(a.status, "")) = "shortlisted"';
 
         $params = [
             ':adviser_id' => $adviserId,
-            ':aa_adviser_id' => $adviserId,
         ];
 
         $department = trim((string)($filters['department'] ?? ''));
@@ -89,7 +87,7 @@ if (!function_exists('adviser_endorsement_get_pending')) {
             $params[':search'] = '%' . $search . '%';
         }
 
-        $sql .= ' ORDER BY e.created_at DESC, e.endorsement_id DESC LIMIT 100';
+        $sql .= ' ORDER BY COALESCE(e.created_at, a.updated_at, a.application_date) DESC, a.application_id DESC LIMIT 100';
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);

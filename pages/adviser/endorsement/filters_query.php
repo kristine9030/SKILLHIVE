@@ -32,12 +32,12 @@ if (!function_exists('adviser_endorsement_get_filter_options')) {
         });
 
         $deptStmt = $pdo->prepare(
-            'SELECT DISTINCT COALESCE(NULLIF(TRIM(s.department), \"\"), \"Unassigned\") AS department
+            "SELECT DISTINCT COALESCE(NULLIF(TRIM(s.department), ''), 'Unassigned') AS department
              FROM endorsement e
              INNER JOIN application a ON a.application_id = e.application_id
              INNER JOIN student s ON s.student_id = a.student_id
              WHERE e.adviser_id = :adviser_id
-             ORDER BY department ASC'
+             ORDER BY department ASC"
         );
         $deptStmt->execute([':adviser_id' => $adviserId]);
         $departmentOptions = $deptStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];

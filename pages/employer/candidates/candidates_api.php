@@ -121,27 +121,15 @@ try {
             candidates_api_respond(['ok' => false, 'error' => 'Invalid request'], 400);
         }
 
-        // Verify employer owns this application
-        $stmt = $pdo->prepare('
-            SELECT 1 FROM application a
-            INNER JOIN internship i ON i.internship_id = a.internship_id
-            WHERE a.application_id = ? AND i.employer_id = ?
-        ');
-        $stmt->execute([$applicationId, $employerId]);
-
-        if (!$stmt->fetch()) {
-            candidates_api_respond(['ok' => false, 'error' => 'Unauthorized'], 403);
+        $result = candidates_update_application_status($pdo, $employerId, $applicationId, $newStatus);
+        if (!empty($result['success'])) {
+            candidates_api_respond(['ok' => true, 'message' => 'Status updated']);
         }
 
-        // Update status
-        $stmt = $pdo->prepare('
-            UPDATE application
-            SET status = ?, updated_at = NOW()
-            WHERE application_id = ?
-        ');
-        $stmt->execute([$newStatus, $applicationId]);
-
-        candidates_api_respond(['ok' => true, 'message' => 'Status updated']);
+        candidates_api_respond([
+            'ok' => false,
+            'error' => (string) ($result['error'] ?? 'Unable to update candidate status.'),
+        ], 422);
     } elseif ($action === 'schedule_interview') {
         $applicationId = (int) ($_POST['application_id'] ?? 0);
         $interviewDate = trim((string) ($_POST['interview_date'] ?? ''));

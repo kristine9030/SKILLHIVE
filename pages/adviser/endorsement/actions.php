@@ -4,6 +4,69 @@
  * Tables/columns used: endorsement(endorsement_id, application_id, adviser_id, status, reviewed_at, notes), application(application_id, student_id), adviser_assignment(adviser_id, student_id, status).
  */
 
+require_once __DIR__ . '/../../../backend/functions/notifications.php';
+
+if (!function_exists('adviser_endorsement_notify_employer_for_approval')) {
+    function adviser_endorsement_notify_employer_for_approval(PDO $pdo, int $endorsementId, int $adviserId): void
+    {
+        if ($endorsementId <= 0 || $adviserId <= 0) {
+            return;
+        }
+
+        $stmt = $pdo->prepare(
+            'SELECT
+                e.application_id,
+                i.employer_id,
+                i.title AS internship_title,
+                s.first_name,
+                s.last_name
+             FROM endorsement e
+             INNER JOIN application a ON a.application_id = e.application_id
+             INNER JOIN internship i ON i.internship_id = a.internship_id
+             INNER JOIN student s ON s.student_id = a.student_id
+             WHERE e.endorsement_id = :endorsement_id
+               AND e.adviser_id = :adviser_id
+             LIMIT 1'
+        );
+        $stmt->execute([
+            ':endorsement_id' => $endorsementId,
+            ':adviser_id' => $adviserId,
+        ]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return;
+        }
+
+        $applicationId = (int)($row['application_id'] ?? 0);
+        $employerId = (int)($row['employer_id'] ?? 0);
+        if ($applicationId <= 0 || $employerId <= 0) {
+            return;
+        }
+
+        $studentName = trim((string)($row['first_name'] ?? '') . ' ' . (string)($row['last_name'] ?? ''));
+        if ($studentName === '') {
+            $studentName = 'the student';
+        }
+
+        $internshipTitle = trim((string)($row['internship_title'] ?? 'the internship position'));
+        if ($internshipTitle === '') {
+            $internshipTitle = 'the internship position';
+        }
+
+        skillhive_notifications_create($pdo, [
+            'recipient_role' => 'employer',
+            'recipient_id' => $employerId,
+            'type' => 'endorsement_approved',
+            'title' => 'Endorsement Approved',
+            'message' => $studentName . ' is now approved for endorsement under ' . $internshipTitle . '. You may schedule the interview now.',
+            'target_url' => 'layout.php?page=employer/candidates',
+            'reference_table' => 'application',
+            'reference_id' => $applicationId,
+        ]);
+    }
+}
+
 if (!function_exists('adviser_endorsement_update_status')) {
     function adviser_endorsement_update_status(PDO $pdo, int $adviserId, int $endorsementId, string $action, string $notes = ''): array
     {
@@ -74,6 +137,14 @@ if (!function_exists('adviser_endorsement_update_status')) {
 
         if ($stmt->rowCount() === 0) {
             return ['success' => false, 'error' => 'Endorsement not found or already updated.'];
+        }
+
+        if ($actionKey === 'approve') {
+            try {
+                adviser_endorsement_notify_employer_for_approval($pdo, $endorsementId, $adviserId);
+            } catch (Throwable $e) {
+                // Non-fatal: approval should still succeed even if notification creation fails.
+            }
         }
 
         return ['success' => true, 'error' => null];

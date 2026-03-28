@@ -348,12 +348,6 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
     }
   }
 </style>
-  <div class="page-header">
-    <div>
-      <h2 class="page-title">Endorsements</h2>
-      <p class="page-subtitle">Review and process adviser-assigned internship endorsements.</p>
-    </div>
-  </div>
 
   <?php if ($errorMessage !== ''): ?>
     <div class="error-msg" style="margin-bottom:14px;">

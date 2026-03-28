@@ -188,6 +188,7 @@ function toggleTopbarProfile(event) {
     if (event) {
         event.stopPropagation();
     }
+    closeTopbarNotifications();
     var menu = document.getElementById('topbarProfileMenu');
     var toggle = document.getElementById('topbarProfileToggle');
     if (!menu || !toggle) return;
@@ -205,10 +206,205 @@ function closeTopbarProfile() {
     }
 }
 
+function toggleTopbarNotifications(event) {
+    if (event) {
+        event.stopPropagation();
+    }
+
+    closeTopbarProfile();
+
+    var menu = document.getElementById('topbarNotifMenu');
+    var toggle = document.getElementById('topbarNotifToggle');
+    if (!menu || !toggle) {
+        return;
+    }
+
+    var isOpen = menu.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+    if (isOpen) {
+        loadTopbarNotifications();
+    }
+}
+
+function closeTopbarNotifications() {
+    var menu = document.getElementById('topbarNotifMenu');
+    var toggle = document.getElementById('topbarNotifToggle');
+    if (menu && toggle) {
+        menu.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+    }
+}
+
+function topbarNotificationsApi(action, options) {
+    var requestOptions = options || {};
+    var method = requestOptions.method || 'GET';
+    var body = requestOptions.body || null;
+    var apiUrl = '<?php echo $baseUrl; ?>/pages/common/notifications_api.php';
+    var finalUrl = apiUrl + '?action=' + encodeURIComponent(action || 'list');
+
+    return fetch(finalUrl, {
+        method: method,
+        body: body
+    }).then(function (response) {
+        return response.text().then(function (text) {
+            var parsed = null;
+            try {
+                parsed = JSON.parse(text);
+            } catch (error) {
+                throw new Error('Invalid notifications response');
+            }
+
+            if (!response.ok || !parsed || !parsed.ok) {
+                throw new Error(parsed && parsed.error ? parsed.error : 'Notifications request failed');
+            }
+
+            return parsed;
+        });
+    });
+}
+
+function updateTopbarNotifBadge(unreadCount) {
+    var badge = document.getElementById('topbarNotifBadge');
+    var toggle = document.getElementById('topbarNotifToggle');
+    var unreadText = document.getElementById('topbarNotifUnreadText');
+    var markAllButton = document.getElementById('topbarNotifMarkAll');
+    if (!badge || !toggle) {
+        return;
+    }
+
+    var count = parseInt(unreadCount || 0, 10);
+    if (isNaN(count) || count <= 0) {
+        badge.style.display = 'none';
+        badge.textContent = '0';
+        toggle.classList.remove('has-unread');
+        toggle.setAttribute('aria-label', 'Notifications');
+        if (unreadText) {
+            unreadText.style.display = 'none';
+            unreadText.textContent = '0 unread';
+        }
+        if (markAllButton) {
+            markAllButton.disabled = true;
+        }
+        return;
+    }
+
+    badge.style.display = 'flex';
+    badge.textContent = count > 99 ? '99+' : String(count);
+    toggle.classList.add('has-unread');
+    toggle.setAttribute('aria-label', 'Notifications (' + count + ' unread)');
+    if (unreadText) {
+        unreadText.style.display = 'inline-flex';
+        unreadText.textContent = count + ' unread';
+    }
+    if (markAllButton) {
+        markAllButton.disabled = false;
+    }
+}
+
+function resolveNotificationUrl(targetUrl) {
+    var raw = String(targetUrl || '').trim();
+    if (raw === '') {
+        return '<?php echo $baseUrl; ?>/layout.php';
+    }
+
+    if (/^https?:\/\//i.test(raw)) {
+        return raw;
+    }
+
+    if (raw.charAt(0) === '/') {
+        return '<?php echo $baseUrl; ?>' + raw;
+    }
+
+    return '<?php echo $baseUrl; ?>/' + raw;
+}
+
+function escapeNotificationHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function renderTopbarNotifications(items) {
+    var list = document.getElementById('topbarNotifList');
+    if (!list) {
+        return;
+    }
+
+    var notifications = Array.isArray(items) ? items : [];
+    if (notifications.length === 0) {
+        list.innerHTML = '<div class="topbar-notification-empty">No notifications yet.</div>';
+        return;
+    }
+
+    var html = notifications.map(function (item) {
+        var id = parseInt(item.notification_id || 0, 10);
+        var title = String(item.title || 'Notification');
+        var message = String(item.message || '');
+        var timeLabel = String(item.time_label || 'Just now');
+        var isRead = !!item.is_read;
+        var url = resolveNotificationUrl(item.target_url || '');
+
+        return '<a class="topbar-notification-item ' + (isRead ? '' : 'unread') + '" '
+            + 'href="' + escapeNotificationHtml(url) + '" '
+            + 'data-notification-id="' + id + '">' 
+            + '<div class="topbar-notification-title">' + escapeNotificationHtml(title) + '</div>'
+            + '<div class="topbar-notification-message">' + escapeNotificationHtml(message) + '</div>'
+            + '<div class="topbar-notification-time">' + escapeNotificationHtml(timeLabel) + '</div>'
+            + '</a>';
+    }).join('');
+
+    list.innerHTML = html;
+}
+
+function loadTopbarNotifications() {
+    topbarNotificationsApi('list').then(function (data) {
+        updateTopbarNotifBadge(data.unread_count || 0);
+        renderTopbarNotifications(data.notifications || []);
+    }).catch(function () {
+        renderTopbarNotifications([]);
+    });
+}
+
+function refreshTopbarUnreadCount() {
+    topbarNotificationsApi('unread_count').then(function (data) {
+        updateTopbarNotifBadge(data.unread_count || 0);
+    }).catch(function () {
+        // Ignore polling errors.
+    });
+}
+
+function markNotificationRead(notificationId) {
+    var id = parseInt(notificationId || 0, 10);
+    if (isNaN(id) || id <= 0) {
+        return Promise.resolve();
+    }
+
+    var body = new FormData();
+    body.append('notification_id', String(id));
+
+    return topbarNotificationsApi('mark_read', {
+        method: 'POST',
+        body: body
+    }).then(function (data) {
+        updateTopbarNotifBadge(data.unread_count || 0);
+    }).catch(function () {
+        // Ignore read-mark errors and allow navigation.
+    });
+}
+
 document.addEventListener('click', function (event) {
     var profileWrap = document.getElementById('topbarProfileWrap');
     if (profileWrap && !profileWrap.contains(event.target)) {
         closeTopbarProfile();
+    }
+
+    var notifWrap = document.getElementById('topbarNotifWrap');
+    if (notifWrap && !notifWrap.contains(event.target)) {
+        closeTopbarNotifications();
     }
 });
 
@@ -222,6 +418,7 @@ document.addEventListener('click', function (event) {
 document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         closeTopbarProfile();
+        closeTopbarNotifications();
     }
 });
 
@@ -230,7 +427,41 @@ window.addEventListener('resize', function () {
         closeMobileSidebar();
     }
     closeTopbarProfile();
+    closeTopbarNotifications();
 });
+
+var topbarNotifListEl = document.getElementById('topbarNotifList');
+if (topbarNotifListEl) {
+    topbarNotifListEl.addEventListener('click', function (event) {
+        var item = event.target.closest('.topbar-notification-item');
+        if (!item) {
+            return;
+        }
+
+        var notificationId = item.getAttribute('data-notification-id') || '0';
+        markNotificationRead(notificationId);
+    });
+}
+
+var topbarMarkAllButton = document.getElementById('topbarNotifMarkAll');
+if (topbarMarkAllButton) {
+    topbarMarkAllButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        topbarNotificationsApi('mark_all_read', {
+            method: 'POST',
+            body: new FormData()
+        }).then(function () {
+            updateTopbarNotifBadge(0);
+            loadTopbarNotifications();
+        }).catch(function () {
+            // Ignore mark-all failures.
+        });
+    });
+}
+
+refreshTopbarUnreadCount();
+loadTopbarNotifications();
+window.setInterval(refreshTopbarUnreadCount, 15000);
 
 // Auto-dismiss flash toast
 var toast = document.getElementById('flashToast');
