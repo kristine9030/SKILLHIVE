@@ -367,19 +367,39 @@ function marketplace_ensure_application_consent_columns(PDO $pdo): void
     }
 
     if (!isset($existing['consented_at'])) {
-        $pdo->exec('ALTER TABLE application ADD COLUMN consented_at DATETIME NULL AFTER cover_letter');
+        try {
+            $pdo->exec('ALTER TABLE application ADD COLUMN consented_at DATETIME NULL AFTER cover_letter');
+        } catch (Throwable $e) {
+            // Non-fatal: keep marketplace functional even without schema migration privileges.
+        }
     }
     if (!isset($existing['consent_version'])) {
-        $pdo->exec('ALTER TABLE application ADD COLUMN consent_version VARCHAR(20) NULL AFTER consented_at');
+        try {
+            $pdo->exec('ALTER TABLE application ADD COLUMN consent_version VARCHAR(20) NULL AFTER consented_at');
+        } catch (Throwable $e) {
+            // Non-fatal: keep marketplace functional even without schema migration privileges.
+        }
     }
     if (!isset($existing['compliance_snapshot'])) {
-        $pdo->exec('ALTER TABLE application ADD COLUMN compliance_snapshot LONGTEXT NULL AFTER consent_version');
+        try {
+            $pdo->exec('ALTER TABLE application ADD COLUMN compliance_snapshot LONGTEXT NULL AFTER consent_version');
+        } catch (Throwable $e) {
+            // Non-fatal: keep marketplace functional even without schema migration privileges.
+        }
     }
     if (!isset($existing['resume_link_snapshot'])) {
-        $pdo->exec('ALTER TABLE application ADD COLUMN resume_link_snapshot VARCHAR(255) NULL AFTER compliance_snapshot');
+        try {
+            $pdo->exec('ALTER TABLE application ADD COLUMN resume_link_snapshot VARCHAR(255) NULL AFTER compliance_snapshot');
+        } catch (Throwable $e) {
+            // Non-fatal: keep marketplace functional even without schema migration privileges.
+        }
     }
     if (!isset($existing['profile_link_snapshot'])) {
-        $pdo->exec('ALTER TABLE application ADD COLUMN profile_link_snapshot VARCHAR(255) NULL AFTER resume_link_snapshot');
+        try {
+            $pdo->exec('ALTER TABLE application ADD COLUMN profile_link_snapshot VARCHAR(255) NULL AFTER resume_link_snapshot');
+        } catch (Throwable $e) {
+            // Non-fatal: keep marketplace functional even without schema migration privileges.
+        }
     }
 
     $ensured = true;

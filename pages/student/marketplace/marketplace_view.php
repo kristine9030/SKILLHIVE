@@ -724,11 +724,7 @@ function marketplace_render(array $data): void
         <a class="btn btn-ghost btn-sm" href="<?php echo marketplace_e($baseUrl); ?>/layout.php?page=student/applications">Go to Applications</a>
       <?php else: ?>
         <div style="font-size:.8rem;color:#64748b;margin-bottom:10px">Open the complete application modal to review university requirements and submit your internship application.</div>
-        <button class="btn btn-primary btn-sm" type="button" onclick="openApplyModal()" <?php echo $studentHasResume ? '' : 'disabled'; ?>>Start Application</button>
-        <?php if (!$studentHasResume): ?>
-          <div style="font-size:.78rem;color:#EF4444;margin-top:8px">Resume required before you can continue.</div>
-          <a class="btn btn-ghost btn-sm" style="margin-top:8px" href="<?php echo marketplace_e($baseUrl); ?>/layout.php?page=student/profile">Go to Profile</a>
-        <?php endif; ?>
+        <button class="btn btn-primary btn-sm" type="button" onclick="openApplyModal()">Start Application</button>
       <?php endif; ?>
     </div>
 
@@ -807,11 +803,11 @@ function marketplace_render(array $data): void
                 <div class="market-modal-box">
                   <div style="font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:8px">University Internship Requirements</div>
                   <div class="market-req-checks">
-                    <label><input type="checkbox" name="confirm_endorsement" value="1" required> <span>I will submit my university/internship adviser endorsement before deployment.</span></label>
-                    <label><input type="checkbox" name="confirm_moa" value="1" required> <span>I understand MOA signing is required between university and company before internship start.</span></label>
-                    <label><input type="checkbox" name="confirm_medical" value="1" required> <span>I will provide required medical/fit-to-work clearance if requested by school/company.</span></label>
-                    <label><input type="checkbox" name="confirm_insurance" value="1" required> <span>I confirm internship insurance/accident coverage requirements will be complied with.</span></label>
-                    <label><input type="checkbox" name="confirm_university_policy" value="1" required> <span>I will follow my university OJT policies, required hours, and documentation rules.</span></label>
+                    <label><input type="checkbox" name="confirm_endorsement" value="1"> <span>I will submit my university/internship adviser endorsement before deployment.</span></label>
+                    <label><input type="checkbox" name="confirm_moa" value="1"> <span>I understand MOA signing is required between university and company before internship start.</span></label>
+                    <label><input type="checkbox" name="confirm_medical" value="1"> <span>I will provide required medical/fit-to-work clearance if requested by school/company.</span></label>
+                    <label><input type="checkbox" name="confirm_insurance" value="1"> <span>I confirm internship insurance/accident coverage requirements will be complied with.</span></label>
+                    <label><input type="checkbox" name="confirm_university_policy" value="1"> <span>I will follow my university OJT policies, required hours, and documentation rules.</span></label>
                   </div>
                 </div>
 
@@ -819,36 +815,36 @@ function marketplace_render(array $data): void
                   <div style="font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:8px">Application Profile</div>
                   <div class="market-field">
                     <label>Preferred Start Date</label>
-                    <input type="date" name="preferred_start_date" required>
+                    <input type="date" name="preferred_start_date">
                   </div>
                   <div class="market-field">
                     <label>Emergency Contact Name</label>
-                    <input type="text" name="emergency_contact_name" maxlength="120" required>
+                    <input type="text" name="emergency_contact_name" maxlength="120">
                   </div>
                   <div class="market-field" style="margin-bottom:0">
                     <label>Emergency Contact Number</label>
-                    <input type="text" name="emergency_contact_phone" maxlength="40" required>
+                    <input type="text" name="emergency_contact_phone" maxlength="40">
                   </div>
                 </div>
               </div>
 
               <div class="market-modal-box">
                 <div style="font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:8px">Cover Letter</div>
-                <textarea class="market-cover" name="cover_letter" placeholder="Introduce yourself, explain your fit for this internship, and mention relevant coursework/projects." required></textarea>
+                <textarea class="market-cover" name="cover_letter" placeholder="Introduce yourself, explain your fit for this internship, and mention relevant coursework/projects."></textarea>
               </div>
 
               <div class="market-modal-box">
                 <div style="font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:8px">Legal Consent</div>
                 <div class="market-legal" style="margin-top:0">
-                  <label><input type="checkbox" name="attest_accuracy" value="1" required> <span>I confirm that all information submitted in this application is accurate and truthful.</span></label>
-                  <label><input type="checkbox" name="consent_privacy" value="1" required> <span>I consent to share my profile, resume, and application data with this employer for internship evaluation and recruitment.</span></label>
+                  <label><input type="checkbox" name="attest_accuracy" value="1"> <span>I confirm that all information submitted in this application is accurate and truthful.</span></label>
+                  <label><input type="checkbox" name="consent_privacy" value="1"> <span>I consent to share my profile, resume, and application data with this employer for internship evaluation and recruitment.</span></label>
                 </div>
                 <div style="margin-top:10px;padding:10px;border:1px dashed #d1d5db;border-radius:10px;background:#fff;display:flex;flex-direction:column;gap:6px">
                   <div style="font-size:.74rem;color:#64748b;font-weight:700">Data shared with employer</div>
                   <div style="font-size:.76rem;color:#475569">Resume file: <strong><?php echo marketplace_e((string) ($resumeRow['resume_file'] ?? '')); ?></strong></div>
                   <div style="font-size:.76rem;color:#475569">Profile link: <strong><?php echo marketplace_e($baseUrl . '/layout.php?page=student/profile&student_id=' . (int) $userId); ?></strong></div>
                 </div>
-                <div style="font-size:.73rem;color:#64748b;margin-top:8px">Application Consent Record will be saved as version <?php echo marketplace_e($consentVersion); ?> with server timestamp.</div>
+                <div style="font-size:.73rem;color:#64748b;margin-top:8px">Optional confirmations for your own documentation before submitting.</div>
               </div>
             </div>
 

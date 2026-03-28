@@ -5,8 +5,6 @@ require_once __DIR__ . '/marketplace_db.php';
 require_once __DIR__ . '/marketplace_apply.php';
 require_once __DIR__ . '/marketplace_view.php';
 
-marketplace_ensure_application_consent_columns($pdo);
-
 $currentFilters  = marketplace_filters_from_request();
 $selectedDetailId = (int) $currentFilters['detail'];
 $openApplyModal  = (int) $currentFilters['open_apply'] === 1;

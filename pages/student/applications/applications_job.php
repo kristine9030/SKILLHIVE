@@ -1,5 +1,28 @@
 <?php
 
+function applications_application_columns_map(PDO $pdo): array
+{
+  static $columns = null;
+
+  if (is_array($columns)) {
+    return $columns;
+  }
+
+  $columns = [];
+  try {
+    foreach ($pdo->query('SHOW COLUMNS FROM application') as $column) {
+      $field = (string) ($column['Field'] ?? '');
+      if ($field !== '') {
+        $columns[$field] = true;
+      }
+    }
+  } catch (Throwable $e) {
+    $columns = [];
+  }
+
+  return $columns;
+}
+
 function applications_load_page_data(PDO $pdo, int $userId, string $statusFilter): array
 {
   $statsSql = 'SELECT status, COUNT(*) AS total FROM application WHERE student_id = ? GROUP BY status';
@@ -17,9 +40,17 @@ function applications_load_page_data(PDO $pdo, int $userId, string $statusFilter
       $statusCounts[(string) $row['status']] = (int) $row['total'];
   }
 
+  $applicationColumns = applications_application_columns_map($pdo);
+
+  $optionalSelects = [
+      isset($applicationColumns['consented_at']) ? 'a.consented_at' : 'NULL AS consented_at',
+      isset($applicationColumns['consent_version']) ? 'a.consent_version' : 'NULL AS consent_version',
+      isset($applicationColumns['resume_link_snapshot']) ? 'a.resume_link_snapshot' : 'NULL AS resume_link_snapshot',
+      isset($applicationColumns['profile_link_snapshot']) ? 'a.profile_link_snapshot' : 'NULL AS profile_link_snapshot',
+  ];
+
   $sql =
-    'SELECT a.application_id, a.application_date, a.status, a.compatibility_score, a.updated_at, a.consented_at, a.consent_version,
-        a.resume_link_snapshot, a.profile_link_snapshot,
+    'SELECT a.application_id, a.application_date, a.status, a.compatibility_score, a.updated_at, ' . implode(', ', $optionalSelects) . ',
               i.internship_id, i.title,
               e.company_name, e.company_badge_status
        FROM application a
