@@ -292,8 +292,8 @@ body {
     </form>
 
     <p class="auth-switch-text">
-      Don't have an account?
-      <a href="register.php">Create account</a>
+      Need an employer or adviser account?
+      <a href="register.php">Register here</a>
     </p>
   </div>
 

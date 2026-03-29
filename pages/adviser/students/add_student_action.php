@@ -1,7 +1,7 @@
 <?php
 /**
  * Purpose: Handles adviser add-student workflow and advisory assignment writes.
- * Tables/columns used: student(student_id, student_number, first_name, last_name, email, program, department, year_level, password_hash, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at), adviser_assignment(adviser_id, student_id, status), employer(email), internship_adviser(email), admin(email).
+ * Tables/columns used: student(student_id, student_number, first_name, last_name, email, program, department, year_level, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at), adviser_assignment(adviser_id, student_id, assigned_date, status), employer(email), internship_adviser(email), admin(email).
  */
 
 if (!function_exists('adviser_students_program_options')) {
@@ -33,8 +33,10 @@ if (!function_exists('adviser_students_default_add_form')) {
     function adviser_students_default_add_form(): array
     {
         return [
-            'student_name' => '',
             'student_number' => '',
+            'first_name' => '',
+            'last_name' => '',
+            'program' => 'BSCS',
             'department' => 'BSCS',
             'year_level' => '3',
             'email' => '',
@@ -42,23 +44,41 @@ if (!function_exists('adviser_students_default_add_form')) {
     }
 }
 
-if (!function_exists('adviser_students_split_name')) {
-    function adviser_students_split_name(string $fullName): array
+if (!function_exists('adviser_students_generate_temp_password')) {
+    function adviser_students_generate_temp_password(int $length = 12): string
     {
-        $normalized = preg_replace('/\s+/', ' ', trim($fullName));
-        if ($normalized === '') {
-            return ['', ''];
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+        $maxIndex = strlen($alphabet) - 1;
+        $password = '';
+
+        for ($index = 0; $index < $length; $index++) {
+            $password .= $alphabet[random_int(0, $maxIndex)];
         }
 
-        $parts = explode(' ', $normalized);
-        $firstName = array_shift($parts) ?: '';
-        $lastName = trim(implode(' ', $parts));
+        return $password;
+    }
+}
 
-        if ($lastName === '') {
-            $lastName = 'Student';
+if (!function_exists('adviser_students_assignment_has_assigned_date')) {
+    function adviser_students_assignment_has_assigned_date(PDO $pdo): bool
+    {
+        static $hasColumn = null;
+        if ($hasColumn !== null) {
+            return $hasColumn;
         }
 
-        return [$firstName, $lastName];
+        $stmt = $pdo->prepare(
+            'SELECT 1
+             FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = "adviser_assignment"
+               AND COLUMN_NAME = "assigned_date"
+             LIMIT 1'
+        );
+        $stmt->execute();
+        $hasColumn = (bool)$stmt->fetchColumn();
+
+        return $hasColumn;
     }
 }
 
@@ -103,8 +123,10 @@ if (!function_exists('adviser_students_process_add_student')) {
     function adviser_students_process_add_student(PDO $pdo, int $adviserId, array $input): array
     {
         $form = adviser_students_default_add_form();
-        $form['student_name'] = trim((string)($input['student_name'] ?? ''));
         $form['student_number'] = trim((string)($input['student_number'] ?? ''));
+        $form['first_name'] = trim((string)($input['first_name'] ?? ''));
+        $form['last_name'] = trim((string)($input['last_name'] ?? ''));
+        $form['program'] = trim((string)($input['program'] ?? $form['program']));
         $form['department'] = trim((string)($input['department'] ?? $form['department']));
         $form['year_level'] = trim((string)($input['year_level'] ?? $form['year_level']));
         $form['email'] = trim((string)($input['email'] ?? ''));
@@ -114,12 +136,24 @@ if (!function_exists('adviser_students_process_add_student')) {
         $validPrograms = array_column(adviser_students_program_options(), 'value');
         $validYearLevels = array_column(adviser_students_year_level_options(), 'value');
 
-        if ($form['student_name'] === '') {
-            $errors['student_name'] = 'Student name is required.';
+        if ($adviserId <= 0) {
+            $errors['form'] = 'Unable to identify adviser account.';
+        }
+
+        if ($form['first_name'] === '') {
+            $errors['first_name'] = 'First name is required.';
+        }
+
+        if ($form['last_name'] === '') {
+            $errors['last_name'] = 'Last name is required.';
         }
 
         if ($form['student_number'] === '') {
             $errors['student_number'] = 'Student ID is required.';
+        }
+
+        if (!in_array($form['program'], $validPrograms, true)) {
+            $errors['program'] = 'Please choose a valid program.';
         }
 
         if (!in_array($form['department'], $validPrograms, true)) {
@@ -136,182 +170,90 @@ if (!function_exists('adviser_students_process_add_student')) {
             $errors['email'] = 'Please enter a valid email address.';
         }
 
+        if (!isset($errors['email']) && adviser_students_email_in_use($pdo, $form['email'])) {
+            $errors['email'] = 'That email address is already used by another account.';
+        }
+
+        $existingStudentByNumberStmt = $pdo->prepare(
+            'SELECT student_id
+             FROM student
+             WHERE student_number = :student_number
+             LIMIT 1'
+        );
+        $existingStudentByNumberStmt->execute([':student_number' => $form['student_number']]);
+        if ($existingStudentByNumberStmt->fetchColumn()) {
+            $errors['student_number'] = 'Student ID already exists.';
+        }
+
+        $existingStudentByEmailStmt = $pdo->prepare(
+            'SELECT student_id
+             FROM student
+             WHERE email = :email
+             LIMIT 1'
+        );
+        $existingStudentByEmailStmt->execute([':email' => $form['email']]);
+        if ($existingStudentByEmailStmt->fetchColumn()) {
+            $errors['email'] = 'Student email already exists.';
+        }
+
         if (!empty($errors)) {
             return ['success' => false, 'errors' => $errors, 'form' => $form];
         }
 
-        [$firstName, $lastName] = adviser_students_split_name($form['student_name']);
-
         try {
             $pdo->beginTransaction();
 
-            $byStudentNumberStmt = $pdo->prepare(
-                'SELECT student_id, email
-                 FROM student
-                 WHERE student_number = :student_number
-                 LIMIT 1'
+            $temporaryPassword = adviser_students_generate_temp_password();
+
+            $insertStudentStmt = $pdo->prepare(
+                'INSERT INTO student
+                    (student_number, first_name, last_name, email, program, department, year_level, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
+                 VALUES
+                    (:student_number, :first_name, :last_name, :email, :program, :department, :year_level, :password_hash, 1, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
             );
-            $byStudentNumberStmt->execute([':student_number' => $form['student_number']]);
-            $studentByNumber = $byStudentNumberStmt->fetch(PDO::FETCH_ASSOC) ?: null;
-
-            $byEmailStmt = $pdo->prepare(
-                'SELECT student_id, student_number
-                 FROM student
-                 WHERE email = :email
-                 LIMIT 1'
-            );
-            $byEmailStmt->execute([':email' => $form['email']]);
-            $studentByEmail = $byEmailStmt->fetch(PDO::FETCH_ASSOC) ?: null;
-
-            if ($studentByNumber && $studentByEmail && (int)$studentByNumber['student_id'] !== (int)$studentByEmail['student_id']) {
-                $pdo->rollBack();
-                return [
-                    'success' => false,
-                    'errors' => ['student_number' => 'Student ID and email belong to different student records.'],
-                    'form' => $form,
-                ];
-            }
-
-            $studentId = 0;
-            if ($studentByNumber) {
-                $studentId = (int)$studentByNumber['student_id'];
-            } elseif ($studentByEmail) {
-                $studentId = (int)$studentByEmail['student_id'];
-            }
-
-            if ($studentId > 0) {
-                if (adviser_students_email_in_use($pdo, $form['email'], $studentId)) {
-                    $pdo->rollBack();
-                    return [
-                        'success' => false,
-                        'errors' => ['email' => 'That email address is already used by another account.'],
-                        'form' => $form,
-                    ];
-                }
-
-                $updateStmt = $pdo->prepare(
-                    'UPDATE student
-                     SET student_number = :student_number,
-                         first_name = :first_name,
-                         last_name = :last_name,
-                         email = :email,
-                         program = :program,
-                         department = :department,
-                         year_level = :year_level,
-                         updated_at = NOW()
-                     WHERE student_id = :student_id'
-                );
-                $updateStmt->execute([
-                    ':student_number' => $form['student_number'],
-                    ':first_name' => $firstName,
-                    ':last_name' => $lastName,
-                    ':email' => $form['email'],
-                    ':program' => $form['department'],
-                    ':department' => $form['department'],
-                    ':year_level' => (int)$form['year_level'],
-                    ':student_id' => $studentId,
-                ]);
-            } else {
-                if (adviser_students_email_in_use($pdo, $form['email'])) {
-                    $pdo->rollBack();
-                    return [
-                        'success' => false,
-                        'errors' => ['email' => 'That email address is already used by another account.'],
-                        'form' => $form,
-                    ];
-                }
-
-                $insertStudentStmt = $pdo->prepare(
-                    'INSERT INTO student
-                        (student_number, first_name, last_name, email, program, department, year_level, password_hash, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
-                     VALUES
-                        (:student_number, :first_name, :last_name, :email, :program, :department, :year_level, :password_hash, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
-                );
-                $insertStudentStmt->execute([
-                    ':student_number' => $form['student_number'],
-                    ':first_name' => $firstName,
-                    ':last_name' => $lastName,
-                    ':email' => $form['email'],
-                    ':program' => $form['department'],
-                    ':department' => $form['department'],
-                    ':year_level' => (int)$form['year_level'],
-                    ':password_hash' => password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT),
-                    ':availability_status' => 'Available',
-                ]);
-
-                $studentId = (int)$pdo->lastInsertId();
-            }
-
-            $otherAdviserStmt = $pdo->prepare(
-                'SELECT adviser_id
-                 FROM adviser_assignment
-                 WHERE student_id = :student_id
-                   AND adviser_id <> :adviser_id
-                   AND COALESCE(NULLIF(TRIM(status), ""), "Active") = "Active"
-                 LIMIT 1'
-            );
-            $otherAdviserStmt->execute([
-                ':student_id' => $studentId,
-                ':adviser_id' => $adviserId,
+            $insertStudentStmt->execute([
+                ':student_number' => $form['student_number'],
+                ':first_name' => $form['first_name'],
+                ':last_name' => $form['last_name'],
+                ':email' => $form['email'],
+                ':program' => $form['program'],
+                ':department' => $form['department'],
+                ':year_level' => (int)$form['year_level'],
+                ':password_hash' => password_hash($temporaryPassword, PASSWORD_DEFAULT),
+                ':availability_status' => 'Available',
             ]);
 
-            if ($otherAdviserStmt->fetchColumn()) {
-                $pdo->rollBack();
-                return [
-                    'success' => false,
-                    'errors' => ['student_number' => 'This student is already assigned to another adviser.'],
-                    'form' => $form,
-                ];
+            $studentId = (int)$pdo->lastInsertId();
+            if ($studentId <= 0) {
+                throw new RuntimeException('Unable to create student account.');
             }
 
-            $assignmentStmt = $pdo->prepare(
-                'SELECT status
-                 FROM adviser_assignment
-                 WHERE adviser_id = :adviser_id
-                   AND student_id = :student_id
-                 LIMIT 1'
-            );
-            $assignmentStmt->execute([
-                ':adviser_id' => $adviserId,
-                ':student_id' => $studentId,
-            ]);
-            $existingAssignment = $assignmentStmt->fetch(PDO::FETCH_ASSOC) ?: null;
-
-            if ($existingAssignment) {
-                $currentStatus = trim((string)($existingAssignment['status'] ?? ''));
-                if ($currentStatus === '' || strcasecmp($currentStatus, 'Active') === 0) {
-                    $pdo->rollBack();
-                    return [
-                        'success' => false,
-                        'errors' => ['student_number' => 'This student is already in your advisory list.'],
-                        'form' => $form,
-                    ];
-                }
-
-                $reactivateStmt = $pdo->prepare(
-                    'UPDATE adviser_assignment
-                     SET status = "Active"
-                     WHERE adviser_id = :adviser_id
-                       AND student_id = :student_id'
+            if (adviser_students_assignment_has_assigned_date($pdo)) {
+                $insertAssignmentStmt = $pdo->prepare(
+                    'INSERT INTO adviser_assignment (adviser_id, student_id, assigned_date, status)
+                     VALUES (:adviser_id, :student_id, CURDATE(), "Active")'
                 );
-                $reactivateStmt->execute([
-                    ':adviser_id' => $adviserId,
-                    ':student_id' => $studentId,
-                ]);
             } else {
                 $insertAssignmentStmt = $pdo->prepare(
                     'INSERT INTO adviser_assignment (adviser_id, student_id, status)
                      VALUES (:adviser_id, :student_id, "Active")'
                 );
-                $insertAssignmentStmt->execute([
-                    ':adviser_id' => $adviserId,
-                    ':student_id' => $studentId,
-                ]);
             }
+            $insertAssignmentStmt->execute([
+                ':adviser_id' => $adviserId,
+                ':student_id' => $studentId,
+            ]);
 
             $pdo->commit();
 
-            return ['success' => true, 'errors' => [], 'form' => adviser_students_default_add_form()];
+            return [
+                'success' => true,
+                'errors' => [],
+                'form' => adviser_students_default_add_form(),
+                'temp_password' => $temporaryPassword,
+                'student_name' => trim($form['first_name'] . ' ' . $form['last_name']),
+                'student_email' => $form['email'],
+            ];
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();

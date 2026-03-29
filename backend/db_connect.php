@@ -140,4 +140,25 @@ try {
 } catch (Throwable $e) {
     // Non-fatal: app should continue even if migration fails
 }
+
+// Schema Migration: Ensure must_change_password exists on student table.
+// New adviser-created student accounts are flagged and forced to update password at first login.
+try {
+    $stmt = $pdo->prepare(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'student'
+           AND COLUMN_NAME = 'must_change_password'"
+    );
+    $stmt->execute();
+    if ($stmt->rowCount() === 0) {
+        $pdo->exec(
+            "ALTER TABLE student
+             ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0
+             AFTER password_hash"
+        );
+    }
+} catch (Throwable $e) {
+    // Non-fatal: app should continue even if migration fails.
+}
 ?>

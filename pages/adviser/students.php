@@ -31,12 +31,21 @@ $rows = $pageData['rows'];
 $addStudentForm = adviser_students_default_add_form();
 $addStudentErrors = [];
 $shouldOpenAddStudentModal = false;
+$newStudentCredentials = $_SESSION['adviser_student_credentials'] ?? null;
+if (isset($_SESSION['adviser_student_credentials'])) {
+  unset($_SESSION['adviser_student_credentials']);
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'add_student') {
     $addStudentResult = adviser_students_process_add_student($pdo, $adviserId, $_POST);
 
     if ($addStudentResult['success']) {
-        $_SESSION['status'] = 'Student added to advisory successfully.';
+      $_SESSION['status'] = 'Student account created and assigned successfully.';
+      $_SESSION['adviser_student_credentials'] = [
+        'student_name' => (string)($addStudentResult['student_name'] ?? ''),
+        'student_email' => (string)($addStudentResult['student_email'] ?? ''),
+        'temp_password' => (string)($addStudentResult['temp_password'] ?? ''),
+      ];
         header('Location: ' . $baseUrl . '/layout.php?page=adviser/students');
         exit;
     }
@@ -101,11 +110,47 @@ $yearLevelOptions = adviser_students_year_level_options();
   .adv-add-input:focus, .adv-add-select:focus { border-color:#111827; box-shadow:0 0 0 3px rgba(17,24,39,.05); }
   .adv-add-help { min-height:16px; font-size:.74rem; color:#dc2626; }
   .adv-add-actions { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:18px; }
+  .adv-credentials { background:#fffbeb; border:1px solid #fde68a; border-radius:16px; padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
+  .adv-credentials-title { margin:0; font-size:.95rem; font-weight:800; color:#78350f; }
+  .adv-credentials-sub { margin:0; font-size:.82rem; color:#92400e; }
+  .adv-credentials-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+  .adv-credentials-item { border:1px dashed #f59e0b; border-radius:12px; background:#fff; padding:10px 12px; }
+  .adv-credentials-label { margin:0 0 4px; font-size:.72rem; color:#9a3412; text-transform:uppercase; letter-spacing:.05em; font-weight:700; }
+  .adv-credentials-value { margin:0; font-size:.86rem; font-weight:700; color:#111827; word-break:break-word; }
+  .adv-credentials-actions { display:flex; justify-content:flex-end; }
+  .adv-copy-btn { height:34px; padding:0 14px; border-radius:999px; border:1px solid #f59e0b; background:#fff; color:#b45309; font-size:.78rem; font-weight:700; cursor:pointer; }
+  .adv-copy-btn:hover { background:#fef3c7; }
   @media (max-width:640px) { .adv-search, .adv-select, .adv-btn { width:100%; max-width:none; } }
-  @media (max-width:640px) { .adv-add-grid { grid-template-columns:1fr; } .adv-add-modal { padding:22px 18px; border-radius:20px; } }
+  @media (max-width:640px) { .adv-add-grid { grid-template-columns:1fr; } .adv-add-modal { padding:22px 18px; border-radius:20px; } .adv-credentials-grid { grid-template-columns:1fr; } }
 </style>
 
 <div class="adv-students">
+  <?php if (is_array($newStudentCredentials) && !empty($newStudentCredentials['temp_password'])): ?>
+    <div class="adv-credentials">
+      <div>
+        <p class="adv-credentials-title">Temporary Student Credentials</p>
+        <p class="adv-credentials-sub">Share these credentials securely with the student. They will be required to change this password at first login.</p>
+      </div>
+      <div class="adv-credentials-grid" id="newStudentCredentialsCard">
+        <div class="adv-credentials-item">
+          <p class="adv-credentials-label">Student</p>
+          <p class="adv-credentials-value"><?php echo adviser_students_escape((string)($newStudentCredentials['student_name'] ?? '')); ?></p>
+        </div>
+        <div class="adv-credentials-item">
+          <p class="adv-credentials-label">Email</p>
+          <p class="adv-credentials-value" id="newStudentCredentialEmail"><?php echo adviser_students_escape((string)($newStudentCredentials['student_email'] ?? '')); ?></p>
+        </div>
+        <div class="adv-credentials-item">
+          <p class="adv-credentials-label">Temporary Password</p>
+          <p class="adv-credentials-value" id="newStudentCredentialPassword"><?php echo adviser_students_escape((string)($newStudentCredentials['temp_password'] ?? '')); ?></p>
+        </div>
+      </div>
+      <div class="adv-credentials-actions">
+        <button type="button" class="adv-copy-btn" onclick="copyNewStudentCredentials()"><i class="fas fa-copy"></i> Copy Credentials</button>
+      </div>
+    </div>
+  <?php endif; ?>
+
   <form class="adv-toolbar" method="get" action="<?php echo $baseUrl; ?>/layout.php">
     <input type="hidden" name="page" value="adviser/students">
 
@@ -244,15 +289,39 @@ $yearLevelOptions = adviser_students_year_level_options();
 
       <div class="adv-add-grid">
         <div class="adv-add-field full">
-          <label class="adv-add-label" for="addStudentName">Student Name</label>
-          <input id="addStudentName" class="adv-add-input" type="text" name="student_name" placeholder="e.g. Juan dela Cruz" value="<?php echo adviser_students_escape($addStudentForm['student_name'] ?? ''); ?>" required>
-          <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['student_name'] ?? ''); ?></div>
-        </div>
-
-        <div class="adv-add-field full">
           <label class="adv-add-label" for="addStudentNumber">Student ID</label>
           <input id="addStudentNumber" class="adv-add-input" type="text" name="student_number" placeholder="e.g. 2021-12345" value="<?php echo adviser_students_escape($addStudentForm['student_number'] ?? ''); ?>" required>
           <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['student_number'] ?? ''); ?></div>
+        </div>
+
+        <div class="adv-add-field">
+          <label class="adv-add-label" for="addStudentFirstName">First Name</label>
+          <input id="addStudentFirstName" class="adv-add-input" type="text" name="first_name" placeholder="e.g. Juan" value="<?php echo adviser_students_escape($addStudentForm['first_name'] ?? ''); ?>" required>
+          <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['first_name'] ?? ''); ?></div>
+        </div>
+
+        <div class="adv-add-field">
+          <label class="adv-add-label" for="addStudentLastName">Last Name</label>
+          <input id="addStudentLastName" class="adv-add-input" type="text" name="last_name" placeholder="e.g. dela Cruz" value="<?php echo adviser_students_escape($addStudentForm['last_name'] ?? ''); ?>" required>
+          <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['last_name'] ?? ''); ?></div>
+        </div>
+
+        <div class="adv-add-field full">
+          <label class="adv-add-label" for="addStudentEmail">Email Address</label>
+          <input id="addStudentEmail" class="adv-add-input" type="email" name="email" placeholder="student@university.edu" value="<?php echo adviser_students_escape($addStudentForm['email'] ?? ''); ?>" required>
+          <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['email'] ?? ''); ?></div>
+        </div>
+
+        <div class="adv-add-field">
+          <label class="adv-add-label" for="addStudentProgram">Program</label>
+          <select id="addStudentProgram" class="adv-add-select" name="program" required>
+            <?php foreach ($programOptions as $programOption): ?>
+              <option value="<?php echo adviser_students_escape($programOption['value']); ?>" <?php echo ($addStudentForm['program'] ?? '') === $programOption['value'] ? 'selected' : ''; ?>>
+                <?php echo adviser_students_escape($programOption['label']); ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+          <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['program'] ?? ''); ?></div>
         </div>
 
         <div class="adv-add-field">
@@ -277,12 +346,6 @@ $yearLevelOptions = adviser_students_year_level_options();
             <?php endforeach; ?>
           </select>
           <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['year_level'] ?? ''); ?></div>
-        </div>
-
-        <div class="adv-add-field full">
-          <label class="adv-add-label" for="addStudentEmail">Email Address</label>
-          <input id="addStudentEmail" class="adv-add-input" type="email" name="email" placeholder="student@university.edu" value="<?php echo adviser_students_escape($addStudentForm['email'] ?? ''); ?>" required>
-          <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['email'] ?? ''); ?></div>
         </div>
       </div>
 
@@ -343,6 +406,39 @@ function closeAddStudentModal() {
     var modal = document.getElementById('addStudentModal');
     if (!modal) return;
     modal.classList.remove('open');
+}
+
+function copyNewStudentCredentials() {
+  var emailEl = document.getElementById('newStudentCredentialEmail');
+  var passwordEl = document.getElementById('newStudentCredentialPassword');
+  if (!emailEl || !passwordEl) {
+    return;
+  }
+
+  var copyText = 'Student Login Credentials\n'
+    + 'Email: ' + (emailEl.textContent || '').trim() + '\n'
+    + 'Temporary Password: ' + (passwordEl.textContent || '').trim();
+
+  var button = document.querySelector('.adv-copy-btn');
+
+  function markCopied() {
+    if (!button) {
+      return;
+    }
+    button.innerHTML = '<i class="fas fa-check"></i> Copied';
+    setTimeout(function () {
+      button.innerHTML = '<i class="fas fa-copy"></i> Copy Credentials';
+    }, 1500);
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(copyText).then(markCopied).catch(function () {
+      window.prompt('Copy credentials:', copyText);
+    });
+    return;
+  }
+
+  window.prompt('Copy credentials:', copyText);
 }
 
 var requirementsEndpoint = '<?php echo $baseUrl; ?>/pages/adviser/students/requirements_data.php';

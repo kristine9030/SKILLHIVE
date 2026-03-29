@@ -30,7 +30,7 @@ function emailExists(PDO $pdo, string $email): bool {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $rawRole   = $_POST['role'] ?? 'student';
+  $rawRole   = $_POST['role'] ?? 'employer';
     $role      = normalizeRole($rawRole);
     $firstName = trim($_POST['first_name'] ?? '');
     $lastName  = trim($_POST['last_name'] ?? '');
@@ -46,9 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'organization' => $org,
     ];
 
-    $validRoles = ['student', 'employer', 'adviser'];
+    $validRoles = ['employer', 'adviser'];
     if (!in_array($role, $validRoles, true)) {
-        $errors['role'] = 'Please select a valid role.';
+      $errors['role'] = 'Student accounts are created by advisers. Please select Employer or Adviser.';
     }
 
     if ($firstName === '') $errors['first_name'] = 'First name is required.';
@@ -92,15 +92,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     VALUES (?, ?, ?, ?, ?, NOW(), NOW())
                 ");
                 $stmt->execute([$firstName, $lastName, $dept, $email, $hash]);
-            } else {
-                // Generate a temporary unique student number
-                $tempStudentNum = 'TEMP-' . strtoupper(substr(md5(uniqid('', true)), 0, 8));
-                $stmt = $pdo->prepare("
-                    INSERT INTO student
-                    (student_number, first_name, last_name, email, program, department, year_level, password_hash, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, '', '', 1, ?, 'Available', NULL, NULL, 0.00, NULL, NOW(), NOW())
-                ");
-                $stmt->execute([$tempStudentNum, $firstName, $lastName, $email, $hash]);
             }
 
             $pdo->commit();
@@ -374,15 +365,10 @@ body {
 
       <!-- Role selector -->
       <div class="auth-role-selector">
-        <label class="auth-role-btn <?php echo (old_val('role','student') === 'student') ? 'active' : ''; ?>" onclick="selectRole('student',this)">
-          <i class="fas fa-user-graduate"></i>
-          <span>Student</span>
-          <input type="radio" name="role" value="student" <?php echo (old_val('role','student') === 'student') ? 'checked' : ''; ?> style="display:none">
-        </label>
-        <label class="auth-role-btn <?php echo (old_val('role') === 'employer') ? 'active' : ''; ?>" onclick="selectRole('employer',this)">
+        <label class="auth-role-btn <?php echo (old_val('role','employer') === 'employer') ? 'active' : ''; ?>" onclick="selectRole('employer',this)">
           <i class="fas fa-building"></i>
           <span>Employer</span>
-          <input type="radio" name="role" value="employer" <?php echo (old_val('role') === 'employer') ? 'checked' : ''; ?> style="display:none">
+          <input type="radio" name="role" value="employer" <?php echo (old_val('role','employer') === 'employer') ? 'checked' : ''; ?> style="display:none">
         </label>
         <label class="auth-role-btn <?php echo (old_val('role') === 'adviser') ? 'active' : ''; ?>" onclick="selectRole('adviser',this)">
           <i class="fas fa-chalkboard-teacher"></i>
@@ -433,12 +419,17 @@ body {
       </div>
 
       <!-- Dynamic org field -->
-      <?php $r = old_val('role', 'student'); ?>
+      <?php
+        $r = old_val('role', 'employer');
+        if (!in_array($r, ['employer', 'adviser'], true)) {
+          $r = 'employer';
+        }
+      ?>
       <div class="auth-field" id="reg-org-field">
         <label class="auth-label" id="reg-org-label"><?php
           if ($r === 'employer') echo 'Company Name';
           elseif ($r === 'adviser') echo 'University / Department';
-          else echo 'University / School';
+          else echo 'Company Name';
         ?></label>
         <div class="auth-input-wrap">
           <i class="fas <?php echo ($r === 'employer') ? 'fa-building' : 'fa-university'; ?> auth-input-icon" id="reg-org-icon"></i>
@@ -446,7 +437,7 @@ body {
             placeholder="<?php
               if ($r === 'employer') echo 'Acme Technologies Inc.';
               elseif ($r === 'adviser') echo 'UP College of Engineering';
-              else echo 'University of the Philippines';
+              else echo 'Acme Technologies Inc.';
             ?>"
             value="<?php echo old_val('organization'); ?>">
         </div>
@@ -498,11 +489,10 @@ function selectRole(role, el) {
   el.querySelector('input[type=radio]').checked = true;
 
   const orgLabels = {
-    student:  ['University / School',      'fa-university', 'University of the Philippines',  'First name', 'Last name', 'Juan', 'dela Cruz'],
     employer: ['Company Name',             'fa-building',   'Acme Technologies Inc.',         'Contact Person First Name', 'Contact Person Last Name', 'Maria', 'Santos'],
     adviser:  ['University / Department',  'fa-university', 'UP College of Engineering',      'First name', 'Last name', 'Juan', 'dela Cruz']
   };
-  const [lbl, icon, ph, fnLabel, lnLabel, fnPh, lnPh] = orgLabels[role];
+  const [lbl, icon, ph, fnLabel, lnLabel, fnPh, lnPh] = orgLabels[role] || orgLabels.employer;
   document.getElementById('reg-org-label').textContent = lbl;
   document.getElementById('reg-org-icon').className = 'fas ' + icon + ' auth-input-icon';
   document.getElementById('reg-org-input').placeholder = ph;
@@ -552,6 +542,9 @@ document.addEventListener('DOMContentLoaded', function() {
   if (checkedRole) {
     const btn = checkedRole.closest('.auth-role-btn');
     if (btn) selectRole(checkedRole.value, btn);
+  } else {
+    const defaultBtn = document.querySelector('.auth-role-btn');
+    if (defaultBtn) selectRole('employer', defaultBtn);
   }
 });
 </script>

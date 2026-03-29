@@ -25,6 +25,7 @@ $defaultPage = [
 $allowedPages = [
     'student' => [
         'student/dashboard',
+        'student/first-login',
         'student/profile',
         'student/matching',
         'student/marketplace',
@@ -61,6 +62,18 @@ $allowedPages = [
         'admin/settings',
     ],
 ];
+
+$mustChangePassword = $role === 'student' && !empty($_SESSION['must_change_password']);
+if ($mustChangePassword) {
+    $defaultPage['student'] = 'student/first-login';
+    if ($page !== 'student/first-login') {
+        header('Location: ' . $baseUrl . '/layout.php?page=student/first-login');
+        exit;
+    }
+} elseif ($role === 'student' && $page === 'student/first-login') {
+    header('Location: ' . $baseUrl . '/layout.php?page=student/dashboard');
+    exit;
+}
 
 if ($page && isset($allowedPages[$role]) && in_array($page, $allowedPages[$role])) {
     $currentPage = $page;
