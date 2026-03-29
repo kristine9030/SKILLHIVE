@@ -357,7 +357,7 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
 
   <div class="endorsement-summary-grid">
     <div class="endorsement-stat-card">
-      <div class="endorsement-stat-label">Pending Review</div>
+      <div class="endorsement-stat-label">Pending Review</div>  
       <div class="endorsement-stat-value"><?php echo $pendingCount; ?></div>
     </div>
     <div class="endorsement-stat-card">
@@ -380,19 +380,27 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
     <a class="tab-btn <?php echo $activeTab === 'all' ? 'active' : ''; ?>" href="<?php echo adviser_endorsement_escape($buildTabUrl('all')); ?>">All Endorsements</a>
   </div>
 
-  <form method="get" action="<?php echo $baseUrl; ?>/layout.php" class="filter-row" style="margin-bottom:18px;">
+  <form method="get" action="<?php echo $baseUrl; ?>/layout.php" class="filter-row" style="margin-bottom:18px;" id="endorsementFilterForm">
     <input type="hidden" name="page" value="adviser/endorsement">
     <input type="hidden" name="tab" value="<?php echo adviser_endorsement_escape($activeTab); ?>">
 
-    <select class="filter-select" name="department">
-      <option value="">All Departments</option>
+    <select class="filter-select" name="department" onchange="this.form.submit()">
+      <option value="">All Section</option>
       <?php foreach (($filterOptions['departments'] ?? []) as $deptOption): ?>
         <option value="<?php echo adviser_endorsement_escape($deptOption); ?>" <?php echo ($selected['department'] ?? '') === $deptOption ? 'selected' : ''; ?>><?php echo adviser_endorsement_escape($deptOption); ?></option>
       <?php endforeach; ?>
     </select>
 
-    <input type="text" name="search" class="search-input" style="max-width:260px" placeholder="Search student, company, or position" value="<?php echo adviser_endorsement_escape((string)($selected['search'] ?? '')); ?>">
-    <button class="btn btn-ghost btn-sm" type="submit">Apply</button>
+    <input
+      type="text"
+      id="endorsementSearchInput"
+      name="search"
+      class="search-input"
+      style="max-width:260px"
+      placeholder="Search student, company, or position"
+      value="<?php echo adviser_endorsement_escape((string)($selected['search'] ?? '')); ?>"
+      autocomplete="off"
+    >
   </form>
 
   <?php if ($activeTab === 'pending'): ?>
@@ -623,6 +631,9 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
 <script>
   (function () {
     var openButtons = document.querySelectorAll('[data-open-review-modal]');
+    var filterForm = document.getElementById('endorsementFilterForm');
+    var searchInput = document.getElementById('endorsementSearchInput');
+    var searchTimer = null;
 
     function closeModal(modal) {
       if (!modal) {
@@ -675,5 +686,27 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
         closeModal(openedModal);
       }
     });
+
+    if (filterForm && searchInput) {
+      searchInput.addEventListener('input', function () {
+        if (searchTimer) {
+          clearTimeout(searchTimer);
+        }
+
+        searchTimer = setTimeout(function () {
+          filterForm.submit();
+        }, 350);
+      });
+
+      searchInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          if (searchTimer) {
+            clearTimeout(searchTimer);
+          }
+          filterForm.submit();
+        }
+      });
+    }
   })();
 </script>

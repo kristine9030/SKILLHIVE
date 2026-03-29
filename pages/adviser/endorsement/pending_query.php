@@ -46,7 +46,6 @@ if (!function_exists('adviser_endorsement_get_pending')) {
              INNER JOIN employer emp ON emp.employer_id = i.employer_id
              INNER JOIN adviser_assignment aa ON aa.student_id = s.student_id
                      AND aa.adviser_id = :adviser_id
-                AND COALESCE(NULLIF(TRIM(aa.status), ""), "Active") = "Active"
                  LEFT JOIN endorsement e ON e.endorsement_id = (
                      SELECT MAX(e2.endorsement_id)
                      FROM endorsement e2
@@ -65,7 +64,7 @@ if (!function_exists('adviser_endorsement_get_pending')) {
                 INNER JOIN requirement r ON r.requirement_id = sr.requirement_id
                 GROUP BY sr.student_id, sr.internship_id
              ) doc_flags ON doc_flags.student_id = s.student_id AND doc_flags.internship_id = a.internship_id
-             WHERE LOWER(COALESCE(a.status, "")) = "shortlisted"';
+             WHERE LOWER(TRIM(COALESCE(a.status, ""))) IN ("shortlisted", "shortlist", "reviewed")';
 
         $params = [
             ':adviser_id' => $adviserId,

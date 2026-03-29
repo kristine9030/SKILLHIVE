@@ -11,31 +11,30 @@ $currentFilters = [
     'search' => trim((string)($_GET['search'] ?? '')),
 ];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $adviserId > 0) {
-    $action = trim((string)($_POST['action'] ?? ''));
-    $employerId = (int)($_POST['employer_id'] ?? 0);
+if (!function_exists('adviser_companies_sample_moa_meta')) {
+  function adviser_companies_sample_moa_meta(int $employerId, string $createdAt = ''): array
+  {
+    $safeId = max(1, $employerId);
+    $statusSet = ['Draft', 'Under Review', 'Ready for Signature'];
+    $status = $statusSet[$safeId % count($statusSet)];
 
-    if ($action === 'approve' || $action === 'reject') {
-        try {
-            $result = adviser_companies_update_verification_status($pdo, $employerId, $action);
-            if (empty($result['success'])) {
-                $errorMessage = (string)($result['error'] ?? 'Unable to update company status.');
-            }
-        } catch (Throwable $e) {
-            $errorMessage = 'Action failed. Please try again.';
-        }
+    $baseDate = strtotime($createdAt);
+    if ($baseDate === false) {
+      $baseDate = time();
     }
 
-    if ($errorMessage === '') {
-        $query = http_build_query([
-            'page' => 'adviser/companies',
-            'industry' => trim((string)($_POST['industry'] ?? $currentFilters['industry'] ?? '')),
-            'status' => trim((string)($_POST['status'] ?? $currentFilters['status'] ?? '')),
-            'search' => trim((string)($_POST['search'] ?? $currentFilters['search'] ?? '')),
-        ]);
-        header('Location: ' . $baseUrl . '/layout.php?' . $query);
-        exit;
-    }
+    $preparedDate = strtotime('+7 days', $baseDate);
+    $targetSignDate = strtotime('+14 days', $baseDate);
+
+    return [
+      'status' => $status,
+      'reference' => 'MOA-2026-' . str_pad((string)$safeId, 4, '0', STR_PAD_LEFT),
+      'prepared_date' => date('M j, Y', $preparedDate),
+      'target_sign_date' => date('M j, Y', $targetSignDate),
+      'document_name' => 'sample_moa_company_' . $safeId . '.pdf',
+      'notes' => 'Sample MOA data only. Real MOA upload will replace this once integrated.',
+    ];
+  }
 }
 
 $pageData = [
@@ -139,6 +138,42 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
   .adviser-companies-export:hover {
     color: #fff;
     transform: translateY(-1px);
+  }
+
+  .adviser-companies-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .adviser-companies-search-input {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 0.86rem;
+    color: var(--text);
+    background: #fff;
+    outline: none;
+  }
+
+  .adviser-companies-search-input:focus {
+    border-color: #111;
+  }
+
+  .adviser-companies-search-button {
+    min-height: 40px;
+    padding: 9px 16px;
+    border: 1px solid #111;
+    border-radius: 10px;
+    background: #111;
+    color: #fff;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
   }
 
   .adviser-companies-table-wrap {
@@ -262,6 +297,14 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
     font-weight: 700;
     text-decoration: none;
     white-space: nowrap;
+    cursor: pointer;
+    transition: border-color .18s ease, color .18s ease, background .18s ease, transform .18s ease;
+  }
+
+  .adviser-companies-action:hover {
+    border-color: #111;
+    color: #111;
+    transform: translateY(-1px);
   }
 
   .adviser-companies-action.primary {
@@ -373,6 +416,12 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
     cursor: pointer;
     padding: 8px 10px;
     border-radius: 10px;
+    transition: border-color .18s ease, color .18s ease;
+  }
+
+  .company-modal-close:hover {
+    border-color: #111;
+    color: #111;
   }
 
   .company-modal-grid {
@@ -429,17 +478,13 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
     background: #fff;
     color: var(--text2);
     cursor: pointer;
+    transition: border-color .18s ease, color .18s ease, transform .18s ease;
   }
 
-  .company-modal-btn.approve {
-    background: #111;
+  .company-modal-btn:hover {
     border-color: #111;
-    color: #fff;
-  }
-
-  .company-modal-btn.reject {
-    border-color: #ef4444;
-    color: #ef4444;
+    color: #111;
+    transform: translateY(-1px);
   }
 
   @media (max-width: 900px) {
@@ -449,6 +494,15 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
     }
 
     .adviser-companies-export {
+      width: 100%;
+    }
+
+    .adviser-companies-filters {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .adviser-companies-search-button {
       width: 100%;
     }
   }
@@ -486,7 +540,7 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
     <div class="adviser-companies-panel-head">
       <div>
         <h2 class="adviser-companies-title">Company Verification Queue</h2>
-        <p class="adviser-companies-subtitle">Review partner company details and update verification status.</p>
+        <p class="adviser-companies-subtitle">View partner company details and current MOA progress.</p>
       </div>
 
       <a
@@ -504,6 +558,20 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
       </a>
     </div>
 
+    <form method="get" action="<?php echo $baseUrl; ?>/layout.php" class="adviser-companies-filters">
+      <input type="hidden" name="page" value="adviser/companies">
+      <input type="hidden" name="industry" value="<?php echo adviser_companies_escape((string)($selected['industry'] ?? '')); ?>">
+      <input type="hidden" name="status" value="<?php echo adviser_companies_escape((string)($selected['status'] ?? '')); ?>">
+      <input
+        type="text"
+        name="search"
+        class="adviser-companies-search-input"
+        placeholder="Search company name, email, or industry"
+        value="<?php echo adviser_companies_escape((string)($selected['search'] ?? '')); ?>"
+      >
+      <button type="submit" class="adviser-companies-search-button">Search</button>
+    </form>
+
     <?php if (!empty($rows)): ?>
       <div class="adviser-companies-table-wrap">
         <table class="adviser-companies-table">
@@ -513,7 +581,6 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
               <th>Industry</th>
               <th>Submitted</th>
               <th>Documents</th>
-              <th>Risk</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -524,16 +591,7 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
               $industry = trim((string)($row['industry'] ?? '')) ?: 'Unspecified';
               $createdAtLabel = adviser_companies_format_date((string)($row['created_at'] ?? ''));
               $documentsMeta = adviser_companies_documents_meta($row);
-              $riskMeta = adviser_companies_risk_meta($row);
-              $actionMeta = adviser_companies_action_meta($row);
-              $contactEmail = trim((string)($row['email'] ?? ''));
               $modalId = 'company-review-modal-' . $index;
-              $requestDocsSubject = rawurlencode('SkillHive company verification documents');
-              $requestDocsBody = rawurlencode(
-                  'Hello ' . $companyName . ',' . "\n\n"
-                  . 'We are reviewing your company profile in SkillHive. Please send the missing verification documents so we can continue the approval process.' . "\n\n"
-                  . 'Thank you.'
-              );
               ?>
               <tr>
                 <td>
@@ -557,31 +615,9 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
                   </span>
                 </td>
                 <td>
-                  <span class="adviser-companies-badge <?php echo adviser_companies_escape($riskMeta['class']); ?>">
-                    <?php echo adviser_companies_escape($riskMeta['label']); ?>
-                  </span>
-                </td>
-                <td>
-                  <?php if ($actionMeta['action'] === 'approve' || $actionMeta['action'] === 'reject'): ?>
-                    <form method="post" style="margin:0;">
-                      <input type="hidden" name="action" value="<?php echo adviser_companies_escape($actionMeta['action']); ?>">
-                      <input type="hidden" name="employer_id" value="<?php echo (int)($row['employer_id'] ?? 0); ?>">
-                      <input type="hidden" name="industry" value="<?php echo adviser_companies_escape((string)($selected['industry'] ?? '')); ?>">
-                      <input type="hidden" name="status" value="<?php echo adviser_companies_escape((string)($selected['status'] ?? '')); ?>">
-                      <input type="hidden" name="search" value="<?php echo adviser_companies_escape((string)($selected['search'] ?? '')); ?>">
-                      <button class="adviser-companies-action <?php echo adviser_companies_escape($actionMeta['class']); ?>" type="submit">
-                        <?php echo adviser_companies_escape($actionMeta['label']); ?>
-                      </button>
-                    </form>
-                  <?php elseif ($actionMeta['action'] === 'mailto' && $contactEmail !== ''): ?>
-                    <a class="adviser-companies-action <?php echo adviser_companies_escape($actionMeta['class']); ?>" href="mailto:<?php echo adviser_companies_escape($contactEmail); ?>?subject=<?php echo $requestDocsSubject; ?>&body=<?php echo $requestDocsBody; ?>">
-                      <?php echo adviser_companies_escape($actionMeta['label']); ?>
-                    </a>
-                  <?php else: ?>
-                    <button class="adviser-companies-action <?php echo adviser_companies_escape($actionMeta['class']); ?>" type="button" data-open-company-modal="<?php echo adviser_companies_escape($modalId); ?>">
-                      <?php echo adviser_companies_escape($actionMeta['label']); ?>
-                    </button>
-                  <?php endif; ?>
+                  <button class="adviser-companies-action secondary" type="button" data-open-company-modal="<?php echo adviser_companies_escape($modalId); ?>">
+                    View
+                  </button>
                 </td>
               </tr>
 
@@ -603,6 +639,7 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
         $location = trim((string)($row['company_address'] ?? ''));
         $contactNumber = trim((string)($row['contact_number'] ?? ''));
         $statusLabel = adviser_companies_verification_label((string)($row['verification_status'] ?? 'Pending'));
+        $moaMeta = adviser_companies_sample_moa_meta((int)($row['employer_id'] ?? 0), (string)($row['created_at'] ?? ''));
         $modalId = 'company-review-modal-' . $index;
         ?>
         <div class="company-modal" id="<?php echo adviser_companies_escape($modalId); ?>" aria-hidden="true">
@@ -610,7 +647,7 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
             <div class="company-modal-head">
               <div>
                 <h3 class="company-modal-title" id="<?php echo adviser_companies_escape($modalId); ?>-title"><?php echo adviser_companies_escape($companyName); ?></h3>
-                <div class="company-modal-subtitle">Review company details and update verification status.</div>
+                <div class="company-modal-subtitle">MOA preview for this company (sample data).</div>
               </div>
               <button class="company-modal-close" type="button" data-close-company-modal aria-label="Close">Close</button>
             </div>
@@ -631,6 +668,30 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
               <div class="company-modal-item">
                 <div class="company-modal-label">Risk Level</div>
                 <div class="company-modal-value"><?php echo adviser_companies_escape($riskMeta['label']); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">MOA Status</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape((string)$moaMeta['status']); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">MOA Reference</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape((string)$moaMeta['reference']); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">MOA Prepared Date</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape((string)$moaMeta['prepared_date']); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Target Sign Date</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape((string)$moaMeta['target_sign_date']); ?></div>
+              </div>
+              <div class="company-modal-item full">
+                <div class="company-modal-label">MOA Document</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape((string)$moaMeta['document_name']); ?></div>
+              </div>
+              <div class="company-modal-item full">
+                <div class="company-modal-label">MOA Note</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape((string)$moaMeta['notes']); ?></div>
               </div>
               <div class="company-modal-item full">
                 <div class="company-modal-label">Address</div>
@@ -663,23 +724,9 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
             </div>
 
             <div class="company-modal-actions">
-              <form method="post" style="flex:1;margin:0;">
-                <input type="hidden" name="action" value="reject">
-                <input type="hidden" name="employer_id" value="<?php echo (int)($row['employer_id'] ?? 0); ?>">
-                <input type="hidden" name="industry" value="<?php echo adviser_companies_escape((string)($selected['industry'] ?? '')); ?>">
-                <input type="hidden" name="status" value="<?php echo adviser_companies_escape((string)($selected['status'] ?? '')); ?>">
-                <input type="hidden" name="search" value="<?php echo adviser_companies_escape((string)($selected['search'] ?? '')); ?>">
-                <button class="company-modal-btn reject" type="submit"><i class="fas fa-times"></i> Reject</button>
-              </form>
-
-              <form method="post" style="flex:1;margin:0;">
-                <input type="hidden" name="action" value="approve">
-                <input type="hidden" name="employer_id" value="<?php echo (int)($row['employer_id'] ?? 0); ?>">
-                <input type="hidden" name="industry" value="<?php echo adviser_companies_escape((string)($selected['industry'] ?? '')); ?>">
-                <input type="hidden" name="status" value="<?php echo adviser_companies_escape((string)($selected['status'] ?? '')); ?>">
-                <input type="hidden" name="search" value="<?php echo adviser_companies_escape((string)($selected['search'] ?? '')); ?>">
-                <button class="company-modal-btn approve" type="submit"><i class="fas fa-check"></i> Approve</button>
-              </form>
+              <button class="company-modal-btn" type="button" data-close-company-modal>
+                <i class="fas fa-times"></i> Close
+              </button>
             </div>
           </div>
         </div>

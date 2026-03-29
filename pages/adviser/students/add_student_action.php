@@ -8,11 +8,112 @@ if (!function_exists('adviser_students_program_options')) {
     function adviser_students_program_options(): array
     {
         return [
-            ['value' => 'BSCS', 'label' => 'BS Computer Science'],
-            ['value' => 'BSIT', 'label' => 'BS Information Technology'],
-            ['value' => 'BSSE', 'label' => 'BS Software Engineering'],
-            ['value' => 'BSDS', 'label' => 'BS Data Science'],
+            [
+                'value' => 'Bachelor of Science in Information Technology',
+                'label' => 'Bachelor of Science in Information Technology',
+            ],
         ];
+    }
+}
+
+if (!function_exists('adviser_students_static_program_label')) {
+    function adviser_students_static_program_label(): string
+    {
+        return 'Bachelor of Science in Information Technology';
+    }
+}
+
+if (!function_exists('adviser_students_static_department_label')) {
+    function adviser_students_static_department_label(): string
+    {
+        return 'College of Informatics and Computing Sciences';
+    }
+}
+
+if (!function_exists('adviser_students_default_academic_year')) {
+    function adviser_students_default_academic_year(): string
+    {
+        $start = (int)date('Y');
+        return $start . '-' . ($start + 1);
+    }
+}
+
+if (!function_exists('adviser_students_build_school_email')) {
+    function adviser_students_build_school_email(string $studentNumber): string
+    {
+        $normalized = preg_replace('/\s+/', '', trim($studentNumber));
+        if ($normalized === '' || $normalized === null) {
+            return '';
+        }
+
+        return strtolower($normalized) . '@g.batstate-u.edu.ph';
+    }
+}
+
+if (!function_exists('adviser_students_normalize_academic_year')) {
+    function adviser_students_normalize_academic_year(string $value): string
+    {
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            return '';
+        }
+
+        if (preg_match('/^(\d{4})\s*-\s*(\d{4})$/', $trimmed, $matches) === 1) {
+            return $matches[1] . '-' . $matches[2];
+        }
+
+        return $trimmed;
+    }
+}
+
+if (!function_exists('adviser_students_has_academic_year_column')) {
+    function adviser_students_has_academic_year_column(PDO $pdo): bool
+    {
+        static $hasColumn = null;
+        if ($hasColumn !== null) {
+            return $hasColumn;
+        }
+
+        $stmt = $pdo->prepare(
+            'SELECT 1
+             FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = "student"
+               AND COLUMN_NAME = "academic_year"
+             LIMIT 1'
+        );
+        $stmt->execute();
+        $hasColumn = (bool)$stmt->fetchColumn();
+
+        return $hasColumn;
+    }
+}
+
+if (!function_exists('adviser_students_derive_year_level')) {
+    function adviser_students_derive_year_level(string $studentNumber, string $academicYear): int
+    {
+        $defaultLevel = 3;
+
+        if (
+            preg_match('/^(\d{2})[-]/', trim($studentNumber), $studentMatch) !== 1
+            || preg_match('/^(\d{4})-\d{4}$/', trim($academicYear), $yearMatch) !== 1
+        ) {
+            return $defaultLevel;
+        }
+
+        $entryYear = 2000 + (int)$studentMatch[1];
+        $academicStartYear = (int)$yearMatch[1];
+        $computed = ($academicStartYear - $entryYear) + 1;
+
+        if ($computed < 1) {
+            return 1;
+        }
+
+        if ($computed > 5) {
+            return 5;
+        }
+
+        return $computed;
     }
 }
 
@@ -36,8 +137,9 @@ if (!function_exists('adviser_students_default_add_form')) {
             'student_number' => '',
             'first_name' => '',
             'last_name' => '',
-            'program' => 'BSCS',
-            'department' => 'BSCS',
+            'program' => adviser_students_static_program_label(),
+            'department' => adviser_students_static_department_label(),
+            'academic_year' => adviser_students_default_academic_year(),
             'year_level' => '3',
             'email' => '',
         ];
@@ -126,15 +228,14 @@ if (!function_exists('adviser_students_process_add_student')) {
         $form['student_number'] = trim((string)($input['student_number'] ?? ''));
         $form['first_name'] = trim((string)($input['first_name'] ?? ''));
         $form['last_name'] = trim((string)($input['last_name'] ?? ''));
-        $form['program'] = trim((string)($input['program'] ?? $form['program']));
-        $form['department'] = trim((string)($input['department'] ?? $form['department']));
-        $form['year_level'] = trim((string)($input['year_level'] ?? $form['year_level']));
-        $form['email'] = trim((string)($input['email'] ?? ''));
+        $form['program'] = adviser_students_static_program_label();
+        $form['department'] = adviser_students_static_department_label();
+        // Academic year is controlled by system defaults and is not user-editable.
+        $form['academic_year'] = adviser_students_default_academic_year();
+        $form['email'] = adviser_students_build_school_email($form['student_number']);
+        $form['year_level'] = (string)adviser_students_derive_year_level($form['student_number'], $form['academic_year']);
 
         $errors = [];
-
-        $validPrograms = array_column(adviser_students_program_options(), 'value');
-        $validYearLevels = array_column(adviser_students_year_level_options(), 'value');
 
         if ($adviserId <= 0) {
             $errors['form'] = 'Unable to identify adviser account.';
@@ -150,18 +251,6 @@ if (!function_exists('adviser_students_process_add_student')) {
 
         if ($form['student_number'] === '') {
             $errors['student_number'] = 'Student ID is required.';
-        }
-
-        if (!in_array($form['program'], $validPrograms, true)) {
-            $errors['program'] = 'Please choose a valid program.';
-        }
-
-        if (!in_array($form['department'], $validPrograms, true)) {
-            $errors['department'] = 'Please choose a valid department.';
-        }
-
-        if (!in_array($form['year_level'], $validYearLevels, true)) {
-            $errors['year_level'] = 'Please choose a valid year level.';
         }
 
         if ($form['email'] === '') {
@@ -205,23 +294,46 @@ if (!function_exists('adviser_students_process_add_student')) {
 
             $temporaryPassword = adviser_students_generate_temp_password();
 
-            $insertStudentStmt = $pdo->prepare(
-                'INSERT INTO student
-                    (student_number, first_name, last_name, email, program, department, year_level, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
-                 VALUES
-                    (:student_number, :first_name, :last_name, :email, :program, :department, :year_level, :password_hash, 1, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
-            );
-            $insertStudentStmt->execute([
-                ':student_number' => $form['student_number'],
-                ':first_name' => $form['first_name'],
-                ':last_name' => $form['last_name'],
-                ':email' => $form['email'],
-                ':program' => $form['program'],
-                ':department' => $form['department'],
-                ':year_level' => (int)$form['year_level'],
-                ':password_hash' => password_hash($temporaryPassword, PASSWORD_DEFAULT),
-                ':availability_status' => 'Available',
-            ]);
+            $yearLevelValue = adviser_students_derive_year_level($form['student_number'], $form['academic_year']);
+
+            if (adviser_students_has_academic_year_column($pdo)) {
+                $insertStudentStmt = $pdo->prepare(
+                    'INSERT INTO student
+                        (student_number, first_name, last_name, email, program, department, year_level, academic_year, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
+                     VALUES
+                        (:student_number, :first_name, :last_name, :email, :program, :department, :year_level, :academic_year, :password_hash, 1, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
+                );
+                $insertStudentStmt->execute([
+                    ':student_number' => $form['student_number'],
+                    ':first_name' => $form['first_name'],
+                    ':last_name' => $form['last_name'],
+                    ':email' => $form['email'],
+                    ':program' => $form['program'],
+                    ':department' => $form['department'],
+                    ':year_level' => $yearLevelValue,
+                    ':academic_year' => $form['academic_year'],
+                    ':password_hash' => password_hash($temporaryPassword, PASSWORD_DEFAULT),
+                    ':availability_status' => 'Available',
+                ]);
+            } else {
+                $insertStudentStmt = $pdo->prepare(
+                    'INSERT INTO student
+                        (student_number, first_name, last_name, email, program, department, year_level, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
+                     VALUES
+                        (:student_number, :first_name, :last_name, :email, :program, :department, :year_level, :password_hash, 1, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
+                );
+                $insertStudentStmt->execute([
+                    ':student_number' => $form['student_number'],
+                    ':first_name' => $form['first_name'],
+                    ':last_name' => $form['last_name'],
+                    ':email' => $form['email'],
+                    ':program' => $form['program'],
+                    ':department' => $form['department'],
+                    ':year_level' => $yearLevelValue,
+                    ':password_hash' => password_hash($temporaryPassword, PASSWORD_DEFAULT),
+                    ':availability_status' => 'Available',
+                ]);
+            }
 
             $studentId = (int)$pdo->lastInsertId();
             if ($studentId <= 0) {

@@ -14,6 +14,7 @@ if (!function_exists('candidates_normalize_status')) {
         $map = [
             'pending' => 'Pending',
             'shortlisted' => 'Shortlisted',
+            'reviewed' => 'Shortlisted',
             'interview scheduled' => 'Interview Scheduled',
             'interview' => 'Interview Scheduled',
             'accepted' => 'Accepted',
@@ -227,7 +228,6 @@ if (!function_exists('candidates_ensure_pending_endorsements_for_application')) 
                     FROM application a
                     INNER JOIN adviser_assignment aa ON aa.student_id = a.student_id
                     WHERE a.application_id = :application_id
-                      AND COALESCE(NULLIF(TRIM(aa.status), ""), "Active") = "Active"
                  ) AS seed
                  WHERE NOT EXISTS (
                     SELECT 1

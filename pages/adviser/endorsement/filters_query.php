@@ -8,7 +8,7 @@ if (!function_exists('adviser_endorsement_get_filter_options')) {
     function adviser_endorsement_get_filter_options(PDO $pdo, int $adviserId): array
     {
         $statusStmt = $pdo->prepare(
-            'SELECT DISTINCT status
+            'SELECT DISTINCT e.status AS status
              FROM endorsement e
              INNER JOIN application a ON a.application_id = e.application_id
              INNER JOIN adviser_assignment aa ON aa.student_id = a.student_id

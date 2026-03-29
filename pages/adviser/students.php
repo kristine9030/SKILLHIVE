@@ -31,6 +31,8 @@ $rows = $pageData['rows'];
 $addStudentForm = adviser_students_default_add_form();
 $addStudentErrors = [];
 $shouldOpenAddStudentModal = false;
+$staticProgramLabel = adviser_students_static_program_label();
+$staticDepartmentLabel = adviser_students_static_department_label();
 $newStudentCredentials = $_SESSION['adviser_student_credentials'] ?? null;
 if (isset($_SESSION['adviser_student_credentials'])) {
   unset($_SESSION['adviser_student_credentials']);
@@ -54,9 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
     $addStudentErrors = $addStudentResult['errors'];
     $shouldOpenAddStudentModal = true;
 }
-
-$programOptions = adviser_students_program_options();
-$yearLevelOptions = adviser_students_year_level_options();
 ?>
 
 <style>
@@ -70,7 +69,7 @@ $yearLevelOptions = adviser_students_year_level_options();
   .adv-select { min-width:188px; padding:0 42px 0 16px; font-size:.92rem; font-weight:500; outline:0; appearance:none; background-image:linear-gradient(45deg,transparent 50%,#111 50%),linear-gradient(135deg,#111 50%,transparent 50%); background-position:calc(100% - 20px) calc(50% - 3px),calc(100% - 14px) calc(50% - 3px); background-size:6px 6px,6px 6px; background-repeat:no-repeat; }
   .adv-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:44px; padding:0 22px; border-radius:999px; border:1px solid transparent; background:#111; color:#fff; font-size:.92rem; font-weight:700; text-decoration:none; cursor:pointer; }
   .adv-btn.is-secondary { background:var(--card); border-color:var(--border); color:var(--text); }
-  .adv-btn:disabled { opacity:1; cursor:not-allowed; }
+  .adv-btn:disabled { opacity:1; cursor:default; }
   .adv-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--card-shadow); overflow:hidden; }
   .adv-table-wrap { overflow-x:auto; }
   .adv-table { width:100%; min-width:1080px; border-collapse:separate; border-spacing:0; }
@@ -92,7 +91,7 @@ $yearLevelOptions = adviser_students_year_level_options();
   .adv-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .adv-row-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:34px; padding:0 16px; border-radius:999px; border:1px solid transparent; background:#111; color:#fff; font-size:.82rem; font-weight:700; text-decoration:none; cursor:pointer; }
   .adv-row-btn.is-icon { width:38px; min-width:38px; padding:0; border-color:var(--border); background:var(--card); color:var(--text); }
-  .adv-row-btn.is-icon[aria-disabled="true"] { opacity:.55; cursor:not-allowed; }
+  .adv-row-btn.is-icon[aria-disabled="true"] { opacity:.55; cursor:default; }
   .adv-empty { padding:34px 18px; text-align:center; color:var(--text3); font-size:.9rem; }
   .adv-modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,.35); backdrop-filter:blur(8px); display:none; align-items:center; justify-content:center; z-index:1250; padding:18px; }
   .adv-modal-overlay.open { display:flex; }
@@ -106,6 +105,7 @@ $yearLevelOptions = adviser_students_year_level_options();
   .adv-add-field.full { grid-column:1 / -1; }
   .adv-add-label { font-size:.82rem; font-weight:700; color:#27272a; }
   .adv-add-input, .adv-add-select { width:100%; height:42px; border:1px solid #e5e7eb; border-radius:14px; background:#fff; padding:0 14px; font-size:.91rem; color:#111827; outline:0; }
+  .adv-add-input[readonly] { background:#f9fafb; color:#4b5563; cursor:default; }
   .adv-add-input::placeholder { color:#a1a1aa; }
   .adv-add-input:focus, .adv-add-select:focus { border-color:#111827; box-shadow:0 0 0 3px rgba(17,24,39,.05); }
   .adv-add-help { min-height:16px; font-size:.74rem; color:#dc2626; }
@@ -160,7 +160,7 @@ $yearLevelOptions = adviser_students_year_level_options();
     </label>
 
     <select class="adv-select" name="department" aria-label="Filter by department">
-      <option value="">All Departments</option>
+      <option value="">All Section</option>
       <?php foreach (($filterOptions['departments'] ?? []) as $departmentOption): ?>
         <option value="<?php echo adviser_students_escape($departmentOption); ?>" <?php echo ($selected['department'] ?? '') === $departmentOption ? 'selected' : ''; ?>><?php echo adviser_students_escape($departmentOption); ?></option>
       <?php endforeach; ?>
@@ -199,7 +199,11 @@ $yearLevelOptions = adviser_students_year_level_options();
               $companyName = trim((string)($row['company_name'] ?? ''));
               $internshipTitle = trim((string)($row['internship_title'] ?? ''));
               $subtitle = trim((string)($row['program'] ?? '')) . ' - ' . ($companyName !== '' ? $companyName : 'No company assigned');
-              $yearProgram = adviser_students_year_level_label($row['year_level'] ?? '') . ' - ' . trim((string)($row['program'] ?? 'N/A'));
+              $academicYearLabel = trim((string)($row['academic_year'] ?? ''));
+              if ($academicYearLabel === '') {
+                $academicYearLabel = adviser_students_year_level_label($row['year_level'] ?? '');
+              }
+              $yearProgram = 'Academic Year: ' . $academicYearLabel . ' - ' . trim((string)($row['program'] ?? 'N/A'));
               $hoursCompleted = (float)($row['hours_completed'] ?? 0);
               $hoursRequired = (float)($row['hours_required'] ?? 0);
               $totalRequirements = (int)($row['total_requirements'] ?? 0);
@@ -308,44 +312,26 @@ $yearLevelOptions = adviser_students_year_level_options();
 
         <div class="adv-add-field full">
           <label class="adv-add-label" for="addStudentEmail">Email Address</label>
-          <input id="addStudentEmail" class="adv-add-input" type="email" name="email" placeholder="student@university.edu" value="<?php echo adviser_students_escape($addStudentForm['email'] ?? ''); ?>" required>
+          <input id="addStudentEmail" class="adv-add-input" type="email" name="email" placeholder="Auto-generated from Student ID" value="<?php echo adviser_students_escape($addStudentForm['email'] ?? ''); ?>" required readonly>
           <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['email'] ?? ''); ?></div>
         </div>
 
-        <div class="adv-add-field">
-          <label class="adv-add-label" for="addStudentProgram">Program</label>
-          <select id="addStudentProgram" class="adv-add-select" name="program" required>
-            <?php foreach ($programOptions as $programOption): ?>
-              <option value="<?php echo adviser_students_escape($programOption['value']); ?>" <?php echo ($addStudentForm['program'] ?? '') === $programOption['value'] ? 'selected' : ''; ?>>
-                <?php echo adviser_students_escape($programOption['label']); ?>
-              </option>
-            <?php endforeach; ?>
-          </select>
-          <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['program'] ?? ''); ?></div>
-        </div>
-
-        <div class="adv-add-field">
+        <div class="adv-add-field full">
           <label class="adv-add-label" for="addStudentDepartment">Department</label>
-          <select id="addStudentDepartment" class="adv-add-select" name="department" required>
-            <?php foreach ($programOptions as $programOption): ?>
-              <option value="<?php echo adviser_students_escape($programOption['value']); ?>" <?php echo ($addStudentForm['department'] ?? '') === $programOption['value'] ? 'selected' : ''; ?>>
-                <?php echo adviser_students_escape($programOption['label']); ?>
-              </option>
-            <?php endforeach; ?>
-          </select>
-          <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['department'] ?? ''); ?></div>
+          <input id="addStudentDepartment" class="adv-add-input" type="text" name="department" value="<?php echo adviser_students_escape((string)($addStudentForm['department'] ?? $staticDepartmentLabel)); ?>" readonly>
+          <div class="adv-add-help"></div>
         </div>
 
-        <div class="adv-add-field">
-          <label class="adv-add-label" for="addStudentYearLevel">Year Level</label>
-          <select id="addStudentYearLevel" class="adv-add-select" name="year_level" required>
-            <?php foreach ($yearLevelOptions as $yearLevelOption): ?>
-              <option value="<?php echo adviser_students_escape($yearLevelOption['value']); ?>" <?php echo ($addStudentForm['year_level'] ?? '') === $yearLevelOption['value'] ? 'selected' : ''; ?>>
-                <?php echo adviser_students_escape($yearLevelOption['label']); ?>
-              </option>
-            <?php endforeach; ?>
-          </select>
-          <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['year_level'] ?? ''); ?></div>
+        <div class="adv-add-field full">
+          <label class="adv-add-label" for="addStudentProgram">Program</label>
+          <input id="addStudentProgram" class="adv-add-input" type="text" name="program" value="<?php echo adviser_students_escape((string)($addStudentForm['program'] ?? $staticProgramLabel)); ?>" readonly>
+          <div class="adv-add-help"></div>
+        </div>
+
+        <div class="adv-add-field full">
+          <label class="adv-add-label" for="addStudentAcademicYear">Academic Year</label>
+          <input id="addStudentAcademicYear" class="adv-add-input" type="text" name="academic_year" placeholder="System generated" value="<?php echo adviser_students_escape((string)($addStudentForm['academic_year'] ?? '')); ?>" required readonly>
+          <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['academic_year'] ?? ''); ?></div>
         </div>
       </div>
 
@@ -400,6 +386,7 @@ function openAddStudentModal() {
     var modal = document.getElementById('addStudentModal');
     if (!modal) return;
     modal.classList.add('open');
+  syncAutoStudentEmail();
 }
 
 function closeAddStudentModal() {
@@ -440,6 +427,46 @@ function copyNewStudentCredentials() {
 
   window.prompt('Copy credentials:', copyText);
 }
+
+  function buildStudentSchoolEmail(studentNumber) {
+    var value = String(studentNumber || '').trim().replace(/\s+/g, '');
+    if (!value) {
+      return '';
+    }
+    return value.toLowerCase() + '@g.batstate-u.edu.ph';
+  }
+
+  function syncAutoStudentEmail() {
+    var studentNumberInput = document.getElementById('addStudentNumber');
+    var emailInput = document.getElementById('addStudentEmail');
+    if (!studentNumberInput || !emailInput) {
+      return;
+    }
+
+    emailInput.value = buildStudentSchoolEmail(studentNumberInput.value);
+  }
+
+  function bindAddStudentEmailAutomation() {
+    var studentNumberInput = document.getElementById('addStudentNumber');
+    if (!studentNumberInput) {
+      return;
+    }
+
+    studentNumberInput.addEventListener('input', syncAutoStudentEmail);
+    studentNumberInput.addEventListener('blur', syncAutoStudentEmail);
+    studentNumberInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        syncAutoStudentEmail();
+        var firstNameInput = document.getElementById('addStudentFirstName');
+        if (firstNameInput) {
+          firstNameInput.focus();
+        }
+      }
+    });
+
+    syncAutoStudentEmail();
+  }
 
 var requirementsEndpoint = '<?php echo $baseUrl; ?>/pages/adviser/students/requirements_data.php';
 var requirementsContext = {
@@ -489,7 +516,7 @@ function renderRequirementsChecklist(phases) {
 
             html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid ' + boxBorder + ';background:' + boxBg + ';border-radius:14px;padding:12px 14px;">';
             html += '<div style="display:flex;align-items:center;gap:10px;">';
-            html += '<input type="checkbox" class="js-requirement-checkbox" data-requirement-id="' + requirementId + '" ' + (isSubmitted ? 'checked ' : '') + (requirementsContext.canEdit ? '' : 'disabled ') + 'style="width:18px;height:18px;' + (requirementsContext.canEdit ? 'cursor:pointer;' : 'cursor:not-allowed;') + (isSubmitted ? 'accent-color:#22c55e;' : '') + '">';
+            html += '<input type="checkbox" class="js-requirement-checkbox" data-requirement-id="' + requirementId + '" ' + (isSubmitted ? 'checked ' : '') + (requirementsContext.canEdit ? '' : 'disabled ') + 'style="width:18px;height:18px;' + (requirementsContext.canEdit ? 'cursor:pointer;' : 'cursor:default;') + (isSubmitted ? 'accent-color:#22c55e;' : '') + '">';
             html += '<p style="font-size:.85rem;margin:0;color:#111827;">' + escapeHtml(item.name || 'Requirement') + '</p>';
             html += '</div>';
             html += '<div style="display:flex;align-items:center;gap:8px;font-size:.72rem;flex-wrap:wrap;justify-content:flex-end;">';
@@ -723,4 +750,6 @@ document.addEventListener('keydown', function (event) {
         closeRequirementsModal();
     }
 });
+
+bindAddStudentEmailAutomation();
 </script>

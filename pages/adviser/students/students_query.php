@@ -7,6 +7,11 @@
 if (!function_exists('adviser_students_get_rows')) {
     function adviser_students_get_rows(PDO $pdo, int $adviserId, array $filters = []): array
     {
+        $hasAcademicYearColumn = adviser_students_has_academic_year_column($pdo);
+        $academicYearSelect = $hasAcademicYearColumn
+            ? 's.academic_year,'
+            : '"" AS academic_year,';
+
         $sql = '
             SELECT
                 s.student_id,
@@ -16,6 +21,7 @@ if (!function_exists('adviser_students_get_rows')) {
                 s.program,
                 s.department,
                 s.year_level,
+                ' . $academicYearSelect . '
                 s.availability_status,
                 o.record_id,
                 o.internship_id,
@@ -81,6 +87,7 @@ if (!function_exists('adviser_students_get_rows')) {
                 CONCAT(COALESCE(s.first_name, ""), " ", COALESCE(s.last_name, "")) LIKE :search
                 OR s.program LIKE :search
                 OR s.department LIKE :search
+                ' . ($hasAcademicYearColumn ? 'OR COALESCE(s.academic_year, "") LIKE :search' : '') . '
                 OR COALESCE(i.title, "") LIKE :search
                 OR COALESCE(e.company_name, "") LIKE :search
             )';
@@ -115,5 +122,28 @@ if (!function_exists('adviser_students_get_rows')) {
         unset($row);
 
         return $rows;
+    }
+}
+
+if (!function_exists('adviser_students_has_academic_year_column')) {
+    function adviser_students_has_academic_year_column(PDO $pdo): bool
+    {
+        static $hasColumn = null;
+        if ($hasColumn !== null) {
+            return $hasColumn;
+        }
+
+        $stmt = $pdo->prepare(
+            'SELECT 1
+             FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = "student"
+               AND COLUMN_NAME = "academic_year"
+             LIMIT 1'
+        );
+        $stmt->execute();
+        $hasColumn = (bool)$stmt->fetchColumn();
+
+        return $hasColumn;
     }
 }

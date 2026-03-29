@@ -28,8 +28,7 @@ if (!function_exists('adviser_endorsement_sync_missing_pending')) {
                 FROM application a
                 INNER JOIN adviser_assignment aa ON aa.student_id = a.student_id
                 WHERE aa.adviser_id = :adviser_id
-                  AND COALESCE(NULLIF(TRIM(aa.status), ""), "Active") = "Active"
-                                    AND LOWER(COALESCE(a.status, "")) = "shortlisted"
+                                    AND LOWER(TRIM(COALESCE(a.status, ""))) IN ("shortlisted", "shortlist", "reviewed")
             ) AS seed
             WHERE NOT EXISTS (
                 SELECT 1

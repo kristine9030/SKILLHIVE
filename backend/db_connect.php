@@ -161,4 +161,25 @@ try {
 } catch (Throwable $e) {
     // Non-fatal: app should continue even if migration fails.
 }
+
+// Schema Migration: Ensure academic_year exists on student table.
+// Adviser add-student form now captures academic year (e.g., 2025-2026).
+try {
+    $stmt = $pdo->prepare(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'student'
+           AND COLUMN_NAME = 'academic_year'"
+    );
+    $stmt->execute();
+    if ($stmt->rowCount() === 0) {
+        $pdo->exec(
+            "ALTER TABLE student
+             ADD COLUMN academic_year VARCHAR(20) NOT NULL DEFAULT ''
+             AFTER year_level"
+        );
+    }
+} catch (Throwable $e) {
+    // Non-fatal: app should continue even if migration fails.
+}
 ?>
