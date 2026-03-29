@@ -6,7 +6,7 @@ if ($role === 'student') {
         ['label' => 'MAIN', 'items' => [
             ['icon' => 'fas fa-house',        'text' => 'Home',         'page' => 'student/dashboard'],
             ['icon' => 'fas fa-user',         'text' => 'Profile',      'page' => 'student/profile'],
-            ['icon' => 'fas fa-brain',        'text' => 'AI Matching',  'page' => 'student/matching'],
+            ['icon' => 'fas fa-comments',     'text' => 'Messaging',    'page' => 'student/messaging'],
             ['icon' => 'fas fa-store',        'text' => 'Marketplace',  'page' => 'student/marketplace'],
             ['icon' => 'fas fa-file-lines',   'text' => 'CV Builder',   'page' => 'student/resume-ai'],
         ]],
@@ -23,6 +23,7 @@ if ($role === 'student') {
     $navItems = [
         ['label' => 'MAIN', 'items' => [
             ['icon' => 'fas fa-house',            'text' => 'Dashboard',   'page' => 'employer/dashboard'],
+      ['icon' => 'fas fa-comments',         'text' => 'Messaging',   'page' => 'employer/messaging'],
             ['icon' => 'fas fa-briefcase',        'text' => 'Postings',    'page' => 'employer/post_internship'],
             ['icon' => 'fas fa-users',            'text' => 'Candidates',  'page' => 'employer/candidates'],
             ['icon' => 'fas fa-clipboard-check',  'text' => 'Evaluations', 'page' => 'employer/evaluation'],
@@ -32,6 +33,7 @@ if ($role === 'student') {
     $navItems = [
         ['label' => 'MAIN', 'items' => [
             ['icon' => 'fas fa-house',            'text' => 'Dashboard',     'page' => 'adviser/dashboard'],
+      ['icon' => 'fas fa-comments',         'text' => 'Messaging',     'page' => 'adviser/messaging'],
             ['icon' => 'fas fa-house',            'text' => 'My Students',   'page' => 'adviser/students'],
             ['icon' => 'fas fa-stamp',            'text' => 'Endorsements',  'page' => 'adviser/endorsement'],
             ['icon' => 'fas fa-eye',              'text' => 'OJT Monitoring','page' => 'adviser/monitoring'],
@@ -49,6 +51,7 @@ if ($role === 'student') {
     $navItems = [
         ['label' => 'MAIN', 'items' => [
             ['icon' => 'fas fa-tachometer-alt', 'text' => 'Dashboard',  'page' => 'admin/dashboard'],
+      ['icon' => 'fas fa-comments',      'text' => 'Messaging',  'page' => 'admin/messaging'],
       ['icon' => 'fas fa-university',     'text' => 'Universities','page' => 'admin/universities'],
             ['icon' => 'fas fa-building',       'text' => 'Companies',  'page' => 'admin/verify-companies'],
             ['icon' => 'fas fa-users',          'text' => 'Users',      'page' => 'admin/users'],

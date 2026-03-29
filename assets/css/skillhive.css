@@ -4976,16 +4976,17 @@ body.role-student .feed-main .job-card {
     padding: 22px;
     border-radius: 18px;
 }
-body.role-student .feed-main .job-card-actions .btn-primary.btn-sm {
-    min-height: 46px;
-    padding: 0 24px;
-    font-size: 1rem;
-}
-body.role-student .feed-main .job-card-actions .btn-ghost.btn-sm {
-    min-height: 46px;
-    min-width: 46px;
+body.role-student .feed-main .job-card-actions .btn.btn-sm {
+    min-height: 40px;
+    min-width: 124px;
     padding: 0 14px;
-    font-size: .95rem;
+    font-size: .88rem;
+    justify-content: center;
+}
+body.role-student .feed-main .job-card-actions .btn.btn-sm[aria-label] {
+    min-height: 40px;
+    min-width: 40px;
+    padding: 0 10px;
 }
 @media (max-width: 768px) {
     body.role-student .page-content {

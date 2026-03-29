@@ -195,7 +195,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             <div class="co-logo" style="background:<?php echo htmlspecialchars($palette); ?>"><?php echo htmlspecialchars($companyInitial); ?></div>
             <div class="job-card-info">
               <div class="job-card-title"><?php echo htmlspecialchars($title); ?></div>
-              <div class="job-card-company"><?php echo htmlspecialchars($companyName); ?><?php echo $location !== '' ? ' · ' . htmlspecialchars($location) : ''; ?></div>
+              <div class="job-card-company"><?php echo htmlspecialchars($companyName); ?></div>
             </div>
           </div>
           <div class="job-card-meta">

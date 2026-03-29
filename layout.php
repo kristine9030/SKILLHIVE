@@ -27,7 +27,7 @@ $allowedPages = [
         'student/dashboard',
         'student/first-login',
         'student/profile',
-        'student/matching',
+        'student/messaging',
         'student/marketplace',
         'student/resume-ai',
         'student/applications',
@@ -37,6 +37,7 @@ $allowedPages = [
     ],
     'employer' => [
         'employer/dashboard',
+        'employer/messaging',
         'employer/post_internship',
         'employer/post-internship',
         'employer/candidates',
@@ -44,6 +45,7 @@ $allowedPages = [
     ],
     'adviser' => [
         'adviser/dashboard',
+        'adviser/messaging',
         'adviser/endorsement',
         'adviser/monitoring',
         'adviser/analytics',
@@ -54,6 +56,7 @@ $allowedPages = [
     ],
     'admin' => [
         'admin/dashboard',
+        'admin/messaging',
         'admin/universities',
         'admin/verify-companies',
         'admin/users',
