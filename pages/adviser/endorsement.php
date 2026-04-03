@@ -426,8 +426,13 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
                 $submittedDate = adviser_endorsement_format_date((string)($row['created_at'] ?? ''));
                 $docsStatus = (string)($row['documents_status'] ?? 'Partial');
                 $docsClass = $docsStatus === 'Complete' ? 'complete' : 'partial';
+                $searchBlob = strtolower(trim(implode(' ', [
+                  (string)$studentName,
+                  (string)($row['company_name'] ?? ''),
+                  (string)($row['internship_title'] ?? ''),
+                ])));
                 ?>
-                <tr>
+                <tr data-search-row="<?php echo adviser_endorsement_escape($searchBlob); ?>">
                   <td><?php echo adviser_endorsement_escape($studentName !== '' ? $studentName : 'N/A'); ?></td>
                   <td><?php echo adviser_endorsement_escape((string)($row['company_name'] ?? 'N/A')); ?></td>
                   <td><?php echo adviser_endorsement_escape((string)($row['internship_title'] ?? 'N/A')); ?></td>
@@ -562,8 +567,13 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
                 $approvedDate = adviser_endorsement_format_date((string)($row['reviewed_at'] ?? ''));
                 $startDate = adviser_endorsement_format_date((string)($row['start_date'] ?? ''));
                 $fileUrl = $resolveEndorsementFileUrl((string)($row['endorsement_file'] ?? ''));
+                $searchBlob = strtolower(trim(implode(' ', [
+                  (string)$studentName,
+                  (string)($row['company_name'] ?? ''),
+                  (string)($row['internship_title'] ?? ''),
+                ])));
                 ?>
-                <tr>
+                <tr data-search-row="<?php echo adviser_endorsement_escape($searchBlob); ?>">
                   <td><?php echo adviser_endorsement_escape($studentName !== '' ? $studentName : 'N/A'); ?></td>
                   <td><?php echo adviser_endorsement_escape((string)($row['company_name'] ?? 'N/A')); ?></td>
                   <td><?php echo adviser_endorsement_escape((string)($row['internship_title'] ?? 'N/A')); ?></td>
@@ -609,8 +619,13 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
                 $statusLabel = adviser_endorsement_normalize_status((string)($row['status'] ?? ''));
                 $statusClass = adviser_endorsement_status_class((string)($row['status'] ?? ''));
                 $statusDate = adviser_endorsement_format_date((string)($row['reviewed_at'] ?? $row['created_at'] ?? ''));
+                $searchBlob = strtolower(trim(implode(' ', [
+                  (string)$studentName,
+                  (string)($row['company_name'] ?? ''),
+                  (string)($row['internship_title'] ?? ''),
+                ])));
                 ?>
-                <tr>
+                <tr data-search-row="<?php echo adviser_endorsement_escape($searchBlob); ?>">
                   <td><?php echo adviser_endorsement_escape($studentName !== '' ? $studentName : 'N/A'); ?></td>
                   <td><?php echo adviser_endorsement_escape((string)($row['company_name'] ?? 'N/A')); ?></td>
                   <td><span class="status-pill <?php echo adviser_endorsement_escape($statusClass); ?>"><?php echo adviser_endorsement_escape($statusLabel); ?></span></td>
@@ -688,14 +703,55 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
     });
 
     if (filterForm && searchInput) {
+      var activeTable = document.querySelector('.endorsement-table-card .app-table');
+
+      function filterVisibleRows() {
+        if (!activeTable) {
+          return;
+        }
+
+        var term = (searchInput.value || '').trim().toLowerCase();
+        var tbody = activeTable.querySelector('tbody');
+        if (!tbody) {
+          return;
+        }
+
+        var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr[data-search-row]'));
+        if (rows.length === 0) {
+          return;
+        }
+        var visibleCount = 0;
+
+        rows.forEach(function (row) {
+          var blob = String(row.getAttribute('data-search-row') || '').toLowerCase();
+          var show = term === '' || blob.indexOf(term) !== -1;
+          row.style.display = show ? '' : 'none';
+          if (show) {
+            visibleCount++;
+          }
+        });
+
+        var emptyRow = tbody.querySelector('tr[data-search-empty="1"]');
+        if (!emptyRow) {
+          var colCount = activeTable.querySelectorAll('thead th').length || 1;
+          emptyRow = document.createElement('tr');
+          emptyRow.setAttribute('data-search-empty', '1');
+          emptyRow.style.display = 'none';
+          emptyRow.innerHTML = '<td colspan="' + colCount + '" class="endorsement-empty">No matching results for your search.</td>';
+          tbody.appendChild(emptyRow);
+        }
+
+        emptyRow.style.display = visibleCount === 0 ? '' : 'none';
+      }
+
       searchInput.addEventListener('input', function () {
         if (searchTimer) {
           clearTimeout(searchTimer);
         }
 
         searchTimer = setTimeout(function () {
-          filterForm.submit();
-        }, 350);
+          filterVisibleRows();
+        }, 120);
       });
 
       searchInput.addEventListener('keydown', function (event) {
@@ -704,9 +760,11 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
           if (searchTimer) {
             clearTimeout(searchTimer);
           }
-          filterForm.submit();
+          filterVisibleRows();
         }
       });
+
+      filterVisibleRows();
     }
   })();
 </script>

@@ -33,21 +33,24 @@ $addStudentErrors = [];
 $shouldOpenAddStudentModal = false;
 $staticProgramLabel = adviser_students_static_program_label();
 $staticDepartmentLabel = adviser_students_static_department_label();
-$newStudentCredentials = $_SESSION['adviser_student_credentials'] ?? null;
-if (isset($_SESSION['adviser_student_credentials'])) {
-  unset($_SESSION['adviser_student_credentials']);
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'add_student') {
     $addStudentResult = adviser_students_process_add_student($pdo, $adviserId, $_POST);
 
     if ($addStudentResult['success']) {
-      $_SESSION['status'] = 'Student account created and assigned successfully.';
-      $_SESSION['adviser_student_credentials'] = [
+      $credentialsEmailResult = adviser_students_send_credentials_email([
         'student_name' => (string)($addStudentResult['student_name'] ?? ''),
         'student_email' => (string)($addStudentResult['student_email'] ?? ''),
+        'student_number' => (string)($addStudentResult['student_number'] ?? ''),
         'temp_password' => (string)($addStudentResult['temp_password'] ?? ''),
-      ];
+        'login_url' => adviser_students_build_login_url($baseUrl ?? '/SkillHive'),
+      ]);
+
+      if (!empty($credentialsEmailResult['ok'])) {
+        $_SESSION['status'] = 'Student account created, assigned, and credentials emailed successfully.';
+      } else {
+        $_SESSION['status'] = 'Student account created and assigned, but credentials email failed: ' . (string)($credentialsEmailResult['error'] ?? 'Unknown email error.');
+      }
         header('Location: ' . $baseUrl . '/layout.php?page=adviser/students');
         exit;
     }
@@ -110,47 +113,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
   .adv-add-input:focus, .adv-add-select:focus { border-color:#111827; box-shadow:0 0 0 3px rgba(17,24,39,.05); }
   .adv-add-help { min-height:16px; font-size:.74rem; color:#dc2626; }
   .adv-add-actions { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:18px; }
-  .adv-credentials { background:#fffbeb; border:1px solid #fde68a; border-radius:16px; padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
-  .adv-credentials-title { margin:0; font-size:.95rem; font-weight:800; color:#78350f; }
-  .adv-credentials-sub { margin:0; font-size:.82rem; color:#92400e; }
-  .adv-credentials-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-  .adv-credentials-item { border:1px dashed #f59e0b; border-radius:12px; background:#fff; padding:10px 12px; }
-  .adv-credentials-label { margin:0 0 4px; font-size:.72rem; color:#9a3412; text-transform:uppercase; letter-spacing:.05em; font-weight:700; }
-  .adv-credentials-value { margin:0; font-size:.86rem; font-weight:700; color:#111827; word-break:break-word; }
-  .adv-credentials-actions { display:flex; justify-content:flex-end; }
-  .adv-copy-btn { height:34px; padding:0 14px; border-radius:999px; border:1px solid #f59e0b; background:#fff; color:#b45309; font-size:.78rem; font-weight:700; cursor:pointer; }
-  .adv-copy-btn:hover { background:#fef3c7; }
   @media (max-width:640px) { .adv-search, .adv-select, .adv-btn { width:100%; max-width:none; } }
-  @media (max-width:640px) { .adv-add-grid { grid-template-columns:1fr; } .adv-add-modal { padding:22px 18px; border-radius:20px; } .adv-credentials-grid { grid-template-columns:1fr; } }
+  @media (max-width:640px) { .adv-add-grid { grid-template-columns:1fr; } .adv-add-modal { padding:22px 18px; border-radius:20px; } }
 </style>
 
 <div class="adv-students">
-  <?php if (is_array($newStudentCredentials) && !empty($newStudentCredentials['temp_password'])): ?>
-    <div class="adv-credentials">
-      <div>
-        <p class="adv-credentials-title">Temporary Student Credentials</p>
-        <p class="adv-credentials-sub">Share these credentials securely with the student. They will be required to change this password at first login.</p>
-      </div>
-      <div class="adv-credentials-grid" id="newStudentCredentialsCard">
-        <div class="adv-credentials-item">
-          <p class="adv-credentials-label">Student</p>
-          <p class="adv-credentials-value"><?php echo adviser_students_escape((string)($newStudentCredentials['student_name'] ?? '')); ?></p>
-        </div>
-        <div class="adv-credentials-item">
-          <p class="adv-credentials-label">Email</p>
-          <p class="adv-credentials-value" id="newStudentCredentialEmail"><?php echo adviser_students_escape((string)($newStudentCredentials['student_email'] ?? '')); ?></p>
-        </div>
-        <div class="adv-credentials-item">
-          <p class="adv-credentials-label">Temporary Password</p>
-          <p class="adv-credentials-value" id="newStudentCredentialPassword"><?php echo adviser_students_escape((string)($newStudentCredentials['temp_password'] ?? '')); ?></p>
-        </div>
-      </div>
-      <div class="adv-credentials-actions">
-        <button type="button" class="adv-copy-btn" onclick="copyNewStudentCredentials()"><i class="fas fa-copy"></i> Copy Credentials</button>
-      </div>
-    </div>
-  <?php endif; ?>
-
   <form class="adv-toolbar" method="get" action="<?php echo $baseUrl; ?>/layout.php">
     <input type="hidden" name="page" value="adviser/students">
 
@@ -256,7 +223,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
                       Requirements
                     </button>
                     <?php if (!empty($row['email'])): ?>
-                      <a class="adv-row-btn is-icon" href="mailto:<?php echo adviser_students_escape((string)$row['email']); ?>" title="Email student"><i class="fas fa-envelope"></i></a>
+                      <button
+                        class="adv-row-btn is-icon js-send-student-email-btn"
+                        type="button"
+                        title="Send email"
+                        data-student-email="<?php echo adviser_students_escape((string)$row['email']); ?>"
+                        data-student-name="<?php echo adviser_students_escape($studentName !== '' ? $studentName : 'Student'); ?>"
+                        onclick="sendStudentEmail(this)"
+                      ><i class="fas fa-envelope"></i></button>
                     <?php else: ?>
                       <span class="adv-row-btn is-icon" aria-disabled="true" title="No email on file"><i class="fas fa-envelope"></i></span>
                     <?php endif; ?>
@@ -288,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
       <div class="adv-add-error"><?php echo adviser_students_escape($addStudentErrors['form']); ?></div>
     <?php endif; ?>
 
-    <form method="post" action="<?php echo $baseUrl; ?>/layout.php?page=adviser/students">
+    <form id="addStudentForm" method="post" action="<?php echo $baseUrl; ?>/layout.php?page=adviser/students">
       <input type="hidden" name="action" value="add_student">
 
       <div class="adv-add-grid">
@@ -337,7 +311,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
 
       <div class="adv-add-actions">
         <button type="button" class="adv-btn is-secondary" onclick="closeAddStudentModal()">Cancel</button>
-        <button type="submit" class="adv-btn"><i class="fas fa-user-plus"></i>Add Student</button>
+        <button id="addStudentSubmitBtn" type="submit" class="adv-btn"><i class="fas fa-user-plus"></i>Add Student</button>
       </div>
     </form>
   </div>
@@ -395,37 +369,28 @@ function closeAddStudentModal() {
     modal.classList.remove('open');
 }
 
-function copyNewStudentCredentials() {
-  var emailEl = document.getElementById('newStudentCredentialEmail');
-  var passwordEl = document.getElementById('newStudentCredentialPassword');
-  if (!emailEl || !passwordEl) {
+function bindAddStudentFormSubmission() {
+  var form = document.getElementById('addStudentForm');
+  if (!form) {
     return;
   }
 
-  var copyText = 'Student Login Credentials\n'
-    + 'Email: ' + (emailEl.textContent || '').trim() + '\n'
-    + 'Temporary Password: ' + (passwordEl.textContent || '').trim();
-
-  var button = document.querySelector('.adv-copy-btn');
-
-  function markCopied() {
-    if (!button) {
+  form.addEventListener('submit', function (event) {
+    if (form.dataset.submitting === '1') {
+      event.preventDefault();
       return;
     }
-    button.innerHTML = '<i class="fas fa-check"></i> Copied';
-    setTimeout(function () {
-      button.innerHTML = '<i class="fas fa-copy"></i> Copy Credentials';
-    }, 1500);
-  }
 
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(copyText).then(markCopied).catch(function () {
-      window.prompt('Copy credentials:', copyText);
-    });
-    return;
-  }
+    form.dataset.submitting = '1';
 
-  window.prompt('Copy credentials:', copyText);
+    var submitButton = document.getElementById('addStudentSubmitBtn');
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    }
+
+    closeAddStudentModal();
+  });
 }
 
   function buildStudentSchoolEmail(studentNumber) {
@@ -466,6 +431,81 @@ function copyNewStudentCredentials() {
     });
 
     syncAutoStudentEmail();
+  }
+
+  var sendEmailHost = (window.location && window.location.hostname) ? window.location.hostname : 'localhost';
+  var sendEmailEndpoint = (window.location && window.location.protocol ? window.location.protocol : 'http:') + '//' + sendEmailHost + ':3100/send-email';
+  var defaultStudentEmailMessage = 'nagugutom ako omaygad';
+  var defaultStudentEmailLogoUrl = '';
+  var emailSendCooldownMs = 15000;
+  var emailSendCooldownByRecipient = {};
+
+  function sendStudentEmail(button) {
+    if (!button || button.dataset.sending === '1') {
+      return;
+    }
+
+    var studentEmail = String(button.getAttribute('data-student-email') || '').trim();
+    var studentName = String(button.getAttribute('data-student-name') || 'Student').trim();
+    var now = Date.now();
+    var lastSentAt = Number(emailSendCooldownByRecipient[studentEmail] || 0);
+
+    if (!studentEmail) {
+      alert('No student email found for this row.');
+      return;
+    }
+
+    if (lastSentAt > 0 && now - lastSentAt < emailSendCooldownMs) {
+      var secondsLeft = Math.ceil((emailSendCooldownMs - (now - lastSentAt)) / 1000);
+      alert('Please wait ' + secondsLeft + 's before sending another email to ' + studentName + '.');
+      return;
+    }
+
+    var originalHtml = button.innerHTML;
+    button.dataset.sending = '1';
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    fetch(sendEmailEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        studentEmail: studentEmail,
+        studentName: studentName,
+        message: defaultStudentEmailMessage,
+        logoUrl: defaultStudentEmailLogoUrl
+      })
+    })
+      .then(function (response) {
+        return response.json().catch(function () {
+          return { ok: false, error: 'Invalid API response.' };
+        }).then(function (payload) {
+          if (!response.ok || !payload || payload.ok !== true) {
+            var message = (payload && payload.error) ? payload.error : 'Unable to send email right now.';
+            throw new Error(message);
+          }
+          return payload;
+        });
+      })
+      .then(function () {
+        emailSendCooldownByRecipient[studentEmail] = Date.now();
+        alert('Email sent successfully to ' + studentName + '.');
+      })
+      .catch(function (error) {
+        var errorMessage = (error && error.message) ? error.message : 'Unknown error';
+        if (/Failed to fetch|NetworkError|Load failed/i.test(errorMessage)) {
+          alert('Email send failed: Unable to reach email service at ' + sendEmailEndpoint + '. Please make sure the email API is running (npm run email:api).');
+          return;
+        }
+        alert('Email send failed: ' + errorMessage);
+      })
+      .finally(function () {
+        button.dataset.sending = '0';
+        button.disabled = false;
+        button.innerHTML = originalHtml;
+      });
   }
 
 var requirementsEndpoint = '<?php echo $baseUrl; ?>/pages/adviser/students/requirements_data.php';
@@ -752,4 +792,5 @@ document.addEventListener('keydown', function (event) {
 });
 
 bindAddStudentEmailAutomation();
+bindAddStudentFormSubmission();
 </script>
