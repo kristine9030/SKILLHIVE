@@ -18,6 +18,8 @@ if (!function_exists('adviser_monitoring_get_rows')) {
                 o.hours_required,
                 o.hours_completed,
                 o.completion_status,
+                o.start_date AS ojt_start_date,
+                o.created_at AS ojt_created_at,
                 i.title AS internship_title,
                 e.company_name,
                 dl.log_date AS latest_log_date,
@@ -83,7 +85,9 @@ if (!function_exists('adviser_monitoring_get_rows')) {
             $badge = adviser_monitoring_status_badge(
                 (string)($row['completion_status'] ?? ''),
                 $percent,
-                (string)($row['latest_log_date'] ?? '')
+                (string)($row['latest_log_date'] ?? ''),
+                (string)($row['ojt_start_date'] ?? ''),
+                (string)($row['ojt_created_at'] ?? '')
             );
 
             if ($progressFilter !== '' && $badge['label'] !== $progressFilter) {

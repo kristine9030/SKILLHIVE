@@ -8,7 +8,7 @@ $errorMessage = '';
 $currentFilters = [
     'industry' => trim((string)($_GET['industry'] ?? '')),
     'status' => trim((string)($_GET['status'] ?? '')),
-    'search' => trim((string)($_GET['search'] ?? '')),
+  'search' => '',
 ];
 
 if (!function_exists('adviser_companies_sample_moa_meta')) {
@@ -163,17 +163,12 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
     border-color: #111;
   }
 
-  .adviser-companies-search-button {
-    min-height: 40px;
-    padding: 9px 16px;
-    border: 1px solid #111;
-    border-radius: 10px;
-    background: #111;
-    color: #fff;
-    font-size: 0.84rem;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
+  .adviser-companies-no-results td {
+    text-align: center;
+    color: var(--text3);
+    font-size: 0.82rem;
+    padding: 16px 14px;
+    border-bottom: 0;
   }
 
   .adviser-companies-table-wrap {
@@ -501,10 +496,6 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
       flex-direction: column;
       align-items: stretch;
     }
-
-    .adviser-companies-search-button {
-      width: 100%;
-    }
   }
 
   @media (max-width: 700px) {
@@ -558,19 +549,15 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
       </a>
     </div>
 
-    <form method="get" action="<?php echo $baseUrl; ?>/layout.php" class="adviser-companies-filters">
-      <input type="hidden" name="page" value="adviser/companies">
-      <input type="hidden" name="industry" value="<?php echo adviser_companies_escape((string)($selected['industry'] ?? '')); ?>">
-      <input type="hidden" name="status" value="<?php echo adviser_companies_escape((string)($selected['status'] ?? '')); ?>">
+    <div class="adviser-companies-filters" role="search" aria-label="Search companies">
       <input
+        id="adviserCompaniesSearchInput"
         type="text"
-        name="search"
         class="adviser-companies-search-input"
         placeholder="Search company name, email, or industry"
         value="<?php echo adviser_companies_escape((string)($selected['search'] ?? '')); ?>"
       >
-      <button type="submit" class="adviser-companies-search-button">Search</button>
-    </form>
+    </div>
 
     <?php if (!empty($rows)): ?>
       <div class="adviser-companies-table-wrap">
@@ -591,9 +578,21 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
               $industry = trim((string)($row['industry'] ?? '')) ?: 'Unspecified';
               $createdAtLabel = adviser_companies_format_date((string)($row['created_at'] ?? ''));
               $documentsMeta = adviser_companies_documents_meta($row);
+              $searchRow = strtolower(trim((string)preg_replace(
+                  '/\s+/',
+                  ' ',
+                  implode(' ', [
+                      $companyName,
+                      $industry,
+                      (string)($row['email'] ?? ''),
+                      (string)($row['website_url'] ?? ''),
+                      (string)($row['company_address'] ?? ''),
+                      (string)($row['contact_number'] ?? ''),
+                  ])
+              )));
               $modalId = 'company-review-modal-' . $index;
               ?>
-              <tr>
+              <tr data-search-row="<?php echo adviser_companies_escape($searchRow); ?>">
                 <td>
                   <div class="adviser-companies-company">
                     <span class="adviser-companies-avatar" style="background:<?php echo adviser_companies_escape(adviser_companies_gradient((int)$index)); ?>;">
@@ -741,6 +740,74 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
 
 <script>
   (function () {
+    var searchInput = document.getElementById('adviserCompaniesSearchInput');
+    var tableBody = document.querySelector('.adviser-companies-table tbody');
+    var searchableRows = tableBody
+      ? Array.prototype.slice.call(tableBody.querySelectorAll('tr[data-search-row]'))
+      : [];
+
+    function normalizeSearchText(value) {
+      return String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+
+    function getNoResultRow() {
+      if (!tableBody) {
+        return null;
+      }
+      return tableBody.querySelector('tr.adviser-companies-no-results');
+    }
+
+    function renderNoResultRow() {
+      if (!tableBody || getNoResultRow()) {
+        return;
+      }
+      var row = document.createElement('tr');
+      row.className = 'adviser-companies-no-results';
+      row.innerHTML = '<td colspan="5">No matching companies found.</td>';
+      tableBody.appendChild(row);
+    }
+
+    function removeNoResultRow() {
+      var row = getNoResultRow();
+      if (row && row.parentNode) {
+        row.parentNode.removeChild(row);
+      }
+    }
+
+    function filterCompanyRows() {
+      if (!searchInput || !tableBody || !searchableRows.length) {
+        return;
+      }
+
+      var query = normalizeSearchText(searchInput.value);
+      var visibleCount = 0;
+
+      searchableRows.forEach(function (row) {
+        var haystack = normalizeSearchText(row.getAttribute('data-search-row'));
+        var isMatch = query === '' || haystack.indexOf(query) !== -1;
+        row.style.display = isMatch ? '' : 'none';
+        if (isMatch) {
+          visibleCount += 1;
+        }
+      });
+
+      if (visibleCount === 0) {
+        renderNoResultRow();
+      } else {
+        removeNoResultRow();
+      }
+    }
+
+    if (searchInput && searchableRows.length) {
+      searchInput.addEventListener('input', filterCompanyRows);
+      searchInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+        }
+      });
+      filterCompanyRows();
+    }
+
     function closeModal(modal) {
       if (!modal) {
         return;

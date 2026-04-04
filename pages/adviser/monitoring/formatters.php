@@ -44,10 +44,17 @@ if (!function_exists('adviser_monitoring_progress_percent')) {
 }
 
 if (!function_exists('adviser_monitoring_status_badge')) {
-    function adviser_monitoring_status_badge(?string $completionStatus, int $progressPercent, ?string $latestLogDate = null): array
+    function adviser_monitoring_status_badge(
+        ?string $completionStatus,
+        int $progressPercent,
+        ?string $latestLogDate = null,
+        ?string $ojtStartDate = null,
+        ?string $ojtCreatedAt = null
+    ): array
     {
         $status = strtolower(trim((string)($completionStatus ?? '')));
         $daysSinceLog = null;
+        $daysSinceOjtStart = null;
 
         if ($latestLogDate) {
             $timestamp = strtotime($latestLogDate);
@@ -56,11 +63,53 @@ if (!function_exists('adviser_monitoring_status_badge')) {
             }
         }
 
-        if ($status === 'completed') {
+        $ojtAnchorDate = trim((string)($ojtStartDate ?? ''));
+        if ($ojtAnchorDate === '') {
+            $ojtAnchorDate = trim((string)($ojtCreatedAt ?? ''));
+        }
+
+        if ($ojtAnchorDate !== '') {
+            $ojtStartTimestamp = strtotime($ojtAnchorDate);
+            if ($ojtStartTimestamp !== false) {
+                $daysSinceOjtStart = (int)floor((time() - $ojtStartTimestamp) / 86400);
+            }
+        }
+
+        if (in_array($status, ['completed', 'complete', 'done'], true) || $progressPercent >= 100) {
+            return ['label' => 'Completed', 'class' => 'monitoring-status-completed'];
+        }
+
+        // New interns should start as On Track during an initial grace period.
+        if ($daysSinceOjtStart !== null && $daysSinceOjtStart <= 14) {
             return ['label' => 'On Track', 'class' => 'monitoring-status-ontrack'];
         }
 
-        if ($progressPercent <= 15 || $daysSinceLog === null || $daysSinceLog > 21) {
+        // Missing logs should not be marked At Risk immediately.
+        if ($daysSinceLog === null) {
+            if ($daysSinceOjtStart === null) {
+                return ['label' => 'On Track', 'class' => 'monitoring-status-ontrack'];
+            }
+
+            if ($daysSinceOjtStart <= 21) {
+                return ['label' => 'Warning', 'class' => 'monitoring-status-warning'];
+            }
+
+            return ['label' => 'At Risk', 'class' => 'monitoring-status-risk'];
+        }
+
+        if ($daysSinceLog > 21) {
+            return ['label' => 'At Risk', 'class' => 'monitoring-status-risk'];
+        }
+
+        if ($progressPercent <= 15) {
+            if ($daysSinceOjtStart !== null && $daysSinceOjtStart <= 14) {
+                return ['label' => 'On Track', 'class' => 'monitoring-status-ontrack'];
+            }
+
+            if ($daysSinceOjtStart !== null && $daysSinceOjtStart <= 21) {
+                return ['label' => 'Warning', 'class' => 'monitoring-status-warning'];
+            }
+
             return ['label' => 'At Risk', 'class' => 'monitoring-status-risk'];
         }
 
@@ -75,6 +124,10 @@ if (!function_exists('adviser_monitoring_status_badge')) {
 if (!function_exists('adviser_monitoring_progress_gradient')) {
     function adviser_monitoring_progress_gradient(string $statusLabel): string
     {
+        if ($statusLabel === 'Completed') {
+            return 'linear-gradient(90deg,#1D4ED8,#2563EB)';
+        }
+
         if ($statusLabel === 'On Track') {
             return 'linear-gradient(90deg,#06B6D4,#10B981)';
         }

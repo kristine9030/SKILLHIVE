@@ -60,6 +60,7 @@ $rows = $pageData['rows'];
 
 $ojtCount = count($rows);
 $onTrackCount = 0;
+$completedCount = 0;
 $warningCount = 0;
 $atRiskCount = 0;
 
@@ -67,6 +68,8 @@ foreach ($rows as $row) {
   $statusLabel = (string)($row['status_label'] ?? '');
   if ($statusLabel === 'On Track') {
     $onTrackCount++;
+  } elseif ($statusLabel === 'Completed') {
+    $completedCount++;
   } elseif ($statusLabel === 'Warning') {
     $warningCount++;
   } elseif ($statusLabel === 'At Risk') {
@@ -146,6 +149,11 @@ if (($_GET['export'] ?? '') === 'csv') {
   .monitoring-summary-icon.track {
     background: #e8f8f2;
     color: #10b981;
+  }
+
+  .monitoring-summary-icon.completed {
+    background: #e7f0ff;
+    color: #2563eb;
   }
 
   .monitoring-summary-icon.warning {
@@ -319,6 +327,11 @@ if (($_GET['export'] ?? '') === 'csv') {
   .monitoring-status-ontrack {
     background: #e8f8f2;
     color: #10b981;
+  }
+
+  .monitoring-status-completed {
+    background: #e7f0ff;
+    color: #2563eb;
   }
 
   .monitoring-status-warning {
@@ -676,6 +689,13 @@ if (($_GET['export'] ?? '') === 'csv') {
       <div>
         <div class="monitoring-summary-label">On Track</div>
         <div class="monitoring-summary-value"><?php echo $onTrackCount; ?></div>
+      </div>
+    </div>
+    <div class="monitoring-summary-card">
+      <div class="monitoring-summary-icon completed"><i class="fas fa-check-double"></i></div>
+      <div>
+        <div class="monitoring-summary-label">Completed</div>
+        <div class="monitoring-summary-value"><?php echo $completedCount; ?></div>
       </div>
     </div>
     <div class="monitoring-summary-card">

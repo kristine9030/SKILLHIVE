@@ -16,19 +16,53 @@ if (!function_exists('validatePostInternshipPayload')) {
 
         $old['title'] = trim((string)($post['title'] ?? ''));
         $old['description'] = trim((string)($post['description'] ?? ''));
+        $old['duration_hours'] = trim((string)($post['duration_hours'] ?? ''));
         $old['duration_weeks'] = trim((string)($post['duration_weeks'] ?? ''));
         $old['allowance'] = trim((string)($post['allowance'] ?? ''));
         $old['work_setup'] = trim((string)($post['work_setup'] ?? ''));
+        $old['region_id'] = trim((string)($post['region_id'] ?? ''));
+        $old['region_name'] = trim((string)($post['region_name'] ?? ''));
+        $old['province_id'] = trim((string)($post['province_id'] ?? ''));
+        $old['province_name'] = trim((string)($post['province_name'] ?? ''));
+        $old['city_id'] = trim((string)($post['city_id'] ?? ''));
+        $old['city_name'] = trim((string)($post['city_name'] ?? ''));
         $old['location'] = trim((string)($post['location'] ?? ''));
         $old['slots_available'] = trim((string)($post['slots_available'] ?? ''));
         $old['status'] = trim((string)($post['status'] ?? 'Open'));
+
+        if ($old['duration_hours'] === '') {
+            $legacyWeeks = filter_var($old['duration_weeks'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($legacyWeeks !== false) {
+                $old['duration_hours'] = (string)((int)$legacyWeeks * 40);
+            }
+        }
+
+        if ($old['location'] === '') {
+            $locationParts = array_values(array_filter([
+                $old['city_name'],
+                $old['province_name'],
+                $old['region_name'],
+            ], static function ($value): bool {
+                return trim((string)$value) !== '';
+            }));
+
+            if (!empty($locationParts)) {
+                $old['location'] = implode(', ', $locationParts);
+            }
+        }
 
         if ($old['title'] === '') $errors[] = 'Title is required.';
         if ($old['description'] === '') $errors[] = 'Description is required.';
         if ($old['location'] === '') $errors[] = 'Location is required.';
 
-        $durationWeeks = filter_var($old['duration_weeks'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-        if ($durationWeeks === false) $errors[] = 'Duration must be a whole number ≥ 1.';
+        $durationHours = filter_var($old['duration_hours'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 40]]);
+        if ($durationHours === false) {
+            $errors[] = 'Duration hours must be a whole number ≥ 40.';
+        } elseif (((int)$durationHours % 40) !== 0) {
+            $errors[] = 'Duration hours must be divisible by 40.';
+        }
+
+        $durationWeeks = $durationHours === false ? false : (int)((int)$durationHours / 40);
 
         $allowance = filter_var($old['allowance'], FILTER_VALIDATE_FLOAT);
         if ($allowance === false || $allowance < 0) $errors[] = 'Allowance must be 0 or higher.';
@@ -70,6 +104,7 @@ if (!function_exists('validatePostInternshipPayload')) {
         return [
             'errors' => $errors,
             'old' => $old,
+            'duration_hours' => $durationHours === false ? null : (int)$durationHours,
             'duration_weeks' => $durationWeeks === false ? null : (int)$durationWeeks,
             'allowance' => $allowance === false ? null : (float)$allowance,
             'slots_available' => $slotsAvailable === false ? null : (int)$slotsAvailable,

@@ -126,6 +126,15 @@ function e(string $v): string {
 function oldVal(array $old, string $key, string $default = ''): string {
     return e($old[$key] ?? $default);
 }
+
+function posting_duration_hours_label($durationWeeks): string {
+  $hours = max(0, (int)$durationWeeks) * 40;
+  if ($hours <= 0) {
+    return 'N/A';
+  }
+
+  return $hours . ' hours';
+}
 ?>
 
 <!-- ═══════════════════════════════════════════
@@ -176,7 +185,7 @@ function oldVal(array $old, string $key, string $default = ''): string {
               data-status="<?php echo e((string)($posting['status'] ?? 'pending')); ?>"
               data-posted="<?php echo e((string)($posting['posted_at'] ?? '')); ?>"
               data-location="<?php echo e((string)($posting['location'] ?? 'N/A')); ?>"
-              data-duration="<?php echo (int)($posting['duration_weeks'] ?? 0); ?>"
+              data-duration-hours="<?php echo max(0, (int)($posting['duration_weeks'] ?? 0)) * 40; ?>"
               data-applicants="<?php echo (int)($posting['applicants_count'] ?? 0); ?>"
               data-work-setup="<?php echo e((string)($posting['work_setup'] ?? 'N/A')); ?>"
               data-allowance="<?php echo number_format((float)($posting['allowance'] ?? 0), 2, '.', ''); ?>"
@@ -213,7 +222,7 @@ function oldVal(array $old, string $key, string $default = ''): string {
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;font-size:.8rem;">
           <div><strong>Location:</strong> <span id="detailLocation"><?php echo e((string)($selectedPosting['location'] ?? 'N/A')); ?></span></div>
-          <div><strong>Duration:</strong> <span id="detailDuration"><?php echo e(dashboard_duration_label((int)($selectedPosting['duration_weeks'] ?? 0))); ?></span></div>
+          <div><strong>Duration:</strong> <span id="detailDuration"><?php echo e(posting_duration_hours_label((int)($selectedPosting['duration_weeks'] ?? 0))); ?></span></div>
           <div><strong>Work Setup:</strong> <span id="detailWorkSetup"><?php echo e((string)($selectedPosting['work_setup'] ?? 'N/A')); ?></span></div>
           <div><strong>Applicants:</strong> <span id="detailApplicants"><?php echo (int)($selectedPosting['applicants_count'] ?? 0); ?></span></div>
           <div><strong>Allowance:</strong> <span id="detailAllowance">₱<?php echo number_format((float)($selectedPosting['allowance'] ?? 0), 2); ?></span></div>
@@ -332,8 +341,9 @@ function oldVal(array $old, string $key, string $default = ''): string {
     <!-- Row: Duration + Allowance -->
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Duration (weeks) <span style="color:var(--red);">*</span></label>
-        <input class="form-control" type="number" min="1" name="duration_weeks" placeholder="e.g. 12" value="<?php echo oldVal($old, 'duration_weeks'); ?>" required>
+        <label class="form-label">Duration (hours) <span style="color:var(--red);">*</span></label>
+        <input class="form-control" type="number" min="40" step="40" name="duration_hours" placeholder="e.g. 480" value="<?php echo oldVal($old, 'duration_hours'); ?>" required>
+        <div style="font-size:11px;color:var(--grey,#888);margin-top:6px;">Use increments of 40 hours (for week-based OJT tracking).</div>
       </div>
       <div class="form-group">
         <label class="form-label">Allowance (₱) <span style="color:var(--red);">*</span></label>
@@ -345,7 +355,27 @@ function oldVal(array $old, string $key, string $default = ''): string {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Location <span style="color:var(--red);">*</span></label>
-        <input class="form-control" type="text" name="location" placeholder="e.g. Batangas City" value="<?php echo oldVal($old, 'location'); ?>" required>
+        <select class="form-control" id="postingRegionSelect" name="region_id" data-old-value="<?php echo oldVal($old, 'region_id'); ?>">
+          <option value="">-- Select Region --</option>
+        </select>
+        <div id="postingProvinceContainer" style="margin-top:8px;display:none;">
+          <select class="form-control" id="postingProvinceSelect" name="province_id" data-old-value="<?php echo oldVal($old, 'province_id'); ?>" disabled>
+            <option value="">-- Select Region First --</option>
+          </select>
+        </div>
+        <div id="postingCityContainer" style="margin-top:8px;display:none;">
+          <select class="form-control" id="postingCitySelect" name="city_id" data-old-value="<?php echo oldVal($old, 'city_id'); ?>" disabled>
+            <option value="">-- Select Province First --</option>
+          </select>
+        </div>
+
+        <input type="hidden" id="postingRegionName" name="region_name" value="<?php echo oldVal($old, 'region_name'); ?>">
+        <input type="hidden" id="postingProvinceName" name="province_name" value="<?php echo oldVal($old, 'province_name'); ?>">
+        <input type="hidden" id="postingCityName" name="city_name" value="<?php echo oldVal($old, 'city_name'); ?>">
+        <input type="hidden" id="postingLocationValue" name="location" value="<?php echo oldVal($old, 'location'); ?>">
+
+        <input class="form-control" type="text" id="postingLocationPreview" placeholder="Selected location will appear here" value="<?php echo oldVal($old, 'location'); ?>" style="margin-top:8px;" readonly>
+        <div id="postingLocationHelp" style="font-size:11px;color:var(--grey,#888);margin-top:6px;">Data source: PSGC API (Region, Province, City/Municipality).</div>
       </div>
       <div class="form-group">
         <label class="form-label">Slots Available <span style="color:var(--red);">*</span></label>
@@ -449,6 +479,402 @@ function oldVal(array $old, string $key, string $default = ''): string {
     }
   });
 
+  const psgcApi = {
+    region: 'https://psgc.rootscratch.com/region',
+    province: 'https://psgc.rootscratch.com/province',
+    municipalCity: 'https://psgc.rootscratch.com/municipal-city'
+  };
+
+  const fallbackPsgcApi = {
+    citiesMunicipalities: 'https://psgc.gitlab.io/api/cities-municipalities/'
+  };
+
+  let fallbackCitiesCache = null;
+
+  const regionSelect = document.getElementById('postingRegionSelect');
+  const provinceContainer = document.getElementById('postingProvinceContainer');
+  const cityContainer = document.getElementById('postingCityContainer');
+  const provinceSelect = document.getElementById('postingProvinceSelect');
+  const citySelect = document.getElementById('postingCitySelect');
+  const regionNameInput = document.getElementById('postingRegionName');
+  const provinceNameInput = document.getElementById('postingProvinceName');
+  const cityNameInput = document.getElementById('postingCityName');
+  const locationValueInput = document.getElementById('postingLocationValue');
+  const locationPreviewInput = document.getElementById('postingLocationPreview');
+  const locationHelp = document.getElementById('postingLocationHelp');
+
+  function normalizeApiRows(payload) {
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    if (payload && typeof payload === 'object') {
+      return [payload];
+    }
+
+    return [];
+  }
+
+  function normalizeNumericCode(value) {
+    return String(value || '').replace(/\D+/g, '');
+  }
+
+  function normalizeProvinceCode(value) {
+    const digits = normalizeNumericCode(value);
+    if (digits.length >= 9) {
+      return digits.slice(0, 9);
+    }
+
+    return digits;
+  }
+
+  function getRowPsgcId(row) {
+    return String(
+      (row && (
+        row.psgc_id ||
+        row.psgc10DigitCode ||
+        row.psgc10digitcode ||
+        row.code
+      )) || ''
+    ).trim();
+  }
+
+  function getRowCorrespondenceCode(row) {
+    return String((row && (row.correspondence_code || row.correspondenceCode || '')) || '').trim();
+  }
+
+  async function fetchPsgcRows(url) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const raw = (await response.text()).trim();
+      if (!raw) {
+        return [];
+      }
+
+      return normalizeApiRows(JSON.parse(raw));
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function clearSelect(select, placeholder, disabled) {
+    if (!select) {
+      return;
+    }
+
+    select.innerHTML = '';
+
+    const placeholderOption = document.createElement('option');
+    placeholderOption.value = '';
+    placeholderOption.textContent = placeholder;
+    select.appendChild(placeholderOption);
+
+    select.disabled = !!disabled;
+    select.value = '';
+  }
+
+  function getSelectedOptionLabel(select) {
+    if (!select) {
+      return '';
+    }
+
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption || !selectedOption.value) {
+      return '';
+    }
+
+    return String(selectedOption.textContent || '').trim();
+  }
+
+  function findSelectedValue(rows, selectedId, selectedName) {
+    const preferredId = String(selectedId || '').trim();
+    if (preferredId !== '' && rows.some(row => getRowPsgcId(row) === preferredId)) {
+      return preferredId;
+    }
+
+    const normalizedName = String(selectedName || '').trim().toLowerCase();
+    if (normalizedName === '') {
+      return '';
+    }
+
+    const match = rows.find(row => String(row.name || '').trim().toLowerCase() === normalizedName);
+    return match ? String(match.psgc_id || '') : '';
+  }
+
+  function populateSelect(select, rows, placeholder, selectedId, selectedName) {
+    clearSelect(select, placeholder, false);
+
+    rows.forEach(row => {
+      const id = getRowPsgcId(row);
+      const name = String(row.name || '').trim();
+      const correspondenceCode = getRowCorrespondenceCode(row);
+
+      if (id === '' || name === '') {
+        return;
+      }
+
+      const option = document.createElement('option');
+      option.value = id;
+      option.textContent = name;
+      if (correspondenceCode !== '') {
+        option.setAttribute('data-correspondence-code', correspondenceCode);
+      }
+      select.appendChild(option);
+    });
+
+    const selectedValue = findSelectedValue(rows, selectedId, selectedName);
+    if (selectedValue !== '') {
+      select.value = selectedValue;
+    }
+
+    if (select.options.length <= 1) {
+      select.disabled = true;
+    }
+  }
+
+  async function fetchFallbackCitiesMunicipalities(parentProvinceId, regionId) {
+    const parentDigits = normalizeNumericCode(parentProvinceId);
+    const parentCode = normalizeProvinceCode(parentProvinceId);
+    const regionCode = normalizeProvinceCode(regionId);
+
+    if (parentDigits === '' && parentCode === '' && regionCode === '') {
+      return [];
+    }
+
+    const isRegionParent = parentDigits.length === 10 && parentDigits.slice(2, 4) === '00';
+    const provincePrefix = (parentDigits.length === 10 && parentDigits.slice(2, 4) !== '00')
+      ? parentDigits.slice(0, 4)
+      : '';
+
+    if (fallbackCitiesCache === null) {
+      const fallbackRows = await fetchPsgcRows(fallbackPsgcApi.citiesMunicipalities);
+      fallbackCitiesCache = Array.isArray(fallbackRows) ? fallbackRows : [];
+    }
+
+    if (!Array.isArray(fallbackCitiesCache) || fallbackCitiesCache.length === 0) {
+      return [];
+    }
+
+    return fallbackCitiesCache
+      .filter(row => {
+        const rowProvinceCode = normalizeProvinceCode(
+          (row && (row.provinceCode || row.province_code || ''))
+        );
+        const rowRegionCode = normalizeProvinceCode(
+          (row && (row.regionCode || row.region_code || ''))
+        );
+        const rowPsgc10 = normalizeNumericCode(
+          (row && (row.psgc10DigitCode || row.psgc10digitcode || row.psgc_id || ''))
+        );
+
+        if (!isRegionParent && parentCode !== '' && rowProvinceCode !== '' && rowProvinceCode === parentCode) {
+          return true;
+        }
+
+        if (provincePrefix !== '' && rowPsgc10 !== '' && rowPsgc10.slice(0, 4) === provincePrefix) {
+          return true;
+        }
+
+        if (isRegionParent && parentCode !== '' && rowRegionCode !== '' && rowRegionCode === parentCode) {
+          return true;
+        }
+
+        if (regionCode !== '' && rowRegionCode !== '' && rowRegionCode === regionCode) {
+          return true;
+        }
+
+        return false;
+      })
+      .map(row => ({
+        psgc_id: getRowPsgcId(row),
+        name: String((row && row.name) || '').trim(),
+      }))
+      .filter(row => row.psgc_id !== '' && row.name !== '')
+      .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+  }
+
+  function setLocationHelp(message) {
+    if (locationHelp) {
+      locationHelp.textContent = message;
+    }
+  }
+
+  function syncLocationComposite() {
+    if (!locationValueInput || !locationPreviewInput) {
+      return;
+    }
+
+    const cityName = String(cityNameInput ? cityNameInput.value : '').trim();
+    const provinceName = String(provinceNameInput ? provinceNameInput.value : '').trim();
+    const regionName = String(regionNameInput ? regionNameInput.value : '').trim();
+
+    const parts = [cityName, provinceName, regionName].filter(Boolean);
+    const composed = parts.join(', ');
+
+    if (composed !== '') {
+      locationValueInput.value = composed;
+      locationPreviewInput.value = composed;
+    }
+  }
+
+  async function loadCities(parentId, selectedCityId, selectedCityName, regionId) {
+    clearSelect(citySelect, '-- Select Province First --', true);
+    if (cityContainer) {
+      cityContainer.style.display = 'none';
+    }
+    if (cityNameInput) {
+      cityNameInput.value = '';
+    }
+
+    const parent = String(parentId || '').trim();
+    if (parent === '') {
+      syncLocationComposite();
+      return;
+    }
+
+    let rows = await fetchPsgcRows(psgcApi.municipalCity + '?id=' + encodeURIComponent(parent));
+    let usedFallbackCities = false;
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      rows = await fetchFallbackCitiesMunicipalities(parent, regionId || regionSelect.value || '');
+      usedFallbackCities = Array.isArray(rows) && rows.length > 0;
+    }
+
+    populateSelect(citySelect, rows, '-- Select City/Municipality --', selectedCityId, selectedCityName);
+
+    if (rows.length === 0) {
+      clearSelect(citySelect, '-- No city/municipality data --', true);
+      setLocationHelp('No city/municipality records found for the selected area.');
+    } else if (usedFallbackCities) {
+      setLocationHelp('City/Municipality list loaded with PSGC API fallback data source.');
+    } else {
+      setLocationHelp('Data source: PSGC API (Region, Province, City/Municipality).');
+    }
+
+    if (cityContainer) {
+      cityContainer.style.display = '';
+    }
+
+    if (cityNameInput) {
+      cityNameInput.value = getSelectedOptionLabel(citySelect);
+    }
+
+    syncLocationComposite();
+  }
+
+  async function loadProvinces(regionId, selectedProvinceId, selectedProvinceName, selectedCityId, selectedCityName) {
+    clearSelect(provinceSelect, '-- Select Region First --', true);
+    clearSelect(citySelect, '-- Select Province First --', true);
+    if (provinceContainer) {
+      provinceContainer.style.display = 'none';
+    }
+    if (cityContainer) {
+      cityContainer.style.display = 'none';
+    }
+
+    if (provinceNameInput) {
+      provinceNameInput.value = '';
+    }
+    if (cityNameInput) {
+      cityNameInput.value = '';
+    }
+
+    const region = String(regionId || '').trim();
+    if (region === '') {
+      setLocationHelp('Select region first, then province and city/municipality will load.');
+      syncLocationComposite();
+      return;
+    }
+
+    const rows = await fetchPsgcRows(psgcApi.province + '?id=' + encodeURIComponent(region));
+    populateSelect(provinceSelect, rows, '-- Select Province --', selectedProvinceId, selectedProvinceName);
+    if (provinceContainer) {
+      provinceContainer.style.display = '';
+    }
+
+    if (provinceNameInput) {
+      provinceNameInput.value = getSelectedOptionLabel(provinceSelect);
+    }
+
+    const selectedProvinceOption = provinceSelect && provinceSelect.selectedIndex >= 0
+      ? provinceSelect.options[provinceSelect.selectedIndex]
+      : null;
+    const selectedProvinceCorrespondenceCode = selectedProvinceOption
+      ? String(selectedProvinceOption.getAttribute('data-correspondence-code') || '').trim()
+      : '';
+
+    const parentIdForCities = String(selectedProvinceCorrespondenceCode || (provinceSelect && provinceSelect.value) || region).trim();
+    await loadCities(parentIdForCities, selectedCityId, selectedCityName, region);
+    syncLocationComposite();
+  }
+
+  async function initializePsgcDropdowns() {
+    if (!regionSelect || !provinceSelect || !citySelect) {
+      return;
+    }
+
+    const oldRegionId = regionSelect.getAttribute('data-old-value') || '';
+    const oldProvinceId = provinceSelect.getAttribute('data-old-value') || '';
+    const oldCityId = citySelect.getAttribute('data-old-value') || '';
+    const oldRegionName = regionNameInput ? regionNameInput.value : '';
+    const oldProvinceName = provinceNameInput ? provinceNameInput.value : '';
+    const oldCityName = cityNameInput ? cityNameInput.value : '';
+
+    const regions = await fetchPsgcRows(psgcApi.region);
+    populateSelect(regionSelect, regions, '-- Select Region --', oldRegionId, oldRegionName);
+
+    if (regionNameInput) {
+      regionNameInput.value = getSelectedOptionLabel(regionSelect) || oldRegionName;
+    }
+
+    await loadProvinces(regionSelect.value, oldProvinceId, oldProvinceName, oldCityId, oldCityName);
+    syncLocationComposite();
+  }
+
+  if (regionSelect && provinceSelect && citySelect) {
+    regionSelect.addEventListener('change', async function () {
+      if (regionNameInput) {
+        regionNameInput.value = getSelectedOptionLabel(regionSelect);
+      }
+
+      await loadProvinces(regionSelect.value, '', '', '', '');
+      syncLocationComposite();
+    });
+
+    provinceSelect.addEventListener('change', async function () {
+      if (provinceNameInput) {
+        provinceNameInput.value = getSelectedOptionLabel(provinceSelect);
+      }
+
+      const selectedProvinceOption = provinceSelect.options[provinceSelect.selectedIndex] || null;
+      const selectedProvinceCorrespondenceCode = selectedProvinceOption
+        ? String(selectedProvinceOption.getAttribute('data-correspondence-code') || '').trim()
+        : '';
+
+      const parentIdForCities = String(selectedProvinceCorrespondenceCode || provinceSelect.value || regionSelect.value || '').trim();
+      await loadCities(parentIdForCities, '', '', regionSelect.value || '');
+      syncLocationComposite();
+    });
+
+    citySelect.addEventListener('change', function () {
+      if (cityNameInput) {
+        cityNameInput.value = getSelectedOptionLabel(citySelect);
+      }
+      syncLocationComposite();
+    });
+
+    initializePsgcDropdowns();
+  }
+
   // Skill search filter
   function filterSkills() {
     const q = document.getElementById('skillSearch').value.toLowerCase();
@@ -485,13 +911,13 @@ function oldVal(array $old, string $key, string $default = ''): string {
     const status = button.getAttribute('data-status') || 'pending';
     const posted = button.getAttribute('data-posted') || '';
     const location = button.getAttribute('data-location') || 'N/A';
-    const duration = parseInt(button.getAttribute('data-duration') || '0', 10);
+    const durationHours = parseInt(button.getAttribute('data-duration-hours') || '0', 10);
     const applicants = button.getAttribute('data-applicants') || '0';
     const workSetup = button.getAttribute('data-work-setup') || 'N/A';
     const allowanceRaw = parseFloat(button.getAttribute('data-allowance') || '0');
     const slots = button.getAttribute('data-slots') || '0';
 
-    const durationText = duration > 0 ? (duration % 4 === 0 ? (duration / 4) + ' month' + ((duration / 4) === 1 ? '' : 's') : duration + ' week' + (duration === 1 ? '' : 's')) : 'N/A';
+    const durationText = durationHours > 0 ? (durationHours + ' hours') : 'N/A';
 
     const statusLabel = status.replace(/[_-]+/g, ' ').trim();
     const prettyStatus = statusLabel ? statusLabel.replace(/\b\w/g, c => c.toUpperCase()) : 'N/A';
