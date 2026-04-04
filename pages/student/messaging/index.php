@@ -126,7 +126,8 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     font-size: .875rem;
     line-height: 1.4;
     word-wrap: break-word;
-    display: block;
+    display: inline-block;
+    width: fit-content;
     max-width: 100%;
   }
   .msg-thread-item.own .msg-thread-bubble {

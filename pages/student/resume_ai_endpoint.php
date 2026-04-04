@@ -18,7 +18,7 @@ if ($role !== 'student' || $userId <= 0) {
 }
 
 $action = (string) ($_POST['action'] ?? '');
-if (!in_array($action, ['analyze', 'chat', 'import_linkedin_cv', 'build_cv', 'load_cv', 'save_cv', 'score_cv'], true)) {
+if (!in_array($action, ['analyze', 'chat', 'import_linkedin_cv', 'build_cv', 'load_cv', 'save_cv', 'score_cv', 'save_form_cv', 'load_form_cv', 'update_cv_field'], true)) {
     http_response_code(400);
     echo json_encode(['ok' => false, 'message' => 'Invalid action']);
     exit;
@@ -758,6 +758,112 @@ if ($action === 'analyze') {
         'breakdown' => $normalizedBreakdown,
         'suggestions' => $suggestions,
     ]);
+    exit;
+}
+
+// Load simple form-based CV data
+if ($action === 'load_form_cv') {
+    cv_builder_ensure_table($pdo);
+    
+    $stmt = $pdo->prepare('SELECT cv_json FROM student_cv_builder WHERE student_id = ? AND source_mode = "form" LIMIT 1');
+    $stmt->execute([$userId]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($row && !empty($row['cv_json'])) {
+        $cvData = json_decode($row['cv_json'], true);
+        if (is_array($cvData)) {
+            echo json_encode(['ok' => true, 'data' => $cvData]);
+            exit;
+        }
+    }
+    
+    // No saved data, return empty structure
+    echo json_encode(['ok' => true, 'data' => null]);
+    exit;
+}
+
+// Save simple form-based CV data
+if ($action === 'save_form_cv') {
+    cv_builder_ensure_table($pdo);
+    
+    $cvData = trim((string) ($_POST['cv_data'] ?? ''));
+    if ($cvData === '') {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'message' => 'CV data is required.']);
+        exit;
+    }
+    
+    $decoded = json_decode($cvData, true);
+    if (!is_array($decoded)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'message' => 'Invalid CV data format.']);
+        exit;
+    }
+    
+    $json = json_encode($decoded, JSON_UNESCAPED_UNICODE);
+    if (!is_string($json) || $json === '') {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'message' => 'Unable to encode CV data.']);
+        exit;
+    }
+    
+    $stmt = $pdo->prepare(
+        'INSERT INTO student_cv_builder (student_id, source_mode, cv_json, created_at, updated_at)
+         VALUES (?, "form", ?, NOW(), NOW())
+         ON DUPLICATE KEY UPDATE source_mode = "form", cv_json = VALUES(cv_json), updated_at = NOW()'
+    );
+    $stmt->execute([$userId, $json]);
+    
+    $updatedStmt = $pdo->prepare('SELECT DATE_FORMAT(updated_at, "%Y-%m-%d %H:%i:%s") AS updated_at FROM student_cv_builder WHERE student_id = ? LIMIT 1');
+    $updatedStmt->execute([$userId]);
+    $updRow = $updatedStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    
+    echo json_encode([
+        'ok' => true,
+        'message' => 'CV saved successfully',
+        'updated_at' => (string) ($updRow['updated_at'] ?? ''),
+    ]);
+    exit;
+}
+
+// Update a single CV field
+if ($action === 'update_cv_field') {
+    cv_builder_ensure_table($pdo);
+    
+    $fieldName = trim((string) ($_POST['field_name'] ?? ''));
+    $fieldValue = (string) ($_POST['field_value'] ?? '');
+    
+    if ($fieldName === '') {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'message' => 'Field name is required.']);
+        exit;
+    }
+    
+    // Load current CV data
+    $stmt = $pdo->prepare('SELECT cv_json FROM student_cv_builder WHERE student_id = ? AND source_mode = "form" LIMIT 1');
+    $stmt->execute([$userId]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    $cvData = [];
+    if ($row && !empty($row['cv_json'])) {
+        $decoded = json_decode($row['cv_json'], true);
+        if (is_array($decoded)) {
+            $cvData = $decoded;
+        }
+    }
+    
+    // Update the field
+    $cvData[$fieldName] = $fieldValue;
+    
+    $json = json_encode($cvData, JSON_UNESCAPED_UNICODE);
+    $stmt = $pdo->prepare(
+        'INSERT INTO student_cv_builder (student_id, source_mode, cv_json, created_at, updated_at)
+         VALUES (?, "form", ?, NOW(), NOW())
+         ON DUPLICATE KEY UPDATE cv_json = VALUES(cv_json), updated_at = NOW()'
+    );
+    $stmt->execute([$userId, $json]);
+    
+    echo json_encode(['ok' => true, 'message' => 'Field updated successfully']);
     exit;
 }
 
