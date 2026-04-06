@@ -13,6 +13,7 @@ if ($role === 'student') {
         ['label' => 'TRACKING', 'items' => [
             ['icon' => 'fas fa-paper-plane',  'text' => 'Applications', 'page' => 'student/applications'],
             ['icon' => 'fas fa-clock',        'text' => 'OJT Tracker',  'page' => 'student/ojt-log'],
+            ['icon' => 'fas fa-book',         'text' => 'Journal',      'page' => 'student/ojt-log/journal'],
             ['icon' => 'fas fa-chart-bar',    'text' => 'Analytics',    'page' => 'student/analytics'],
         ]],
         ['label' => 'SYSTEM', 'items' => [
@@ -37,6 +38,7 @@ if ($role === 'student') {
             ['icon' => 'fas fa-house',            'text' => 'My Students',   'page' => 'adviser/students'],
             ['icon' => 'fas fa-stamp',            'text' => 'Endorsements',  'page' => 'adviser/endorsement'],
             ['icon' => 'fas fa-eye',              'text' => 'OJT Monitoring','page' => 'adviser/monitoring'],
+            ['icon' => 'fas fa-book-open',        'text' => 'Student Journals', 'page' => 'adviser/journal_analytics'],
             ['icon' => 'fas fa-chart-pie',        'text' => 'Analytics',     'page' => 'adviser/analytics'],
         ]],
         ['label' => 'MANAGEMENT', 'items' => [

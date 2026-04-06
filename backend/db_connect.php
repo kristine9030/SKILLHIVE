@@ -182,4 +182,111 @@ try {
 } catch (Throwable $e) {
     // Non-fatal: app should continue even if migration fails.
 }
+
+// Schema Migration: Create ojt_journal_entries table for structured journal entries
+try {
+    $stmt = $pdo->prepare(
+        "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES
+         WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME = 'ojt_journal_entries'"
+    );
+    $stmt->execute();
+    if ($stmt->rowCount() === 0) {
+        $pdo->exec(
+            "CREATE TABLE ojt_journal_entries (
+                journal_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                record_id INT UNSIGNED NOT NULL,
+                log_ids VARCHAR(255) NOT NULL DEFAULT '',
+                entry_date DATE NOT NULL,
+                company_department VARCHAR(255) NOT NULL DEFAULT '',
+                tasks_accomplished LONGTEXT NOT NULL DEFAULT '',
+                skills_applied_learned LONGTEXT NOT NULL DEFAULT '',
+                challenges_encountered LONGTEXT NOT NULL DEFAULT '',
+                solutions_actions_taken LONGTEXT NOT NULL DEFAULT '',
+                key_learnings_insights LONGTEXT NOT NULL DEFAULT '',
+                reflection LONGTEXT NOT NULL DEFAULT '',
+                quality_score TINYINT UNSIGNED NOT NULL DEFAULT 0,
+                sentiment_analysis VARCHAR(50) NOT NULL DEFAULT 'neutral',
+                productivity_score TINYINT UNSIGNED NOT NULL DEFAULT 0,
+                is_structured TINYINT(1) NOT NULL DEFAULT 1,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (journal_id),
+                KEY idx_record_id (record_id),
+                KEY idx_entry_date (entry_date),
+                FOREIGN KEY (record_id) REFERENCES ojt_record(record_id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+    } else {
+        // Add missing columns if they don't exist (backward compatibility)
+        $check_quality = $pdo->prepare(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+             WHERE TABLE_SCHEMA = DATABASE() 
+             AND TABLE_NAME = 'ojt_journal_entries' 
+             AND COLUMN_NAME = 'quality_score'"
+        );
+        $check_quality->execute();
+        if ($check_quality->rowCount() === 0) {
+            $pdo->exec("ALTER TABLE ojt_journal_entries ADD COLUMN quality_score TINYINT UNSIGNED NOT NULL DEFAULT 0");
+        }
+        
+        $check_sentiment = $pdo->prepare(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+             WHERE TABLE_SCHEMA = DATABASE() 
+             AND TABLE_NAME = 'ojt_journal_entries' 
+             AND COLUMN_NAME = 'sentiment_analysis'"
+        );
+        $check_sentiment->execute();
+        if ($check_sentiment->rowCount() === 0) {
+            $pdo->exec("ALTER TABLE ojt_journal_entries ADD COLUMN sentiment_analysis VARCHAR(50) NOT NULL DEFAULT 'neutral'");
+        }
+        
+        $check_productivity = $pdo->prepare(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+             WHERE TABLE_SCHEMA = DATABASE() 
+             AND TABLE_NAME = 'ojt_journal_entries' 
+             AND COLUMN_NAME = 'productivity_score'"
+        );
+        $check_productivity->execute();
+        if ($check_productivity->rowCount() === 0) {
+            $pdo->exec("ALTER TABLE ojt_journal_entries ADD COLUMN productivity_score TINYINT UNSIGNED NOT NULL DEFAULT 0");
+        }
+    }
+} catch (Throwable $e) {
+    // Non-fatal: app should continue even if migration fails.
+}
+
+// Schema Migration: Create ojt_final_reports table for internship summary reports
+try {
+    $stmt = $pdo->prepare(
+        "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES
+         WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME = 'ojt_final_reports'"
+    );
+    $stmt->execute();
+    if ($stmt->rowCount() === 0) {
+        $pdo->exec(
+            "CREATE TABLE ojt_final_reports (
+                report_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                record_id INT UNSIGNED NOT NULL,
+                internship_overview LONGTEXT NOT NULL DEFAULT '',
+                key_responsibilities LONGTEXT NOT NULL DEFAULT '',
+                skills_developed LONGTEXT NOT NULL DEFAULT '',
+                challenges_resolutions LONGTEXT NOT NULL DEFAULT '',
+                contributions_achievements LONGTEXT NOT NULL DEFAULT '',
+                personal_professional_growth LONGTEXT NOT NULL DEFAULT '',
+                conclusion_reflection LONGTEXT NOT NULL DEFAULT '',
+                total_journal_entries INT UNSIGNED NOT NULL DEFAULT 0,
+                duration_days INT UNSIGNED NOT NULL DEFAULT 0,
+                generated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (report_id),
+                KEY idx_record_id (record_id),
+                FOREIGN KEY (record_id) REFERENCES ojt_record(record_id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+    }
+} catch (Throwable $e) {
+    // Non-fatal: app should continue even if migration fails.
+}
 ?>
