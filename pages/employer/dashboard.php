@@ -4,6 +4,7 @@
  * Tables/columns used: Indirectly uses employer(employer_id, company_name, verification_status, company_badge_status), internship(internship_id, employer_id, title, location, duration_weeks, status, posted_at, created_at), application(application_id, internship_id, student_id, status, compatibility_score, application_date, updated_at), interview(application_id, interview_date, interview_status), student(student_id, first_name, last_name).
  */
 require_once __DIR__ . '/../../backend/db_connect.php';
+require_once __DIR__ . '/post_internship/auth_helpers.php';
 
 $baseUrl = isset($baseUrl) ? (string)$baseUrl : '/SkillHive';
 $userName = isset($userName) ? (string)$userName : 'Employer';
@@ -23,7 +24,7 @@ if (file_exists($dashboardBootstrapFile)) {
   $dashboardLoadError = 'Dashboard data source not found.';
 }
 
-$employerId = (int)($_SESSION['employer_id'] ?? ($userId ?? 0));
+$employerId = resolveEmployerId($_SESSION, isset($userId) ? (int)$userId : null) ?? 0;
 $postingsPage = max(1, (int)($_GET['postings_page'] ?? 1));
 
 $dashboardData = [
@@ -77,6 +78,7 @@ $companyInitials = $companyInitials !== '' ? substr($companyInitials, 0, 2) : $i
 $verificationRaw = (string)($dashboardData['company']['verification_status'] ?? 'pending');
 $companyStatusClass = dashboard_status_class($verificationRaw);
 $companyStatusLabel = dashboard_status_label($verificationRaw);
+$isEmployerApproved = strtolower(trim($verificationRaw)) === 'approved';
 
 $stats = $dashboardData['stats'];
 $month = $dashboardData['month'];
@@ -91,8 +93,21 @@ $upcomingInterviews = $dashboardData['upcoming_interviews'];
     <h2 class="page-title">Employer Dashboard</h2>
     <p class="page-subtitle">Manage your internship postings and track candidates.</p>
   </div>
-  <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/post_internship" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Post Internship</a>
+  <?php if ($isEmployerApproved): ?>
+    <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/post_internship" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Post Internship</a>
+  <?php else: ?>
+    <span class="btn btn-ghost btn-sm" style="opacity:.7;cursor:not-allowed;pointer-events:none;"><i class="fas fa-lock"></i> Approval Required</span>
+  <?php endif; ?>
 </div>
+
+<?php if (!$isEmployerApproved): ?>
+  <div class="panel-card" style="margin-bottom:14px;border-left:4px solid #F59E0B;">
+    <div style="font-size:.85rem;color:#666;">
+      <i class="fas fa-shield-halved" style="color:#F59E0B;margin-right:6px"></i>
+      Your company is currently <strong><?php echo dashboard_escape($companyStatusLabel); ?></strong>. Posting, candidates, messaging, and evaluation modules unlock after admin approval.
+    </div>
+  </div>
+<?php endif; ?>
 
 <?php if ($dashboardLoadError !== null): ?>
   <div class="panel-card" style="margin-bottom:14px;border-left:4px solid #F59E0B;">
@@ -147,8 +162,8 @@ $upcomingInterviews = $dashboardData['upcoming_interviews'];
               <span><i class="fas fa-clock"></i> <?php echo dashboard_escape(dashboard_duration_label((int)($posting['duration_weeks'] ?? 0))); ?></span>
             </div>
             <div class="job-card-actions">
-              <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/candidates" class="btn btn-ghost btn-sm">View Applicants</a>
-              <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/post_internship" class="btn btn-ghost btn-sm"><i class="fas fa-edit"></i> Edit</a>
+              <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/candidates&position=<?php echo (int)($posting['internship_id'] ?? 0); ?>" class="btn btn-ghost btn-sm">View Applicants</a>
+              <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/post_internship&focus_posting=<?php echo (int)($posting['internship_id'] ?? 0); ?>#my-postings" class="btn btn-ghost btn-sm"><i class="fas fa-edit"></i> Edit</a>
             </div>
           </div>
         <?php endforeach; ?>
@@ -236,7 +251,7 @@ $upcomingInterviews = $dashboardData['upcoming_interviews'];
                   <td><?php echo dashboard_escape($applicant['internship_title'] ?? 'N/A'); ?></td>
                   <td><span class="match-badge"><?php echo dashboard_escape($matchText); ?></span></td>
                   <td><span class="status-pill <?php echo dashboard_status_class($applicant['status'] ?? 'pending'); ?>"><?php echo dashboard_escape(dashboard_status_label($applicant['status'] ?? 'pending')); ?></span></td>
-                  <td><a href="<?php echo $baseUrl; ?>/layout.php?page=employer/candidates" class="btn btn-ghost btn-sm">Review</a></td>
+                  <td><a href="<?php echo $baseUrl; ?>/layout.php?page=employer/candidates&position=<?php echo (int)($applicant['internship_id'] ?? 0); ?>" class="btn btn-ghost btn-sm">Review</a></td>
                 </tr>
               <?php endforeach; ?>
             <?php else: ?>

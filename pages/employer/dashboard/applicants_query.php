@@ -12,6 +12,7 @@ if (!function_exists('dashboard_get_recent_applicants')) {
         $sql = '
             SELECT
                 a.application_id,
+                     a.internship_id,
                 a.status,
                 a.compatibility_score,
                 a.application_date,

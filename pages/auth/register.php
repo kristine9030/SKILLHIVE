@@ -96,6 +96,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $pdo->commit();
 
+            if ($role === 'employer') {
+              $_SESSION['status'] = 'Employer account created. Please wait for admin approval before signing in.';
+              header('Location: login.php');
+              exit;
+            }
+
             if (login($email, $password)) {
                 header('Location: ' . $baseUrl . '/layout.php');
                 exit;

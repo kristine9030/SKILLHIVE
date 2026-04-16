@@ -85,6 +85,7 @@ function ojt_log_handle_submit(PDO $pdo, ?array $ojt): array
       'ok' => true,
       'message' => 'Log entry added successfully.',
       'entry' => [
+        'date_iso' => $date,
         'date_display' => date('M d, Y', strtotime($date)),
         'accomplishment' => $accomplishment,
         'hours' => $hours,

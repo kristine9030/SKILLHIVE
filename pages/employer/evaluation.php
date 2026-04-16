@@ -8,6 +8,8 @@ require_once __DIR__ . '/dashboard/formatters.php';
 require_once __DIR__ . '/post_internship/auth_helpers.php';
 require_once __DIR__ . '/evaluation/data.php';
 
+$baseUrl = isset($baseUrl) ? (string)$baseUrl : '/SkillHive';
+
 $resolvedEmployerId = resolveEmployerId($_SESSION, isset($userId) ? (int)$userId : null);
 $employerId = (int)($resolvedEmployerId ?? 0);
 
@@ -66,6 +68,14 @@ if (!empty($employerIdCandidates)) {
 
 if ($employerId > 0 && $sessionEmployerId <= 0) {
   $_SESSION['employer_id'] = $employerId;
+}
+
+$verificationStatus = getEmployerVerificationStatus($pdo, (int)$employerId) ?? (string)($_SESSION['verification_status'] ?? '');
+$_SESSION['verification_status'] = $verificationStatus;
+if (!isEmployerApproved($verificationStatus)) {
+  $_SESSION['status'] = 'Your employer account is pending admin verification. Evaluation module is locked until approval.';
+  header('Location: ' . $baseUrl . '/layout.php?page=employer/dashboard');
+  exit;
 }
 
 $errorMessage = '';
@@ -138,6 +148,40 @@ $history = $pageData['history'];
 $summary = $pageData['summary'];
 $selectedFilters = $pageData['selected'];
 $submitDisabled = empty($internOptions);
+
+$exportMode = strtolower(trim((string)($_GET['export'] ?? '')));
+if ($exportMode === 'csv' && $employerId > 0) {
+  $filename = 'employer-evaluations-' . date('Ymd-His') . '.csv';
+
+  if (!headers_sent()) {
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+  }
+
+  $out = fopen('php://output', 'w');
+  if ($out !== false) {
+    fwrite($out, "\xEF\xBB\xBF");
+    fputcsv($out, ['Intern', 'Internship', 'Period', 'Technical', 'Communication', 'Work Ethic', 'Overall', 'Feedback', 'Evaluation Date']);
+
+    foreach ($history as $row) {
+      fputcsv($out, [
+        (string)($row['intern'] ?? ''),
+        (string)($row['internship_title'] ?? ''),
+        (string)($row['period'] ?? ''),
+        (string)number_format((float)($row['technical'] ?? 0), 1),
+        (string)number_format((float)($row['communication'] ?? 0), 1),
+        (string)number_format((float)($row['ethic'] ?? 0), 1),
+        (string)number_format((float)($row['overall'] ?? 0), 1),
+        (string)($row['comment'] ?? ''),
+        (string)($row['evaluation_date'] ?? ''),
+      ]);
+    }
+
+    fclose($out);
+  }
+
+  exit;
+}
 ?>
 
 <div class="page-header">
@@ -161,6 +205,7 @@ $submitDisabled = empty($internOptions);
   </select>
 
   <button class="btn btn-primary btn-sm" type="submit">Apply</button>
+  <a class="btn btn-ghost btn-sm" href="<?php echo $baseUrl; ?>/layout.php?<?php echo http_build_query(['page' => 'employer/evaluation', 'internship_id' => (int)$selectedFilters['internship_id'], 'export' => 'csv']); ?>">Export CSV</a>
   <a class="btn btn-ghost btn-sm" href="<?php echo $baseUrl; ?>/layout.php?page=employer/evaluation">Reset</a>
 </form>
 
@@ -255,11 +300,20 @@ $submitDisabled = empty($internOptions);
       <div class="app-table-wrap">
         <table class="app-table">
           <thead>
-            <tr><th>Intern</th><th>Internship</th><th>Period</th><th>Technical</th><th>Comm.</th><th>Ethics</th><th>Overall</th></tr>
+            <tr><th>Intern</th><th>Internship</th><th>Period</th><th>Technical</th><th>Comm.</th><th>Ethics</th><th>Overall</th><th>Feedback</th><th>Evaluated On</th></tr>
           </thead>
           <tbody>
             <?php if (!empty($history)): ?>
               <?php foreach ($history as $row): ?>
+                <?php
+                $feedbackRaw = trim((string)($row['comment'] ?? ''));
+                $feedbackText = $feedbackRaw !== '' ? $feedbackRaw : 'No written feedback.';
+                if (strlen($feedbackText) > 90) {
+                  $feedbackText = substr($feedbackText, 0, 87) . '...';
+                }
+                $evaluatedDateText = trim((string)($row['evaluation_date'] ?? ''));
+                $evaluatedDateLabel = $evaluatedDateText !== '' ? date('M j, Y', strtotime($evaluatedDateText)) : 'N/A';
+                ?>
                 <tr>
                   <td><?php echo dashboard_escape($row['intern']); ?></td>
                   <td><?php echo dashboard_escape($row['internship_title']); ?></td>
@@ -268,11 +322,13 @@ $submitDisabled = empty($internOptions);
                   <td><span style="color:#F59E0B"><i class="fas fa-star"></i> <?php echo number_format((float)$row['communication'], 1); ?></span></td>
                   <td><span style="color:#F59E0B"><i class="fas fa-star"></i> <?php echo number_format((float)$row['ethic'], 1); ?></span></td>
                   <td><span style="font-weight:700;color:#10B981"><?php echo number_format((float)$row['overall'], 1); ?></span></td>
+                  <td style="max-width:240px;"><?php echo dashboard_escape($feedbackText); ?></td>
+                  <td><?php echo dashboard_escape($evaluatedDateLabel); ?></td>
                 </tr>
               <?php endforeach; ?>
             <?php else: ?>
               <tr>
-                <td colspan="7" style="text-align:center;color:#999;">No evaluations submitted yet.</td>
+                <td colspan="9" style="text-align:center;color:#999;">No evaluations submitted yet.</td>
               </tr>
             <?php endif; ?>
           </tbody>

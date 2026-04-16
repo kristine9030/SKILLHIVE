@@ -40,7 +40,7 @@ if (!function_exists('dashboard_get_postings_total')) {
         $stmt = $pdo->prepare(
             'SELECT COUNT(*)
              FROM internship i
-             WHERE i.employer_id = :employer_id'
+                         WHERE i.employer_id = :employer_id'
         );
         $stmt->execute([':employer_id' => $employerId]);
         return (int)$stmt->fetchColumn();

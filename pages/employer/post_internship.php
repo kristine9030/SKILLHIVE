@@ -19,6 +19,14 @@ if (!$employerId) {
     exit;
 }
 
+$verificationStatus = getEmployerVerificationStatus($pdo, (int)$employerId) ?? (string)($_SESSION['verification_status'] ?? '');
+$_SESSION['verification_status'] = $verificationStatus;
+if (!isEmployerApproved($verificationStatus)) {
+  $_SESSION['status'] = 'Your employer account is pending admin verification. Posting module is locked until approval.';
+  header('Location: /Skillhive/layout.php?page=employer/dashboard');
+  exit;
+}
+
 // ── 2. Constants & master data ─────────────────
 $errors          = [];
 $old             = [];
@@ -141,6 +149,109 @@ function posting_duration_hours_label($durationWeeks): string {
      HTML  —  uses skillhive.css classes
      ═══════════════════════════════════════════ -->
 
+<style>
+.location-dropdown-shell {
+  border: 1px solid var(--border,#e8e0e0);
+  background: linear-gradient(180deg, #fcfcfd 0%, #f7f7f9 100%);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.location-dependent-group {
+  margin-top: 0;
+}
+
+.location-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #dadde5;
+  background: #fff;
+  border-radius: 11px;
+  padding: 6px 10px;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.location-select-wrap:focus-within {
+  border-color: var(--red,#8b0000);
+  box-shadow: 0 0 0 3px rgba(139,0,0,.08);
+}
+
+.location-select-wrap.is-disabled {
+  background: #f3f4f6;
+  border-style: dashed;
+  border-color: #d7d9dd;
+  opacity: .85;
+}
+
+.location-select-tag {
+  min-width: 72px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: #6b7280;
+}
+
+.location-select-wrap .location-select {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 6px 4px;
+  min-height: 34px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.location-select-wrap .location-select:focus {
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+.location-preview-input {
+  margin-top: 6px;
+  border: 1px dashed #d6d6d6;
+  background: #fffdf7;
+  font-weight: 600;
+  color: #111827;
+}
+
+.location-preview-input::placeholder {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.location-help-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.location-help-text i {
+  margin-top: 2px;
+  color: #9ca3af;
+}
+
+@media (max-width: 900px) {
+  .location-select-wrap {
+    padding: 8px 10px;
+  }
+
+  .location-select-tag {
+    min-width: 66px;
+    font-size: 10px;
+  }
+}
+</style>
+
 <!-- Page Header -->
 <div class="page-header">
   <h1 class="page-title"><i class="fa-solid fa-plus-circle" style="color:var(--red);"></i> Post New Internship</h1>
@@ -235,7 +346,7 @@ function posting_duration_hours_label($durationWeeks): string {
         </div>
 
         <div class="job-card-actions" style="margin-top:12px;">
-          <a id="detailApplicantsLink" href="/Skillhive/layout.php?page=employer/candidates&position=<?php echo rawurlencode((string)($selectedPosting['title'] ?? '')); ?>" class="btn btn-ghost btn-sm">View Applicants</a>
+          <a id="detailApplicantsLink" href="/Skillhive/layout.php?page=employer/candidates&position=<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>" class="btn btn-ghost btn-sm">View Applicants</a>
           <form method="post" action="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Delete this posting?');" style="margin:0;display:inline-block;">
             <input type="hidden" name="delete_posting_id" id="detailDeletePostingId" value="<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>">
             <input type="hidden" name="postings_page" value="<?php echo $postingsPage; ?>">
@@ -355,18 +466,31 @@ function posting_duration_hours_label($durationWeeks): string {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Location <span style="color:var(--red);">*</span></label>
-        <select class="form-control" id="postingRegionSelect" name="region_id" data-old-value="<?php echo oldVal($old, 'region_id'); ?>">
-          <option value="">-- Select Region --</option>
-        </select>
-        <div id="postingProvinceContainer" style="margin-top:8px;display:none;">
-          <select class="form-control" id="postingProvinceSelect" name="province_id" data-old-value="<?php echo oldVal($old, 'province_id'); ?>" disabled>
-            <option value="">-- Select Region First --</option>
-          </select>
-        </div>
-        <div id="postingCityContainer" style="margin-top:8px;display:none;">
-          <select class="form-control" id="postingCitySelect" name="city_id" data-old-value="<?php echo oldVal($old, 'city_id'); ?>" disabled>
-            <option value="">-- Select Province First --</option>
-          </select>
+        <div class="location-dropdown-shell">
+          <div class="location-select-wrap" id="postingRegionWrap">
+            <span class="location-select-tag">Region</span>
+            <select class="form-control location-select" id="postingRegionSelect" name="region_id" data-old-value="<?php echo oldVal($old, 'region_id'); ?>">
+              <option value="">-- Select Region --</option>
+            </select>
+          </div>
+
+          <div id="postingProvinceContainer" class="location-dependent-group">
+            <div class="location-select-wrap is-disabled" id="postingProvinceWrap">
+              <span class="location-select-tag">Province</span>
+              <select class="form-control location-select" id="postingProvinceSelect" name="province_id" data-old-value="<?php echo oldVal($old, 'province_id'); ?>" disabled>
+                <option value="">-- Select Region First --</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="postingCityContainer" class="location-dependent-group">
+            <div class="location-select-wrap is-disabled" id="postingCityWrap">
+              <span class="location-select-tag">City</span>
+              <select class="form-control location-select" id="postingCitySelect" name="city_id" data-old-value="<?php echo oldVal($old, 'city_id'); ?>" disabled>
+                <option value="">-- Select Province First --</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <input type="hidden" id="postingRegionName" name="region_name" value="<?php echo oldVal($old, 'region_name'); ?>">
@@ -374,8 +498,8 @@ function posting_duration_hours_label($durationWeeks): string {
         <input type="hidden" id="postingCityName" name="city_name" value="<?php echo oldVal($old, 'city_name'); ?>">
         <input type="hidden" id="postingLocationValue" name="location" value="<?php echo oldVal($old, 'location'); ?>">
 
-        <input class="form-control" type="text" id="postingLocationPreview" placeholder="Selected location will appear here" value="<?php echo oldVal($old, 'location'); ?>" style="margin-top:8px;" readonly>
-        <div id="postingLocationHelp" style="font-size:11px;color:var(--grey,#888);margin-top:6px;">Data source: PSGC API (Region, Province, City/Municipality).</div>
+        <input class="form-control location-preview-input" type="text" id="postingLocationPreview" placeholder="Selected location will appear here" value="<?php echo oldVal($old, 'location'); ?>" readonly>
+        <div id="postingLocationHelp" class="location-help-text"><i class="fas fa-circle-info"></i><span>Data source: PSGC API (Region, Province, City/Municipality).</span></div>
       </div>
       <div class="form-group">
         <label class="form-label">Slots Available <span style="color:var(--red);">*</span></label>
@@ -486,14 +610,19 @@ function posting_duration_hours_label($durationWeeks): string {
   };
 
   const fallbackPsgcApi = {
+    provinces: 'https://psgc.gitlab.io/api/provinces/',
     citiesMunicipalities: 'https://psgc.gitlab.io/api/cities-municipalities/'
   };
 
+  let fallbackProvincesCache = null;
   let fallbackCitiesCache = null;
 
   const regionSelect = document.getElementById('postingRegionSelect');
   const provinceContainer = document.getElementById('postingProvinceContainer');
   const cityContainer = document.getElementById('postingCityContainer');
+  const regionWrap = document.getElementById('postingRegionWrap');
+  const provinceWrap = document.getElementById('postingProvinceWrap');
+  const cityWrap = document.getElementById('postingCityWrap');
   const provinceSelect = document.getElementById('postingProvinceSelect');
   const citySelect = document.getElementById('postingCitySelect');
   const regionNameInput = document.getElementById('postingRegionName');
@@ -580,6 +709,26 @@ function posting_duration_hours_label($durationWeeks): string {
 
     select.disabled = !!disabled;
     select.value = '';
+    syncLocationSelectState(select);
+  }
+
+  function syncLocationSelectState(select) {
+    if (!select) {
+      return;
+    }
+
+    const wrapById = {
+      postingRegionSelect: regionWrap,
+      postingProvinceSelect: provinceWrap,
+      postingCitySelect: cityWrap,
+    };
+
+    const targetWrap = wrapById[select.id] || null;
+    if (!targetWrap) {
+      return;
+    }
+
+    targetWrap.classList.toggle('is-disabled', !!select.disabled);
   }
 
   function getSelectedOptionLabel(select) {
@@ -639,6 +788,8 @@ function posting_duration_hours_label($durationWeeks): string {
     if (select.options.length <= 1) {
       select.disabled = true;
     }
+
+    syncLocationSelectState(select);
   }
 
   async function fetchFallbackCitiesMunicipalities(parentProvinceId, regionId) {
@@ -702,9 +853,44 @@ function posting_duration_hours_label($durationWeeks): string {
       .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
   }
 
+  async function fetchFallbackProvinces(regionId) {
+    const regionCode = normalizeProvinceCode(regionId);
+    if (regionCode === '') {
+      return [];
+    }
+
+    if (fallbackProvincesCache === null) {
+      const fallbackRows = await fetchPsgcRows(fallbackPsgcApi.provinces);
+      fallbackProvincesCache = Array.isArray(fallbackRows) ? fallbackRows : [];
+    }
+
+    if (!Array.isArray(fallbackProvincesCache) || fallbackProvincesCache.length === 0) {
+      return [];
+    }
+
+    return fallbackProvincesCache
+      .filter(row => {
+        const rowRegionCode = normalizeProvinceCode(
+          (row && (row.regionCode || row.region_code || ''))
+        );
+        return rowRegionCode !== '' && rowRegionCode === regionCode;
+      })
+      .map(row => ({
+        psgc_id: getRowPsgcId(row),
+        name: String((row && row.name) || '').trim(),
+      }))
+      .filter(row => row.psgc_id !== '' && row.name !== '')
+      .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+  }
+
   function setLocationHelp(message) {
     if (locationHelp) {
-      locationHelp.textContent = message;
+      const helperText = locationHelp.querySelector('span');
+      if (helperText) {
+        helperText.textContent = message;
+      } else {
+        locationHelp.textContent = message;
+      }
     }
   }
 
@@ -727,10 +913,7 @@ function posting_duration_hours_label($durationWeeks): string {
   }
 
   async function loadCities(parentId, selectedCityId, selectedCityName, regionId) {
-    clearSelect(citySelect, '-- Select Province First --', true);
-    if (cityContainer) {
-      cityContainer.style.display = 'none';
-    }
+    clearSelect(citySelect, '-- Select Province or Region --', true);
     if (cityNameInput) {
       cityNameInput.value = '';
     }
@@ -744,9 +927,16 @@ function posting_duration_hours_label($durationWeeks): string {
     let rows = await fetchPsgcRows(psgcApi.municipalCity + '?id=' + encodeURIComponent(parent));
     let usedFallbackCities = false;
 
-    if (!Array.isArray(rows) || rows.length === 0) {
-      rows = await fetchFallbackCitiesMunicipalities(parent, regionId || regionSelect.value || '');
-      usedFallbackCities = Array.isArray(rows) && rows.length > 0;
+    if (!Array.isArray(rows)) {
+      rows = [];
+    }
+
+    if (rows.length <= 2) {
+      const fallbackRows = await fetchFallbackCitiesMunicipalities(parent, regionId || regionSelect.value || '');
+      if (Array.isArray(fallbackRows) && fallbackRows.length > rows.length) {
+        rows = fallbackRows;
+        usedFallbackCities = true;
+      }
     }
 
     populateSelect(citySelect, rows, '-- Select City/Municipality --', selectedCityId, selectedCityName);
@@ -774,12 +964,6 @@ function posting_duration_hours_label($durationWeeks): string {
   async function loadProvinces(regionId, selectedProvinceId, selectedProvinceName, selectedCityId, selectedCityName) {
     clearSelect(provinceSelect, '-- Select Region First --', true);
     clearSelect(citySelect, '-- Select Province First --', true);
-    if (provinceContainer) {
-      provinceContainer.style.display = 'none';
-    }
-    if (cityContainer) {
-      cityContainer.style.display = 'none';
-    }
 
     if (provinceNameInput) {
       provinceNameInput.value = '';
@@ -795,7 +979,19 @@ function posting_duration_hours_label($durationWeeks): string {
       return;
     }
 
-    const rows = await fetchPsgcRows(psgcApi.province + '?id=' + encodeURIComponent(region));
+    let rows = await fetchPsgcRows(psgcApi.province + '?id=' + encodeURIComponent(region));
+    if (!Array.isArray(rows)) {
+      rows = [];
+    }
+
+    if (rows.length <= 2) {
+      const fallbackRows = await fetchFallbackProvinces(region);
+      if (Array.isArray(fallbackRows) && fallbackRows.length > rows.length) {
+        rows = fallbackRows;
+        setLocationHelp('Province list loaded with PSGC API fallback data source.');
+      }
+    }
+
     populateSelect(provinceSelect, rows, '-- Select Province --', selectedProvinceId, selectedProvinceName);
     if (provinceContainer) {
       provinceContainer.style.display = '';
@@ -838,6 +1034,9 @@ function posting_duration_hours_label($durationWeeks): string {
 
     await loadProvinces(regionSelect.value, oldProvinceId, oldProvinceName, oldCityId, oldCityName);
     syncLocationComposite();
+    syncLocationSelectState(regionSelect);
+    syncLocationSelectState(provinceSelect);
+    syncLocationSelectState(citySelect);
   }
 
   if (regionSelect && provinceSelect && citySelect) {
@@ -875,6 +1074,20 @@ function posting_duration_hours_label($durationWeeks): string {
     initializePsgcDropdowns();
   }
 
+  const internshipForm = document.getElementById('internshipForm');
+  if (internshipForm) {
+    internshipForm.addEventListener('submit', function (event) {
+      // Controls are associated via form="internshipForm" and may live outside
+      // the hidden form tag, so read values through FormData.
+      const formData = new FormData(internshipForm);
+      const selectedSkills = formData.getAll('skills[]');
+      if (selectedSkills.length === 0) {
+        event.preventDefault();
+        alert('Please select at least one required skill before creating the internship.');
+      }
+    });
+  }
+
   // Skill search filter
   function filterSkills() {
     const q = document.getElementById('skillSearch').value.toLowerCase();
@@ -906,6 +1119,7 @@ function posting_duration_hours_label($durationWeeks): string {
     if (!button) return;
     setPostingCardActiveState(button);
 
+    const internshipId = parseInt(button.getAttribute('data-id') || '0', 10);
     const title = button.getAttribute('data-title') || 'Untitled Internship';
     const description = button.getAttribute('data-description') || 'No description provided.';
     const status = button.getAttribute('data-status') || 'pending';
@@ -942,7 +1156,10 @@ function posting_duration_hours_label($durationWeeks): string {
     document.getElementById('detailAllowance').textContent = '₱' + allowanceRaw.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     document.getElementById('detailSlots').textContent = slots;
     document.getElementById('detailDescription').textContent = description;
-    document.getElementById('detailApplicantsLink').setAttribute('href', '/Skillhive/layout.php?page=employer/candidates&position=' + encodeURIComponent(title));
+    const applicantsHref = internshipId > 0
+      ? ('/Skillhive/layout.php?page=employer/candidates&position=' + encodeURIComponent(String(internshipId)))
+      : '/Skillhive/layout.php?page=employer/candidates';
+    document.getElementById('detailApplicantsLink').setAttribute('href', applicantsHref);
     const detailDeletePostingId = document.getElementById('detailDeletePostingId');
     if (detailDeletePostingId) {
       detailDeletePostingId.value = button.getAttribute('data-id') || '0';
@@ -954,3 +1171,5 @@ function posting_duration_hours_label($durationWeeks): string {
     selectPostingCard(initiallyActiveCard);
   }
 </script>
+
+

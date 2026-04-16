@@ -28,7 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: ' . $baseUrl . '/layout.php');
             exit;
         }
-        $errors['email'] = 'Invalid email or password.';
+      $loginError = function_exists('get_last_login_error') ? get_last_login_error() : '';
+      $errors['email'] = $loginError !== '' ? $loginError : 'Invalid email or password.';
     }
 }
 

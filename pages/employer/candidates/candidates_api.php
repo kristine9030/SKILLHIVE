@@ -31,6 +31,7 @@ if (!function_exists('candidates_api_respond')) {
 }
 
 require_once __DIR__ . '/../../../backend/db_connect.php';
+require_once __DIR__ . '/../post_internship/auth_helpers.php';
 require_once __DIR__ . '/data.php';
 
 $action = trim((string) ($_GET['action'] ?? $_POST['action'] ?? ''));
@@ -38,6 +39,12 @@ $employerId = (int) ($_SESSION['employer_id'] ?? $_SESSION['user_id'] ?? 0);
 
 if ($employerId <= 0) {
     candidates_api_respond(['ok' => false, 'error' => 'Unauthorized'], 401);
+}
+
+$verificationStatus = getEmployerVerificationStatus($pdo, $employerId) ?? (string)($_SESSION['verification_status'] ?? '');
+$_SESSION['verification_status'] = $verificationStatus;
+if (!isEmployerApproved($verificationStatus)) {
+    candidates_api_respond(['ok' => false, 'error' => 'Employer account is pending admin verification.'], 403);
 }
 
 try {

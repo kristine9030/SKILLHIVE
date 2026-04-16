@@ -38,6 +38,7 @@ $allowedPages = [
     ],
     'employer' => [
         'employer/dashboard',
+        'employer/profile',
         'employer/messaging',
         'employer/post_internship',
         'employer/post-internship',
@@ -46,6 +47,7 @@ $allowedPages = [
     ],
     'adviser' => [
         'adviser/dashboard',
+        'adviser/profile',
         'adviser/messaging',
         'adviser/endorsement',
         'adviser/monitoring',
@@ -67,6 +69,74 @@ $allowedPages = [
         'admin/settings',
     ],
 ];
+
+if ($role === 'employer') {
+    require_once __DIR__ . '/backend/db_connect.php';
+
+    $resolvedEmployerId = (int)($_SESSION['employer_id'] ?? 0);
+    if ($resolvedEmployerId <= 0) {
+        $resolvedEmployerId = (int)$userId;
+    }
+
+    $verificationStatus = trim((string)($_SESSION['verification_status'] ?? ''));
+
+    if ($resolvedEmployerId > 0) {
+        try {
+            $stmt = $pdo->prepare(
+                'SELECT employer_id, company_name, verification_status
+                 FROM employer
+                 WHERE employer_id = :employer_id
+                 LIMIT 1'
+            );
+            $stmt->execute([':employer_id' => $resolvedEmployerId]);
+            $employerRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$employerRow && $userEmail !== '') {
+                $stmt = $pdo->prepare(
+                    'SELECT employer_id, company_name, verification_status
+                     FROM employer
+                     WHERE email = :email
+                     LIMIT 1'
+                );
+                $stmt->execute([':email' => $userEmail]);
+                $employerRow = $stmt->fetch(PDO::FETCH_ASSOC);
+            }
+
+            if ($employerRow) {
+                $resolvedEmployerId = (int)($employerRow['employer_id'] ?? $resolvedEmployerId);
+                $verificationStatus = trim((string)($employerRow['verification_status'] ?? $verificationStatus));
+
+                $_SESSION['employer_id'] = $resolvedEmployerId;
+                $_SESSION['verification_status'] = $verificationStatus;
+
+                $companyName = trim((string)($employerRow['company_name'] ?? ''));
+                if ($companyName !== '') {
+                    $_SESSION['user_name'] = $companyName;
+                    $userName = $companyName;
+                }
+            }
+        } catch (Throwable $e) {
+            // Non-fatal: route guard falls back to session values.
+        }
+    }
+
+    $isEmployerApproved = strtolower($verificationStatus) === 'approved';
+    if (!$isEmployerApproved) {
+        $restrictedEmployerPages = [
+            'employer/messaging',
+            'employer/post_internship',
+            'employer/post-internship',
+            'employer/candidates',
+            'employer/evaluation',
+        ];
+
+        if ($page && in_array($page, $restrictedEmployerPages, true)) {
+            $_SESSION['status'] = 'Your employer account is pending admin verification. Employer tools are locked until approval.';
+            header('Location: ' . $baseUrl . '/layout.php?page=employer/dashboard');
+            exit;
+        }
+    }
+}
 
 $mustChangePassword = $role === 'student' && !empty($_SESSION['must_change_password']);
 if ($mustChangePassword) {

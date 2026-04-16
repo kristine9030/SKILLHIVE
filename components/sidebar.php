@@ -24,6 +24,7 @@ if ($role === 'student') {
     $navItems = [
         ['label' => 'MAIN', 'items' => [
             ['icon' => 'fas fa-house',            'text' => 'Dashboard',   'page' => 'employer/dashboard'],
+          ['icon' => 'fas fa-id-card',          'text' => 'Profile',     'page' => 'employer/profile'],
       ['icon' => 'fas fa-comments',         'text' => 'Messaging',   'page' => 'employer/messaging'],
             ['icon' => 'fas fa-briefcase',        'text' => 'Postings',    'page' => 'employer/post_internship'],
             ['icon' => 'fas fa-users',            'text' => 'Candidates',  'page' => 'employer/candidates'],
@@ -34,6 +35,7 @@ if ($role === 'student') {
     $navItems = [
         ['label' => 'MAIN', 'items' => [
             ['icon' => 'fas fa-house',            'text' => 'Dashboard',     'page' => 'adviser/dashboard'],
+      ['icon' => 'fas fa-id-card',          'text' => 'Profile',       'page' => 'adviser/profile'],
       ['icon' => 'fas fa-comments',         'text' => 'Messaging',     'page' => 'adviser/messaging'],
             ['icon' => 'fas fa-house',            'text' => 'My Students',   'page' => 'adviser/students'],
             ['icon' => 'fas fa-stamp',            'text' => 'Endorsements',  'page' => 'adviser/endorsement'],

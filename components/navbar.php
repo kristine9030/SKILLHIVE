@@ -42,11 +42,11 @@
       $profileLink = 'student/profile';
       $settingsLink = 'student/settings';
       if ($role === 'employer') {
-          $profileLink = 'employer/dashboard';
-          $settingsLink = 'employer/dashboard';
+          $profileLink = 'employer/profile';
+          $settingsLink = 'employer/profile';
       } elseif ($role === 'adviser') {
-          $profileLink = 'adviser/dashboard';
-          $settingsLink = 'adviser/dashboard';
+          $profileLink = 'adviser/profile';
+          $settingsLink = 'adviser/profile';
       } elseif ($role === 'admin') {
           $profileLink = 'admin/dashboard';
           $settingsLink = 'admin/settings';

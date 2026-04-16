@@ -23,3 +23,34 @@ if (!function_exists('resolveEmployerId')) {
         return null;
     }
 }
+
+if (!function_exists('getEmployerVerificationStatus')) {
+    function getEmployerVerificationStatus(PDO $pdo, int $employerId): ?string
+    {
+        if ($employerId <= 0) {
+            return null;
+        }
+
+        $stmt = $pdo->prepare(
+            'SELECT verification_status
+             FROM employer
+             WHERE employer_id = :employer_id
+             LIMIT 1'
+        );
+        $stmt->execute([':employer_id' => $employerId]);
+        $status = $stmt->fetchColumn();
+
+        if ($status === false) {
+            return null;
+        }
+
+        return trim((string)$status);
+    }
+}
+
+if (!function_exists('isEmployerApproved')) {
+    function isEmployerApproved(?string $verificationStatus): bool
+    {
+        return strtolower(trim((string)$verificationStatus)) === 'approved';
+    }
+}

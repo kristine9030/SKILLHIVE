@@ -5,9 +5,20 @@
  */
 require_once __DIR__ . '/../../backend/db_connect.php';
 require_once __DIR__ . '/dashboard/formatters.php';
+require_once __DIR__ . '/post_internship/auth_helpers.php';
 require_once __DIR__ . '/candidates/data.php';
 
-$employerId = (int)($_SESSION['employer_id'] ?? ($userId ?? 0));
+$baseUrl = isset($baseUrl) ? (string)$baseUrl : '/SkillHive';
+
+$employerId = resolveEmployerId($_SESSION, isset($userId) ? (int)$userId : null) ?? 0;
+$verificationStatus = getEmployerVerificationStatus($pdo, (int)$employerId) ?? (string)($_SESSION['verification_status'] ?? '');
+$_SESSION['verification_status'] = $verificationStatus;
+if (!isEmployerApproved($verificationStatus)) {
+  $_SESSION['status'] = 'Your employer account is pending admin verification. Candidates module is locked until approval.';
+  header('Location: ' . $baseUrl . '/layout.php?page=employer/dashboard');
+  exit;
+}
+
 $errorMessage = '';
 
 $currentFilters = [
