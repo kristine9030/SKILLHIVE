@@ -1,7 +1,7 @@
 <?php
 /**
  * Purpose: Handles employer candidate pipeline actions (status updates and interview scheduling).
- * Tables/columns used: application(application_id, student_id, internship_id, status, updated_at), internship(internship_id, employer_id, duration_weeks), interview(application_id, interview_date, interview_mode, interview_status, meeting_link, venue, notes), ojt_record(student_id, internship_id, hours_required, hours_completed, completion_status, start_date, end_date, created_at, updated_at).
+ * Tables/columns used: application(application_id, student_id, internship_id, status, updated_at), internship(internship_id, employer_id, duration_weeks), interview(application_id, interview_date, interview_mode, interview_status, meeting_link, venue, notes), ojt_record(student_id, internship_id, hours_required, hours_completed, completion_status, start_date, end_date, created_at, updated_at), endorsement(application_id, moa_status, reviewed_at).
  */
 
 if (!function_exists('candidates_normalize_status')) {
@@ -194,6 +194,14 @@ if (!function_exists('candidates_update_application_status')) {
                     }
                     return $ojtResult;
                 }
+
+                $moaResult = candidates_mark_endorsement_moa_signed($pdo, $applicationId);
+                if (empty($moaResult['success'])) {
+                    if ($ownsTransaction && $pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+                    return $moaResult;
+                }
             }
 
             if ($ownsTransaction && $pdo->inTransaction()) {
@@ -204,6 +212,29 @@ if (!function_exists('candidates_update_application_status')) {
                 $pdo->rollBack();
             }
             return ['success' => false, 'error' => 'Unable to update candidate status right now.'];
+        }
+
+        return ['success' => true, 'error' => null];
+    }
+}
+
+if (!function_exists('candidates_mark_endorsement_moa_signed')) {
+    function candidates_mark_endorsement_moa_signed(PDO $pdo, int $applicationId): array
+    {
+        if ($applicationId <= 0) {
+            return ['success' => false, 'error' => 'Invalid application selected for MOA sync.'];
+        }
+
+        try {
+            $stmt = $pdo->prepare(
+                'UPDATE endorsement
+                 SET moa_status = "Signed",
+                     reviewed_at = COALESCE(reviewed_at, NOW())
+                 WHERE application_id = :application_id'
+            );
+            $stmt->execute([':application_id' => $applicationId]);
+        } catch (Throwable $e) {
+            return ['success' => false, 'error' => 'Unable to sync MOA status for accepted candidate.'];
         }
 
         return ['success' => true, 'error' => null];

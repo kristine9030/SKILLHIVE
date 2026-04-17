@@ -626,11 +626,25 @@ var applicationPolling = {
       }
 
       // Interview details added (status is "Interview Scheduled")
+      var detailsSelector = 'tr.interview-details[data-app-id="' + app.application_id + '"]';
+      var detailsRows = table.querySelectorAll(detailsSelector);
+      if (detailsRows.length > 1) {
+        for (var i = 1; i < detailsRows.length; i++) {
+          detailsRows[i].remove();
+        }
+      }
+
+      var detailsRow = detailsRows.length > 0 ? detailsRows[0] : null;
+
       if (app.status === 'Interview Scheduled' && app.interview_date) {
         var row = table.querySelector('tr[data-app-id="' + app.application_id + '"]');
-        if (row && !row.querySelector('.interview-details')) {
+        if (row && detailsRow) {
+          self.updateInterviewDetails(detailsRow, app);
+        } else if (row) {
           self.insertInterviewDetails(row, app);
         }
+      } else if (detailsRow) {
+        detailsRow.remove();
       }
 
       self.lastData[key] = app;
@@ -671,10 +685,17 @@ var applicationPolling = {
     }
   },
 
-  insertInterviewDetails: function(row, app) {
-    if (!app.interview_date || !app.interview_time) return;
+  buildInterviewDetailsHtml: function(app) {
+    var appId = parseInt(app.application_id || 0, 10);
+    var interviewDate = escapeHtml(this.formatDate(app.interview_date || ''));
+    var interviewTime = escapeHtml(app.interview_time || 'N/A');
+    var interviewMode = escapeHtml(app.interview_mode || 'N/A');
+    var venueHtml = app.venue ? '<div><strong>Venue:</strong> ' + escapeHtml(app.venue) + '</div>' : '';
+    var linkHtml = app.meeting_link
+      ? '<div><strong>Link:</strong> <a href="' + escapeHtml(app.meeting_link) + '" target="_blank" rel="noopener">Join Interview</a></div>'
+      : '';
 
-    var detailsHtml = '<tr class="interview-details" data-app-id="' + app.application_id + '">' +
+    return '<tr class="interview-details" data-app-id="' + appId + '">' +
       '<td colspan="5" style="background:#f0fdf4;padding:12px;border-top:2px solid #86efac">' +
       '<div style="display:flex;gap:16px;align-items:flex-start">' +
       '<div style="flex:1">' +
@@ -682,11 +703,11 @@ var applicationPolling = {
       '<i class="fas fa-calendar-check"></i> Interview Scheduled' +
       '</div>' +
       '<div style="display:grid;gap:6px;font-size:.82rem;color:#374151">' +
-      '<div><strong>Date:</strong> ' + applicationPolling.formatDate(app.interview_date) + '</div>' +
-      '<div><strong>Time:</strong> ' + app.interview_time + '</div>' +
-      '<div><strong>Mode:</strong> ' + app.interview_mode + '</div>' +
-      (app.venue ? '<div><strong>Venue:</strong> ' + app.venue + '</div>' : '') +
-      (app.meeting_link ? '<div><strong>Link:</strong> <a href="' + app.meeting_link + '" target="_blank" rel="noopener">Join Interview</a></div>' : '') +
+      '<div><strong>Date:</strong> ' + interviewDate + '</div>' +
+      '<div><strong>Time:</strong> ' + interviewTime + '</div>' +
+      '<div><strong>Mode:</strong> ' + interviewMode + '</div>' +
+      venueHtml +
+      linkHtml +
       '</div>' +
       '</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
@@ -695,6 +716,24 @@ var applicationPolling = {
       '</div>' +
       '</div>' +
       '</td></tr>';
+  },
+
+  insertInterviewDetails: function(row, app) {
+    if (!app.interview_date || !app.interview_time) return;
+    if (!row || !row.parentNode) return;
+
+    var table = row.parentNode;
+    var existingRows = table.querySelectorAll('tr.interview-details[data-app-id="' + app.application_id + '"]');
+    for (var i = 0; i < existingRows.length; i++) {
+      existingRows[i].remove();
+    }
+
+    row.insertAdjacentHTML('afterend', this.buildInterviewDetailsHtml(app));
+  },
+
+  updateInterviewDetails: function(detailsRow, app) {
+    if (!detailsRow || !app.interview_date || !app.interview_time) return;
+    detailsRow.outerHTML = this.buildInterviewDetailsHtml(app);
 
     row.insertAdjacentHTML('afterend', detailsHtml);
   },

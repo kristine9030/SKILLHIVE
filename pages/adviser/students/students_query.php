@@ -30,6 +30,30 @@ if (!function_exists('adviser_students_get_rows')) {
                 o.completion_status,
                 i.title AS internship_title,
                 e.company_name,
+                                (
+                                        SELECT COALESCE(NULLIF(TRIM(a_status.status), ""), "Pending")
+                                        FROM application a_status
+                                        WHERE a_status.student_id = s.student_id
+                                            AND (
+                                                        o.internship_id IS NULL
+                                                        OR a_status.internship_id = o.internship_id
+                                            )
+                                        ORDER BY a_status.application_id DESC
+                                        LIMIT 1
+                                ) AS application_status,
+                                (
+                                        SELECT COALESCE(NULLIF(TRIM(e_latest.moa_status), ""), "Not Started")
+                                        FROM endorsement e_latest
+                                        INNER JOIN application a_latest ON a_latest.application_id = e_latest.application_id
+                                        WHERE e_latest.adviser_id = :moa_adviser_id
+                                            AND a_latest.student_id = s.student_id
+                                            AND (
+                                                        o.internship_id IS NULL
+                                                        OR a_latest.internship_id = o.internship_id
+                                            )
+                                        ORDER BY e_latest.endorsement_id DESC
+                                        LIMIT 1
+                                ) AS moa_status,
                 (
                     SELECT COUNT(*)
                     FROM requirement r_total
@@ -67,7 +91,10 @@ if (!function_exists('adviser_students_get_rows')) {
             LEFT JOIN employer e ON e.employer_id = i.employer_id
             WHERE 1=1';
 
-        $params = [':adviser_id' => $adviserId];
+        $params = [
+            ':adviser_id' => $adviserId,
+            ':moa_adviser_id' => $adviserId,
+        ];
 
         $department = trim((string)($filters['department'] ?? ''));
         if ($department !== '') {
@@ -115,6 +142,11 @@ if (!function_exists('adviser_students_get_rows')) {
             $row['progress_percent'] = $progress;
             $row['status_label'] = $statusLabel;
             $row['status_class'] = adviser_students_status_class($statusLabel);
+            $row['moa_label'] = adviser_students_moa_label(
+                (string)($row['moa_status'] ?? ''),
+                (string)($row['company_name'] ?? ''),
+                (string)($row['application_status'] ?? '')
+            );
             $row['requirements_submitted'] = $requirements['submitted'];
             $row['requirements_pending'] = $requirements['pending'];
             $row['requirements_completion'] = $requirements['completion'];

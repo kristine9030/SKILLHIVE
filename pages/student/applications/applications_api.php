@@ -40,7 +40,11 @@ if ($action === 'fetch_applications') {
             FROM application a
             INNER JOIN internship i ON i.internship_id = a.internship_id
             INNER JOIN employer e ON e.employer_id = i.employer_id
-            LEFT JOIN interview evt ON evt.application_id = a.application_id
+            LEFT JOIN interview evt ON evt.interview_id = (
+                SELECT MAX(evt2.interview_id)
+                FROM interview evt2
+                WHERE evt2.application_id = a.application_id
+            )
             WHERE a.student_id = ?
             ORDER BY a.application_date DESC, a.application_id DESC
         ';

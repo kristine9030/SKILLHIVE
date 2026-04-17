@@ -343,6 +343,26 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
   </div>
 </div>
 
+<div id="interviewSuccessModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1260;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this){closeInterviewSuccessModal(true);}">
+  <div style="background:#fff;border-radius:12px;max-width:460px;width:100%;padding:18px 18px 14px;max-height:90vh;overflow:auto;box-shadow:0 18px 45px rgba(0,0,0,.24);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <div style="width:30px;height:30px;border-radius:999px;background:rgba(16,185,129,.14);color:#10B981;display:flex;align-items:center;justify-content:center;font-size:.92rem;flex-shrink:0;">
+          <i class="fas fa-check"></i>
+        </div>
+        <div>
+          <h3 style="margin:0;font-size:1rem;line-height:1.35;">Interview Scheduled Successfully</h3>
+          <div id="interviewSuccessMessage" style="margin-top:4px;font-size:.84rem;color:#555;line-height:1.45;">The student will see the interview details immediately.</div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeInterviewSuccessModal(true)">Close</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+      <button type="button" class="btn btn-primary btn-sm" onclick="closeInterviewSuccessModal(true)">OK</button>
+    </div>
+  </div>
+</div>
+
 <form method="post" id="quickRejectForm" style="display:none;">
   <input type="hidden" name="action" value="change_status">
   <input type="hidden" name="application_id" id="quickRejectApplicationId" value="0">
@@ -398,6 +418,29 @@ function openInterviewModal(applicationId) {
 
 function closeInterviewModal() {
   document.getElementById('interviewModal').style.display = 'none';
+}
+
+function openInterviewSuccessModal(message) {
+  var modal = document.getElementById('interviewSuccessModal');
+  var messageEl = document.getElementById('interviewSuccessMessage');
+  if (!modal) return;
+
+  if (messageEl) {
+    messageEl.textContent = message || 'The student will see the interview details immediately.';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeInterviewSuccessModal(shouldReload) {
+  var modal = document.getElementById('interviewSuccessModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+
+  if (shouldReload) {
+    location.reload();
+  }
 }
 
 function toggleMeetingLabel() {
@@ -577,9 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(function(data) {
           if (data.ok) {
             closeInterviewModal();
-            alert('Interview scheduled successfully! The student will see the details immediately.');
-            // Refresh page to show updated status
-            setTimeout(function() { location.reload(); }, 800);
+            openInterviewSuccessModal('The student will see the interview details immediately.');
           } else {
             alert('Error: ' + (data.error || 'Could not schedule interview'));
           }

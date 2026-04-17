@@ -15,7 +15,7 @@ $employerId = resolveEmployerId($_SESSION, isset($userId) ? (int)$userId : null)
 
 if (!$employerId) {
     // Not logged in as employer — bounce to login
-    header('Location: /Skillhive/pages/auth/login.php');
+    header('Location: /SkillHive/pages/auth/login.php');
     exit;
 }
 
@@ -23,7 +23,7 @@ $verificationStatus = getEmployerVerificationStatus($pdo, (int)$employerId) ?? (
 $_SESSION['verification_status'] = $verificationStatus;
 if (!isEmployerApproved($verificationStatus)) {
   $_SESSION['status'] = 'Your employer account is pending admin verification. Posting module is locked until approval.';
-  header('Location: /Skillhive/layout.php?page=employer/dashboard');
+  header('Location: /SkillHive/layout.php?page=employer/dashboard');
   exit;
 }
 
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-      header('Location: /Skillhive/layout.php?page=employer/post_internship&postings_page=' . $deletePage . '#my-postings');
+      header('Location: /SkillHive/layout.php?page=employer/post_internship&postings_page=' . $deletePage . '#my-postings');
       exit;
     }
   } else {
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
               // 5. Flash success & stay on the postings page
               $_SESSION['status'] = 'Internship posted successfully!';
-              header('Location: /Skillhive/layout.php?page=employer/post_internship&postings_page=1#my-postings');
+              header('Location: /SkillHive/layout.php?page=employer/post_internship&postings_page=1#my-postings');
               exit;
 
           } catch (Throwable $e) {
@@ -314,7 +314,7 @@ function posting_duration_hours_label($durationWeeks): string {
               </div>
             </button>
             <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-              <form method="post" action="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Delete this posting?');" style="margin:0;">
+              <form method="post" action="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Delete this posting?');" style="margin:0;">
                 <input type="hidden" name="delete_posting_id" value="<?php echo $postingId; ?>">
                 <input type="hidden" name="postings_page" value="<?php echo $postingsPage; ?>">
                 <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#EF4444;"><i class="fas fa-trash"></i> Delete</button>
@@ -346,8 +346,8 @@ function posting_duration_hours_label($durationWeeks): string {
         </div>
 
         <div class="job-card-actions" style="margin-top:12px;">
-          <a id="detailApplicantsLink" href="/Skillhive/layout.php?page=employer/candidates&position=<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>" class="btn btn-ghost btn-sm">View Applicants</a>
-          <form method="post" action="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Delete this posting?');" style="margin:0;display:inline-block;">
+          <a id="detailApplicantsLink" href="/SkillHive/layout.php?page=employer/candidates&position=<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>" class="btn btn-ghost btn-sm">View Applicants</a>
+          <form method="post" action="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Delete this posting?');" style="margin:0;display:inline-block;">
             <input type="hidden" name="delete_posting_id" id="detailDeletePostingId" value="<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>">
             <input type="hidden" name="postings_page" value="<?php echo $postingsPage; ?>">
             <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#EF4444;"><i class="fas fa-trash"></i> Delete</button>
@@ -370,11 +370,11 @@ function posting_duration_hours_label($durationWeeks): string {
       ?>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
         <?php if ($postingsPage > 1): ?>
-          <a class="btn btn-ghost btn-sm" href="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo ($postingsPage - 1); ?>">Previous</a>
+          <a class="btn btn-ghost btn-sm" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo ($postingsPage - 1); ?>">Previous</a>
         <?php endif; ?>
 
         <?php if ($startPage > 1): ?>
-          <a class="btn btn-ghost btn-sm" href="/Skillhive/layout.php?page=employer/post_internship&postings_page=1">1</a>
+          <a class="btn btn-ghost btn-sm" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=1">1</a>
           <?php if ($startPage > 2): ?>
             <span style="padding:6px 4px;color:#999;">...</span>
           <?php endif; ?>
@@ -384,7 +384,7 @@ function posting_duration_hours_label($durationWeeks): string {
           <?php if ($pageNum === $postingsPage): ?>
             <span class="btn btn-red btn-sm" style="pointer-events:none;"><?php echo $pageNum; ?></span>
           <?php else: ?>
-            <a class="btn btn-ghost btn-sm" href="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo $pageNum; ?>"><?php echo $pageNum; ?></a>
+            <a class="btn btn-ghost btn-sm" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $pageNum; ?>"><?php echo $pageNum; ?></a>
           <?php endif; ?>
         <?php endfor; ?>
 
@@ -392,11 +392,11 @@ function posting_duration_hours_label($durationWeeks): string {
           <?php if ($endPage < ($postingsTotalPages - 1)): ?>
             <span style="padding:6px 4px;color:#999;">...</span>
           <?php endif; ?>
-          <a class="btn btn-ghost btn-sm" href="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsTotalPages; ?>"><?php echo $postingsTotalPages; ?></a>
+          <a class="btn btn-ghost btn-sm" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsTotalPages; ?>"><?php echo $postingsTotalPages; ?></a>
         <?php endif; ?>
 
         <?php if ($postingsPage < $postingsTotalPages): ?>
-          <a class="btn btn-ghost btn-sm" href="/Skillhive/layout.php?page=employer/post_internship&postings_page=<?php echo ($postingsPage + 1); ?>">Next</a>
+          <a class="btn btn-ghost btn-sm" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo ($postingsPage + 1); ?>">Next</a>
         <?php endif; ?>
       </div>
     <?php endif; ?>
@@ -422,7 +422,7 @@ function posting_duration_hours_label($durationWeeks): string {
 <div class="card">
   <h3 class="card-title"><i class="fa-solid fa-briefcase" style="color:var(--red);margin-right:6px;"></i> Internship Details</h3>
 
-  <form method="post" action="/Skillhive/layout.php?page=employer/post_internship">
+  <form method="post" action="/SkillHive/layout.php?page=employer/post_internship">
 
     <!-- Row: Title + Work Setup -->
     <div class="form-row">
@@ -578,14 +578,14 @@ function posting_duration_hours_label($durationWeeks): string {
     <button type="submit" form="internshipForm" class="btn btn-red btn-lg">
       <i class="fa-solid fa-rocket"></i> &nbsp;Create Internship
     </button>
-    <a href="/Skillhive/layout.php?page=employer/dashboard" class="btn btn-dark btn-lg">
+    <a href="/SkillHive/layout.php?page=employer/dashboard" class="btn btn-dark btn-lg">
       <i class="fa-solid fa-xmark"></i> &nbsp;Cancel
     </a>
   </div>
 </div>
 
 <!-- Hidden form tag that wraps everything via "form" attribute -->
-<form id="internshipForm" method="post" action="/Skillhive/layout.php?page=employer/post_internship" style="display:none;"></form>
+<form id="internshipForm" method="post" action="/SkillHive/layout.php?page=employer/post_internship" style="display:none;"></form>
 
 <!-- Re-associate all inputs in the first card to internshipForm -->
 <script>
@@ -1157,8 +1157,8 @@ function posting_duration_hours_label($durationWeeks): string {
     document.getElementById('detailSlots').textContent = slots;
     document.getElementById('detailDescription').textContent = description;
     const applicantsHref = internshipId > 0
-      ? ('/Skillhive/layout.php?page=employer/candidates&position=' + encodeURIComponent(String(internshipId)))
-      : '/Skillhive/layout.php?page=employer/candidates';
+      ? ('/SkillHive/layout.php?page=employer/candidates&position=' + encodeURIComponent(String(internshipId)))
+      : '/SkillHive/layout.php?page=employer/candidates';
     document.getElementById('detailApplicantsLink').setAttribute('href', applicantsHref);
     const detailDeletePostingId = document.getElementById('detailDeletePostingId');
     if (detailDeletePostingId) {

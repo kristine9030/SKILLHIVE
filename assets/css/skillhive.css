@@ -1739,17 +1739,17 @@ td,
     animation: topbarNotifPulse 1.6s ease-in-out infinite;
 }
 
-.topbar-notification-menu {
-    width: 380px;
-    min-width: 380px;
-    max-width: min(380px, calc(100vw - 24px));
+.topbar-dropdown-menu.topbar-notification-menu {
+    width: min(420px, calc(100vw - 24px));
+    min-width: min(420px, calc(100vw - 24px));
+    max-width: min(420px, calc(100vw - 24px));
     padding: 0;
     overflow: hidden;
 }
 
 .topbar-notification-head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
     padding: 12px 14px;
@@ -1761,7 +1761,16 @@ td,
 .topbar-notification-head-main {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.topbar-notification-head-main strong {
+    display: block;
+    font-size: 0.95rem;
+    line-height: 1.35;
 }
 
 .topbar-notification-unread-text {
@@ -1785,6 +1794,9 @@ td,
     font-weight: 600;
     cursor: pointer;
     padding: 0;
+    white-space: nowrap;
+    line-height: 1.35;
+    flex: 0 0 auto;
 }
 
 .topbar-notification-mark-read:hover {
@@ -1812,10 +1824,11 @@ td,
 }
 
 .topbar-notification-item {
-    display: block;
+    display: grid;
+    gap: 4px;
     text-decoration: none;
     color: var(--text);
-    padding: 11px 14px 11px 18px;
+    padding: 12px 14px 12px 20px;
     border-bottom: 1px solid var(--border);
     transition: background var(--transition);
     position: relative;
@@ -1847,19 +1860,27 @@ td,
 .topbar-notification-title {
     font-size: 0.82rem;
     font-weight: 700;
-    margin-bottom: 2px;
+    line-height: 1.38;
+    margin: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .topbar-notification-message {
     font-size: 0.78rem;
     color: var(--text2);
-    line-height: 1.35;
-    margin-bottom: 5px;
+    line-height: 1.45;
+    margin: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .topbar-notification-time {
     font-size: 0.72rem;
     color: var(--text3);
+    margin-top: 2px;
 }
 
 .topbar-notification-empty {
@@ -1994,9 +2015,10 @@ td,
         left: auto;
         top: calc(100% + 10px);
     }
-    .topbar-notification-menu {
+    .topbar-dropdown-menu.topbar-notification-menu {
         width: min(380px, calc(100vw - 24px));
         min-width: min(380px, calc(100vw - 24px));
+        max-width: min(380px, calc(100vw - 24px));
     }
 }
 

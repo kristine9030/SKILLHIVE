@@ -82,7 +82,7 @@ $errorMessage = '';
 
 $formState = [
   'candidate_key' => '',
-  'period' => 'Midterm',
+  'period' => 'Final',
   'technical_score' => 0,
   'communication_score' => 0,
   'work_ethic_score' => 0,
@@ -97,7 +97,7 @@ $selectedFilters = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $employerId > 0) {
   $formState['internship_id'] = $selectedFilters['internship_id'];
   $formState['candidate_key'] = trim((string)($_POST['candidate_key'] ?? ''));
-  $formState['period'] = trim((string)($_POST['period'] ?? 'Midterm'));
+  $formState['period'] = 'Final';
   $formState['technical_score'] = (float)($_POST['technical_score'] ?? 0);
   $formState['communication_score'] = (float)($_POST['communication_score'] ?? 0);
   $formState['work_ethic_score'] = (float)($_POST['work_ethic_score'] ?? 0);
@@ -243,10 +243,8 @@ if ($exportMode === 'csv' && $employerId > 0) {
           </div>
           <div class="form-group">
             <label class="form-label">Evaluation Period</label>
-            <select class="form-input" name="period">
-              <option value="Midterm" <?php echo $formState['period'] === 'Midterm' ? 'selected' : ''; ?>>Midterm</option>
-              <option value="Final" <?php echo $formState['period'] === 'Final' ? 'selected' : ''; ?>>Final</option>
-            </select>
+            <input type="hidden" name="period" value="Final">
+            <div class="form-input" style="display:flex;align-items:center;background:#f8fafc;color:#0f172a;font-weight:600;">Final</div>
           </div>
         </div>
 

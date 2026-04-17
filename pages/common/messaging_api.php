@@ -94,7 +94,29 @@ if (!function_exists('messaging_get_user_name')) {
                     "SELECT company_name as name FROM employer WHERE employer_id = ? LIMIT 1"
                 );
                 $stmt->execute([$userId]);
-            } elseif ($role === 'adviser' || $role === 'admin') {
+            } elseif ($role === 'adviser') {
+                $row = null;
+                try {
+                    $stmt = $pdo->prepare(
+                        "SELECT CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name FROM internship_adviser WHERE adviser_id = ? LIMIT 1"
+                    );
+                    $stmt->execute([$userId]);
+                    $row = $stmt->fetch();
+                } catch (Throwable $e) {
+                    $row = null;
+                }
+
+                if (!$row) {
+                    $stmt = $pdo->prepare(
+                        "SELECT CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name FROM admin WHERE admin_id = ? LIMIT 1"
+                    );
+                    $stmt->execute([$userId]);
+                    $row = $stmt->fetch();
+                }
+
+                $name = $row ? trim((string)($row['name'] ?? '')) : null;
+                return $name && strlen($name) > 1 ? $name : null;
+            } elseif ($role === 'admin') {
                 $stmt = $pdo->prepare(
                     "SELECT CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name FROM admin WHERE admin_id = ? LIMIT 1"
                 );
@@ -164,13 +186,31 @@ if (!function_exists('messaging_get_user_profile_summary')) {
                     $summary['profile_picture'] = $logo;
                 }
             } elseif ($role === 'adviser') {
-                $stmt = $pdo->prepare(
-                    "SELECT email FROM admin WHERE admin_id = ? LIMIT 1"
-                );
-                $stmt->execute([$userId]);
-                $row = $stmt->fetch() ?: [];
-
                 $summary['headline'] = 'Academic Adviser';
+
+                $row = [];
+                try {
+                    $stmt = $pdo->prepare(
+                        "SELECT email, department FROM internship_adviser WHERE adviser_id = ? LIMIT 1"
+                    );
+                    $stmt->execute([$userId]);
+                    $row = $stmt->fetch() ?: [];
+                } catch (Throwable $e) {
+                    $row = [];
+                }
+
+                if (!$row) {
+                    $stmt = $pdo->prepare(
+                        "SELECT email FROM admin WHERE admin_id = ? LIMIT 1"
+                    );
+                    $stmt->execute([$userId]);
+                    $row = $stmt->fetch() ?: [];
+                }
+
+                $department = trim((string)($row['department'] ?? ''));
+                if ($department !== '') {
+                    $summary['headline'] = $department;
+                }
                 $summary['email'] = (string)($row['email'] ?? '');
             } elseif ($role === 'admin') {
                 $stmt = $pdo->prepare(
@@ -205,6 +245,335 @@ if (!function_exists('messaging_sanitize_message')) {
             $message = substr($message, 0, 5000);
         }
         return $message;
+    }
+}
+
+if (!function_exists('messaging_has_admin_role_level_column')) {
+    function messaging_has_admin_role_level_column($pdo): bool
+    {
+        static $hasColumn = null;
+        if ($hasColumn !== null) {
+            return $hasColumn;
+        }
+
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT 1
+                 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = 'admin'
+                   AND COLUMN_NAME = 'role_level'
+                 LIMIT 1"
+            );
+            $stmt->execute();
+            $hasColumn = (bool)$stmt->fetchColumn();
+        } catch (Throwable $e) {
+            $hasColumn = false;
+        }
+
+        return $hasColumn;
+    }
+}
+
+if (!function_exists('messaging_has_internship_adviser_table')) {
+    function messaging_has_internship_adviser_table($pdo): bool
+    {
+        static $exists = null;
+        if ($exists !== null) {
+            return $exists;
+        }
+
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT 1
+                 FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = 'internship_adviser'
+                 LIMIT 1"
+            );
+            $stmt->execute();
+            $exists = (bool)$stmt->fetchColumn();
+        } catch (Throwable $e) {
+            $exists = false;
+        }
+
+        return $exists;
+    }
+}
+
+if (!function_exists('messaging_role_exists')) {
+    function messaging_role_exists($pdo, string $role, int $userId): bool
+    {
+        static $cache = [];
+
+        $role = strtolower(trim($role));
+        $userId = (int)$userId;
+        if (!messaging_validate_role($role) || $userId <= 0) {
+            return false;
+        }
+
+        $cacheKey = $role . '_' . $userId;
+        if (array_key_exists($cacheKey, $cache)) {
+            return $cache[$cacheKey];
+        }
+
+        try {
+            if ($role === 'student') {
+                $stmt = $pdo->prepare('SELECT 1 FROM student WHERE student_id = ? LIMIT 1');
+                $stmt->execute([$userId]);
+                $cache[$cacheKey] = (bool)$stmt->fetchColumn();
+                return $cache[$cacheKey];
+            }
+
+            if ($role === 'employer') {
+                $stmt = $pdo->prepare('SELECT 1 FROM employer WHERE employer_id = ? LIMIT 1');
+                $stmt->execute([$userId]);
+                $cache[$cacheKey] = (bool)$stmt->fetchColumn();
+                return $cache[$cacheKey];
+            }
+
+            if ($role === 'admin') {
+                $stmt = $pdo->prepare('SELECT 1 FROM admin WHERE admin_id = ? LIMIT 1');
+                $stmt->execute([$userId]);
+                $cache[$cacheKey] = (bool)$stmt->fetchColumn();
+                return $cache[$cacheKey];
+            }
+
+            if ($role === 'adviser') {
+                if (messaging_has_internship_adviser_table($pdo)) {
+                    $stmt = $pdo->prepare('SELECT 1 FROM internship_adviser WHERE adviser_id = ? LIMIT 1');
+                    $stmt->execute([$userId]);
+                    if ((bool)$stmt->fetchColumn()) {
+                        $cache[$cacheKey] = true;
+                        return true;
+                    }
+                }
+
+                $stmt = $pdo->prepare('SELECT 1 FROM admin WHERE admin_id = ? LIMIT 1');
+                $stmt->execute([$userId]);
+                $cache[$cacheKey] = (bool)$stmt->fetchColumn();
+                return $cache[$cacheKey];
+            }
+        } catch (Throwable $e) {
+            $cache[$cacheKey] = false;
+            return false;
+        }
+
+        $cache[$cacheKey] = false;
+        return false;
+    }
+}
+
+if (!function_exists('messaging_has_student_employer_relationship')) {
+    function messaging_has_student_employer_relationship($pdo, int $studentId, int $employerId): bool
+    {
+        static $cache = [];
+
+        $studentId = (int)$studentId;
+        $employerId = (int)$employerId;
+        if ($studentId <= 0 || $employerId <= 0) {
+            return false;
+        }
+
+        $key = $studentId . '_' . $employerId;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+
+        try {
+            $stmt = $pdo->prepare(
+                'SELECT 1
+                 FROM application a
+                 INNER JOIN internship i ON i.internship_id = a.internship_id
+                 WHERE a.student_id = :student_id
+                   AND i.employer_id = :employer_id
+                 LIMIT 1'
+            );
+            $stmt->execute([
+                ':student_id' => $studentId,
+                ':employer_id' => $employerId,
+            ]);
+            $cache[$key] = (bool)$stmt->fetchColumn();
+            return $cache[$key];
+        } catch (Throwable $e) {
+            $cache[$key] = false;
+            return false;
+        }
+    }
+}
+
+if (!function_exists('messaging_has_student_adviser_relationship')) {
+    function messaging_has_student_adviser_relationship($pdo, int $studentId, int $adviserId): bool
+    {
+        static $cache = [];
+        static $studentHasValidMappedAdviser = [];
+
+        $studentId = (int)$studentId;
+        $adviserId = (int)$adviserId;
+        if ($studentId <= 0 || $adviserId <= 0) {
+            return false;
+        }
+
+        $key = $studentId . '_' . $adviserId;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+
+        try {
+            $stmt = $pdo->prepare(
+                'SELECT 1
+                 FROM adviser_assignment aa
+                 WHERE aa.student_id = :student_id
+                   AND aa.adviser_id = :adviser_id
+                   AND COALESCE(NULLIF(TRIM(aa.status), ""), "Active") = "Active"
+                 LIMIT 1'
+            );
+            $stmt->execute([
+                ':student_id' => $studentId,
+                ':adviser_id' => $adviserId,
+            ]);
+
+            if ((bool)$stmt->fetchColumn()) {
+                $cache[$key] = true;
+                return true;
+            }
+
+            if (!array_key_exists($studentId, $studentHasValidMappedAdviser)) {
+                $mappedStmt = $pdo->prepare(
+                    'SELECT 1
+                     FROM adviser_assignment aa
+                                         LEFT JOIN admin ad ON ad.admin_id = aa.adviser_id
+                                         LEFT JOIN internship_adviser ia ON ia.adviser_id = aa.adviser_id
+                     WHERE aa.student_id = :student_id
+                       AND COALESCE(NULLIF(TRIM(aa.status), ""), "Active") = "Active"
+                                             AND (ad.admin_id IS NOT NULL OR ia.adviser_id IS NOT NULL)
+                     LIMIT 1'
+                );
+                $mappedStmt->execute([':student_id' => $studentId]);
+                $studentHasValidMappedAdviser[$studentId] = (bool)$mappedStmt->fetchColumn();
+            }
+
+            if ($studentHasValidMappedAdviser[$studentId] === false && messaging_role_exists($pdo, 'adviser', $adviserId)) {
+                $cache[$key] = true;
+                return true;
+            }
+
+            $cache[$key] = false;
+            return false;
+        } catch (Throwable $e) {
+            $cache[$key] = false;
+            return false;
+        }
+    }
+}
+
+if (!function_exists('messaging_has_employer_adviser_relationship')) {
+    function messaging_has_employer_adviser_relationship($pdo, int $employerId, int $adviserId): bool
+    {
+        static $cache = [];
+
+        $employerId = (int)$employerId;
+        $adviserId = (int)$adviserId;
+        if ($employerId <= 0 || $adviserId <= 0) {
+            return false;
+        }
+
+        $key = $employerId . '_' . $adviserId;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+
+        try {
+            $stmt = $pdo->prepare(
+                'SELECT 1
+                 FROM internship i
+                 INNER JOIN application a ON a.internship_id = i.internship_id
+                 INNER JOIN adviser_assignment aa ON aa.student_id = a.student_id
+                 WHERE i.employer_id = :employer_id
+                   AND aa.adviser_id = :adviser_id
+                   AND COALESCE(NULLIF(TRIM(aa.status), ""), "Active") = "Active"
+                 LIMIT 1'
+            );
+            $stmt->execute([
+                ':employer_id' => $employerId,
+                ':adviser_id' => $adviserId,
+            ]);
+            $cache[$key] = (bool)$stmt->fetchColumn();
+            return $cache[$key];
+        } catch (Throwable $e) {
+            $cache[$key] = false;
+            return false;
+        }
+    }
+}
+
+if (!function_exists('messaging_can_message')) {
+    function messaging_can_message($pdo, string $fromRole, int $fromId, string $toRole, int $toId): bool
+    {
+        $fromRole = strtolower(trim($fromRole));
+        $toRole = strtolower(trim($toRole));
+        $fromId = (int)$fromId;
+        $toId = (int)$toId;
+
+        if (!messaging_validate_role($fromRole) || !messaging_validate_role($toRole) || $fromId <= 0 || $toId <= 0) {
+            return false;
+        }
+
+        if ($fromRole === $toRole) {
+            return false;
+        }
+
+        $pair = $fromRole . '|' . $toRole;
+        $allowedPairs = [
+            'student|employer',
+            'employer|student',
+            'student|adviser',
+            'adviser|student',
+            'employer|adviser',
+            'adviser|employer',
+            'adviser|admin',
+            'admin|adviser',
+            'employer|admin',
+            'admin|employer',
+        ];
+
+        if (!in_array($pair, $allowedPairs, true)) {
+            return false;
+        }
+
+        if (!messaging_role_exists($pdo, $fromRole, $fromId) || !messaging_role_exists($pdo, $toRole, $toId)) {
+            return false;
+        }
+
+        if ($pair === 'student|employer') {
+            return messaging_has_student_employer_relationship($pdo, $fromId, $toId);
+        }
+
+        if ($pair === 'employer|student') {
+            return messaging_has_student_employer_relationship($pdo, $toId, $fromId);
+        }
+
+        if ($pair === 'student|adviser') {
+            return messaging_has_student_adviser_relationship($pdo, $fromId, $toId);
+        }
+
+        if ($pair === 'adviser|student') {
+            return messaging_has_student_adviser_relationship($pdo, $toId, $fromId);
+        }
+
+        if ($pair === 'employer|adviser') {
+            return messaging_has_employer_adviser_relationship($pdo, $fromId, $toId);
+        }
+
+        if ($pair === 'adviser|employer') {
+            return messaging_has_employer_adviser_relationship($pdo, $toId, $fromId);
+        }
+
+        if (in_array($pair, ['adviser|admin', 'admin|adviser', 'employer|admin', 'admin|employer'], true)) {
+            return true;
+        }
+
+        return false;
     }
 }
 
@@ -252,6 +621,7 @@ try {
             $unread = (int)($conv['unread_count'] ?? 0);
 
             if ($other_id <= 0 || !messaging_validate_role($other_role)) continue;
+            if (!messaging_can_message($pdo, $role, $userId, $other_role, $other_id)) continue;
 
             $name = messaging_get_user_name($pdo, $other_role, $other_id);
             if (!$name) continue;
@@ -289,12 +659,26 @@ try {
     // ==================== GET UNREAD COUNT ====================
     if ($action === 'get_unread_count') {
         $stmt = $pdo->prepare(
-            "SELECT COUNT(*) as total FROM direct_message
-             WHERE receiver_id = ? AND receiver_role = ? AND is_read = 0"
+            "SELECT sender_id, sender_role, COUNT(*) as unread_count
+             FROM direct_message
+             WHERE receiver_id = ? AND receiver_role = ? AND is_read = 0
+             GROUP BY sender_id, sender_role"
         );
         $stmt->execute([$userId, $role]);
-        $row = $stmt->fetch();
-        $unread = (int)($row['total'] ?? 0);
+        $rows = $stmt->fetchAll() ?: [];
+
+        $unread = 0;
+        foreach ($rows as $row) {
+            $senderId = (int)($row['sender_id'] ?? 0);
+            $senderRole = strtolower(trim((string)($row['sender_role'] ?? '')));
+            if (!messaging_validate_role($senderRole) || $senderId <= 0) {
+                continue;
+            }
+            if (!messaging_can_message($pdo, $role, $userId, $senderRole, $senderId)) {
+                continue;
+            }
+            $unread += (int)($row['unread_count'] ?? 0);
+        }
 
         messaging_api_respond(['ok' => true, 'unread_count' => $unread]);
     }
@@ -324,13 +708,19 @@ try {
             // Get assigned advisers
             try {
                 $stmt2 = $pdo->prepare(
-                    "SELECT DISTINCT ad.admin_id as user_id, 
-                            CONCAT(COALESCE(ad.first_name, ''), ' ', COALESCE(ad.last_name, '')) as name, 
+                                        "SELECT DISTINCT aa.adviser_id as user_id,
+                                                        COALESCE(
+                                                                NULLIF(TRIM(CONCAT(COALESCE(ad.first_name, ''), ' ', COALESCE(ad.last_name, ''))), ''),
+                                                                NULLIF(TRIM(CONCAT(COALESCE(ia.first_name, ''), ' ', COALESCE(ia.last_name, ''))), ''),
+                                                                CONCAT('Adviser #', aa.adviser_id)
+                                                        ) as name,
                             'adviser' as user_role
-                     FROM admin ad
-                     INNER JOIN adviser_assignment aa ON ad.admin_id = aa.adviser_id
-                     WHERE aa.student_id = ?
-                     ORDER BY ad.first_name, ad.last_name
+                                         FROM adviser_assignment aa
+                                         LEFT JOIN admin ad ON ad.admin_id = aa.adviser_id
+                                         LEFT JOIN internship_adviser ia ON ia.adviser_id = aa.adviser_id
+                                         WHERE aa.student_id = ?
+                                             AND COALESCE(NULLIF(TRIM(aa.status), ''), 'Active') = 'Active'
+                                         ORDER BY name
                      LIMIT 100"
                 );
                 $stmt2->execute([$userId]);
@@ -365,6 +755,22 @@ try {
                     $contacts = array_merge($contacts, $fallbackAdvisers);
                 } catch (Throwable $e) {
                     // Ignore fallback errors.
+                }
+
+                if (messaging_has_internship_adviser_table($pdo)) {
+                    try {
+                        $fallbackInternshipAdvisers = $pdo->query(
+                            "SELECT adviser_id as user_id,
+                                    CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name,
+                                    'adviser' as user_role
+                             FROM internship_adviser
+                             ORDER BY first_name, last_name
+                             LIMIT 100"
+                        )->fetchAll();
+                        $contacts = array_merge($contacts, $fallbackInternshipAdvisers);
+                    } catch (Throwable $e) {
+                        // Ignore fallback errors.
+                    }
                 }
             }
         } elseif ($role === 'employer') {
@@ -422,19 +828,58 @@ try {
         }
 
         try {
-            $allAdvisersStmt = $pdo->prepare(
-                "SELECT admin_id as user_id,
-                        CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name,
-                        CASE WHEN role_level >= 2 THEN 'admin' ELSE 'adviser' END as user_role
-                 FROM admin
-                 WHERE NOT ((? = 'adviser' OR ? = 'admin') AND admin_id = ?)
-                 ORDER BY first_name, last_name
-                 LIMIT 100"
-            );
-            $allAdvisersStmt->execute([$role, $role, $userId]);
+            if (messaging_has_admin_role_level_column($pdo)) {
+                $allAdvisersStmt = $pdo->prepare(
+                    "SELECT admin_id as user_id,
+                            CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name,
+                            CASE
+                                WHEN ? = 'student' THEN 'adviser'
+                                WHEN role_level >= 2 THEN 'admin'
+                                ELSE 'adviser'
+                            END as user_role
+                     FROM admin
+                     WHERE NOT ((? = 'adviser' OR ? = 'admin') AND admin_id = ?)
+                     ORDER BY first_name, last_name
+                     LIMIT 100"
+                );
+                $allAdvisersStmt->execute([$role, $role, $role, $userId]);
+            } else {
+                $allAdvisersStmt = $pdo->prepare(
+                    "SELECT admin_id as user_id,
+                            CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name,
+                            CASE
+                                WHEN ? = 'student' THEN 'adviser'
+                                ELSE 'admin'
+                            END as user_role
+                     FROM admin
+                     WHERE NOT ((? = 'adviser' OR ? = 'admin') AND admin_id = ?)
+                     ORDER BY first_name, last_name
+                     LIMIT 100"
+                );
+                $allAdvisersStmt->execute([$role, $role, $role, $userId]);
+            }
+
             $contacts = array_merge($contacts, $allAdvisersStmt->fetchAll());
         } catch (Throwable $e) {
             // Continue if query fails.
+        }
+
+        if (messaging_has_internship_adviser_table($pdo)) {
+            try {
+                $internshipAdvisersStmt = $pdo->prepare(
+                    "SELECT adviser_id as user_id,
+                            CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name,
+                            'adviser' as user_role
+                     FROM internship_adviser
+                     WHERE NOT (? = 'adviser' AND adviser_id = ?)
+                     ORDER BY first_name, last_name
+                     LIMIT 100"
+                );
+                $internshipAdvisersStmt->execute([$role, $userId]);
+                $contacts = array_merge($contacts, $internshipAdvisersStmt->fetchAll());
+            } catch (Throwable $e) {
+                // Continue if query fails.
+            }
         }
 
         // Get contacts from previous conversations
@@ -469,6 +914,7 @@ try {
             $key = $contact_id . '_' . $contact_role;
 
             if (!messaging_validate_role($contact_role) || $contact_id <= 0) continue;
+            if (!messaging_can_message($pdo, $role, $userId, $contact_role, $contact_id)) continue;
             if (isset($uniqueIds[$key])) continue;
 
             $uniqueIds[$key] = true;
@@ -533,6 +979,14 @@ try {
 
         if ($other_id <= 0 || !messaging_validate_role($other_role)) {
             messaging_api_respond(['ok' => false, 'error' => 'Invalid user ID or role'], 400);
+        }
+
+        if (!messaging_role_exists($pdo, $other_role, $other_id)) {
+            messaging_api_respond(['ok' => false, 'error' => 'User not found'], 404);
+        }
+
+        if (!messaging_can_message($pdo, $role, $userId, $other_role, $other_id)) {
+            messaging_api_respond(['ok' => false, 'error' => 'Conversation is not allowed for this user pair'], 403);
         }
 
         $other_name = messaging_get_user_name($pdo, $other_role, $other_id);
@@ -626,6 +1080,14 @@ try {
 
         if ($other_id <= 0 || !messaging_validate_role($other_role)) {
             messaging_api_respond(['ok' => false, 'error' => 'Invalid recipient data'], 400);
+        }
+
+        if (!messaging_role_exists($pdo, $other_role, $other_id)) {
+            messaging_api_respond(['ok' => false, 'error' => 'Recipient not found'], 404);
+        }
+
+        if (!messaging_can_message($pdo, $role, $userId, $other_role, $other_id)) {
+            messaging_api_respond(['ok' => false, 'error' => 'Messaging is not allowed for this user pair'], 403);
         }
 
         // Handle file upload if present
@@ -735,8 +1197,14 @@ try {
             messaging_api_respond(['ok' => false, 'error' => 'Invalid message ID'], 400);
         }
 
-        $stmt = $pdo->prepare("UPDATE direct_message SET is_read = 1 WHERE message_id = ?");
-        $stmt->execute([$message_id]);
+        $stmt = $pdo->prepare(
+            "UPDATE direct_message
+             SET is_read = 1
+             WHERE message_id = ?
+               AND receiver_id = ?
+               AND receiver_role = ?"
+        );
+        $stmt->execute([$message_id, $userId, $role]);
 
         messaging_api_respond(['ok' => true]);
     }
@@ -760,6 +1228,14 @@ try {
 
         if ($other_id <= 0 || !messaging_validate_role($other_role)) {
             messaging_api_respond(['ok' => false, 'error' => 'Invalid user'], 400);
+        }
+
+        if (!messaging_role_exists($pdo, $other_role, $other_id)) {
+            messaging_api_respond(['ok' => false, 'error' => 'User not found'], 404);
+        }
+
+        if (!messaging_can_message($pdo, $role, $userId, $other_role, $other_id)) {
+            messaging_api_respond(['ok' => false, 'error' => 'Online status is not available for this user pair'], 403);
         }
 
         $stmt = $pdo->prepare(

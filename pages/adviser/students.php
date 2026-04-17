@@ -151,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
           <tr>
             <th>Student</th>
             <th>Department</th>
-            <th>Company / Status</th>
+            <th>Company / MOA</th>
             <th>OJT Hours</th>
             <th>Requirements</th>
             <th>Actions</th>
@@ -165,6 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
               $studentName = trim((string)($row['first_name'] ?? '') . ' ' . (string)($row['last_name'] ?? ''));
               $companyName = trim((string)($row['company_name'] ?? ''));
               $internshipTitle = trim((string)($row['internship_title'] ?? ''));
+              $moaLabel = (string)($row['moa_label'] ?? adviser_students_moa_label((string)($row['moa_status'] ?? ''), $companyName, (string)($row['application_status'] ?? '')));
               $subtitle = trim((string)($row['program'] ?? '')) . ' - ' . ($companyName !== '' ? $companyName : 'No company assigned');
               $academicYearLabel = trim((string)($row['academic_year'] ?? ''));
               if ($academicYearLabel === '') {
@@ -193,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
                 <td><span class="adv-dept"><?php echo adviser_students_escape((string)($row['department'] ?? 'Unassigned')); ?></span></td>
                 <td>
                   <p class="adv-company"><?php echo adviser_students_escape($companyName !== '' ? $companyName : '-'); ?></p>
-                  <p class="adv-company-meta"><?php echo adviser_students_escape($companyName !== '' ? ($internshipTitle !== '' ? $internshipTitle : 'Internship placement') : 'Not yet placed'); ?></p>
+                  <p class="adv-company-meta"><?php echo adviser_students_escape($moaLabel); ?></p>
                 </td>
                 <td><span class="adv-hours"><?php echo (int)round($hoursCompleted); ?>/<?php echo (int)round($hoursRequired); ?></span></td>
                 <td>

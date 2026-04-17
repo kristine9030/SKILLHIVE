@@ -146,3 +146,43 @@ if (!function_exists('adviser_students_avatar_gradient')) {
         return $gradients[$index];
     }
 }
+
+if (!function_exists('adviser_students_moa_label')) {
+    function adviser_students_moa_label(?string $moaStatus, ?string $companyName = null, ?string $applicationStatus = null): string
+    {
+        $company = trim((string)($companyName ?? ''));
+        $raw = trim((string)($moaStatus ?? ''));
+        $normalized = strtolower($raw);
+        $applicationRaw = trim((string)($applicationStatus ?? ''));
+        $applicationNormalized = strtolower($applicationRaw);
+
+        if (
+            ($applicationNormalized !== '' && strpos($applicationNormalized, 'accepted') !== false)
+            || in_array($applicationNormalized, ['approved', 'hired'], true)
+        ) {
+            return 'MOA Signed';
+        }
+
+        if ($company === '') {
+            return 'No company assigned';
+        }
+
+        if ($normalized === '' || in_array($normalized, ['not started', 'pending'], true)) {
+            return 'MOA Not Started';
+        }
+
+        if (in_array($normalized, ['signed', 'moa signed', 'completed', 'complete', 'approved'], true)) {
+            return 'MOA Signed';
+        }
+
+        if (in_array($normalized, ['in progress', 'processing', 'for signing'], true)) {
+            return 'MOA In Progress';
+        }
+
+        if (preg_match('/^moa\s+/i', $raw) === 1) {
+            return $raw;
+        }
+
+        return 'MOA ' . ucwords($raw);
+    }
+}

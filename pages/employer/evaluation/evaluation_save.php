@@ -8,7 +8,7 @@ if (!function_exists('saveEmployerEvaluation')) {
     function saveEmployerEvaluation(PDO $pdo, int $employerId, array $payload): array
     {
         $candidateKey  = trim((string)($payload['candidate_key'] ?? ''));
-        $period        = trim((string)($payload['period'] ?? 'Midterm'));
+        $period        = 'Final';
         $comment       = trim((string)($payload['comments'] ?? ''));
 
         $technical     = filter_var($payload['technical_score']     ?? null, FILTER_VALIDATE_FLOAT);
@@ -31,11 +31,6 @@ if (!function_exists('saveEmployerEvaluation')) {
             if ($score === false || $score < 1 || $score > 5) {
                 return ['success' => false, 'error' => 'Please provide a valid ' . $label . ' rating (1 to 5).'];
             }
-        }
-
-        $allowedPeriod = ['Midterm', 'Final'];
-        if (!in_array($period, $allowedPeriod, true)) {
-            $period = 'Midterm';
         }
 
         $ownershipStmt = $pdo->prepare(
