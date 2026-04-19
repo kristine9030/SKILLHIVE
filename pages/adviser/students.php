@@ -31,10 +31,14 @@ $rows = $pageData['rows'];
 $addStudentForm = adviser_students_default_add_form();
 $addStudentErrors = [];
 $shouldOpenAddStudentModal = false;
+$bulkImportResult = null;
+$bulkImportSummaryMessage = '';
+$shouldOpenBulkImportModal = false;
 $staticProgramLabel = adviser_students_static_program_label();
 $staticDepartmentLabel = adviser_students_static_department_label();
+$postAction = (string)($_POST['action'] ?? '');
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'add_student') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'add_student') {
     $addStudentResult = adviser_students_process_add_student($pdo, $adviserId, $_POST);
 
     if ($addStudentResult['success']) {
@@ -58,6 +62,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
     $addStudentForm = $addStudentResult['form'];
     $addStudentErrors = $addStudentResult['errors'];
     $shouldOpenAddStudentModal = true;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students') {
+    $bulkImportResult = adviser_students_process_bulk_add_students(
+        $pdo,
+        $adviserId,
+        is_array($_FILES['bulk_students_csv'] ?? null) ? $_FILES['bulk_students_csv'] : [],
+        $baseUrl ?? '/SkillHive'
+    );
+
+    $bulkImportSummaryMessage = 'Bulk import finished: '
+      . (int)($bulkImportResult['created'] ?? 0) . ' created, '
+      . (int)($bulkImportResult['failed'] ?? 0) . ' failed, '
+      . (int)($bulkImportResult['emails_sent'] ?? 0) . ' credentials emails sent, '
+      . (int)($bulkImportResult['emails_failed'] ?? 0) . ' email failures.';
+
+    $isFullySuccessful = !empty($bulkImportResult['success'])
+      && (int)($bulkImportResult['failed'] ?? 0) === 0
+      && (int)($bulkImportResult['emails_failed'] ?? 0) === 0
+      && empty($bulkImportResult['errors'])
+      && empty($bulkImportResult['warnings']);
+
+    if ($isFullySuccessful) {
+      $_SESSION['status'] = $bulkImportSummaryMessage;
+      header('Location: ' . $baseUrl . '/layout.php?page=adviser/students');
+      exit;
+    }
+
+    $shouldOpenBulkImportModal = true;
+
+    if ($adviserId > 0) {
+      try {
+        $pageData = getAdviserStudentsPageData($pdo, $adviserId, $currentFilters);
+      } catch (Throwable $e) {
+        $pageData = $pageData;
+      }
+
+      $selected = $pageData['selected'];
+      $filterOptions = $pageData['filter_options'];
+      $rows = $pageData['rows'];
+    }
 }
 ?>
 
@@ -113,6 +158,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
   .adv-add-input:focus, .adv-add-select:focus { border-color:#111827; box-shadow:0 0 0 3px rgba(17,24,39,.05); }
   .adv-add-help { min-height:16px; font-size:.74rem; color:#dc2626; }
   .adv-add-actions { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:18px; }
+  .adv-add-modal.is-wide { width:min(680px,100%); }
+  .adv-bulk-note { margin-top:10px; padding:10px 12px; border-radius:12px; background:#f8fafc; border:1px solid #e2e8f0; color:#334155; font-size:.8rem; line-height:1.5; }
+  .adv-bulk-summary { margin-bottom:12px; padding:12px 14px; border-radius:14px; border:1px solid #bfdbfe; background:#eff6ff; color:#1e3a8a; font-size:.82rem; }
+  .adv-bulk-summary strong { color:#1d4ed8; }
+  .adv-bulk-list { margin:10px 0 0; padding-left:18px; max-height:170px; overflow:auto; color:#7f1d1d; font-size:.79rem; line-height:1.45; }
+  .adv-bulk-list.is-warning { color:#92400e; }
   @media (max-width:640px) { .adv-search, .adv-select, .adv-btn { width:100%; max-width:none; } }
   @media (max-width:640px) { .adv-add-grid { grid-template-columns:1fr; } .adv-add-modal { padding:22px 18px; border-radius:20px; } }
 </style>
@@ -141,6 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
     </select>
 
     <button class="adv-btn is-secondary" type="submit">Apply Filters</button>
+    <button class="adv-btn is-secondary" type="button" onclick="openBulkImportModal()"><i class="fas fa-file-upload"></i>Bulk Import</button>
     <button class="adv-btn" type="button" onclick="openAddStudentModal()"><i class="fas fa-user-plus"></i>Add Student</button>
   </form>
 
@@ -318,6 +370,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
   </div>
 </div>
 
+<div id="bulkImportModal" class="adv-modal-overlay<?php echo $shouldOpenBulkImportModal ? ' open' : ''; ?>">
+  <div class="adv-add-modal is-wide" role="dialog" aria-modal="true" aria-labelledby="bulkImportTitle">
+    <div class="adv-add-header">
+      <div>
+        <h2 id="bulkImportTitle" class="adv-add-title">Bulk Import Students</h2>
+      </div>
+      <button type="button" class="adv-add-close" onclick="closeBulkImportModal()">&times;</button>
+    </div>
+
+    <?php if ($bulkImportResult !== null): ?>
+      <div class="adv-bulk-summary">
+        <strong><?php echo adviser_students_escape($bulkImportSummaryMessage !== '' ? $bulkImportSummaryMessage : 'Bulk import processed.'); ?></strong>
+        <div style="margin-top:6px;color:#334155;">
+          Processed rows: <?php echo (int)($bulkImportResult['processed_rows'] ?? 0); ?>
+        </div>
+      </div>
+
+      <?php if (!empty($bulkImportResult['errors'])): ?>
+        <div class="adv-add-error" style="margin-bottom:12px;">
+          <strong>Rows with errors</strong>
+          <ul class="adv-bulk-list">
+            <?php foreach ((array)$bulkImportResult['errors'] as $bulkError): ?>
+              <li><?php echo adviser_students_escape((string)$bulkError); ?></li>
+            <?php endforeach; ?>
+          </ul>
+        </div>
+      <?php endif; ?>
+
+      <?php if (!empty($bulkImportResult['warnings'])): ?>
+        <div class="adv-bulk-note" style="background:#fffbeb;border-color:#fde68a;color:#92400e;">
+          <strong>Warnings</strong>
+          <ul class="adv-bulk-list is-warning">
+            <?php foreach ((array)$bulkImportResult['warnings'] as $bulkWarning): ?>
+              <li><?php echo adviser_students_escape((string)$bulkWarning); ?></li>
+            <?php endforeach; ?>
+          </ul>
+        </div>
+      <?php endif; ?>
+    <?php endif; ?>
+
+    <form id="bulkImportForm" method="post" action="<?php echo $baseUrl; ?>/layout.php?page=adviser/students" enctype="multipart/form-data">
+      <input type="hidden" name="action" value="bulk_add_students">
+
+      <div class="adv-add-grid">
+        <div class="adv-add-field full">
+          <label class="adv-add-label" for="bulkStudentsCsv">CSV / Excel File</label>
+          <input id="bulkStudentsCsv" class="adv-add-input" type="file" name="bulk_students_csv" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+          <div class="adv-add-help"></div>
+        </div>
+      </div>
+
+      <div class="adv-bulk-note">
+        CSV or Excel header format: <strong>student_number,first_name,last_name</strong>. Maximum 500 non-empty rows per upload.
+      </div>
+      <div class="adv-bulk-note" style="margin-top:8px;background:#f0f9ff;border-color:#bae6fd;color:#0c4a6e;">
+        Student accounts are created first, then credentials emails are sent automatically after bulk creation completes.
+      </div>
+      <div class="adv-bulk-note" style="margin-top:8px;">
+        Need a sample file?
+        <a href="<?php echo $baseUrl; ?>/assets/templates/adviser_students_bulk_template.csv" download style="font-weight:700;color:#1d4ed8;text-decoration:underline;">Download CSV template</a>
+      </div>
+
+      <div class="adv-add-actions">
+        <button type="button" class="adv-btn is-secondary" onclick="closeBulkImportModal()">Cancel</button>
+        <button id="bulkImportSubmitBtn" type="submit" class="adv-btn"><i class="fas fa-file-import"></i>Import Students</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="requirementsModal" style="position:fixed;inset:0;background:rgba(0,0,0,.40);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1200;padding:16px;">
   <div style="background:#fff;width:720px;max-width:100%;border-radius:22px;box-shadow:0 20px 40px rgba(0,0,0,.2);padding:24px;max-height:90vh;overflow:auto;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:16px;">
@@ -370,6 +492,18 @@ function closeAddStudentModal() {
     modal.classList.remove('open');
 }
 
+function openBulkImportModal() {
+  var modal = document.getElementById('bulkImportModal');
+  if (!modal) return;
+  modal.classList.add('open');
+}
+
+function closeBulkImportModal() {
+  var modal = document.getElementById('bulkImportModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+}
+
 function bindAddStudentFormSubmission() {
   var form = document.getElementById('addStudentForm');
   if (!form) {
@@ -391,6 +525,28 @@ function bindAddStudentFormSubmission() {
     }
 
     closeAddStudentModal();
+  });
+}
+
+function bindBulkImportFormSubmission() {
+  var form = document.getElementById('bulkImportForm');
+  if (!form) {
+    return;
+  }
+
+  form.addEventListener('submit', function (event) {
+    if (form.dataset.submitting === '1') {
+      event.preventDefault();
+      return;
+    }
+
+    form.dataset.submitting = '1';
+
+    var submitButton = document.getElementById('bulkImportSubmitBtn');
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...';
+    }
   });
 }
 
@@ -778,6 +934,11 @@ document.addEventListener('click', function (event) {
         closeAddStudentModal();
     }
 
+  var bulkImportModal = document.getElementById('bulkImportModal');
+  if (bulkImportModal && event.target === bulkImportModal) {
+    closeBulkImportModal();
+  }
+
     var modal = document.getElementById('requirementsModal');
     if (!modal || modal.style.display !== 'flex') return;
     if (event.target === modal) {
@@ -788,10 +949,12 @@ document.addEventListener('click', function (event) {
 document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         closeAddStudentModal();
+    closeBulkImportModal();
         closeRequirementsModal();
     }
 });
 
 bindAddStudentEmailAutomation();
 bindAddStudentFormSubmission();
+bindBulkImportFormSubmission();
 </script>

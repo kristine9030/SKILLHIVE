@@ -9,10 +9,6 @@ if ($listener) {
     exit 0
 }
 
-if ([string]::IsNullOrWhiteSpace($env:GMAIL_SMTP_USER) -or [string]::IsNullOrWhiteSpace($env:GMAIL_APP_PASSWORD)) {
-    exit 1
-}
-
 $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
 if (-not $nodeCommand) {
     exit 1

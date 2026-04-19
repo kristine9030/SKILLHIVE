@@ -31,6 +31,7 @@ $currentFilters = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $employerId > 0) {
   $action = trim((string)($_POST['action'] ?? ''));
   $applicationId = (int)($_POST['application_id'] ?? 0);
+  $showInterviewSuccessOnRedirect = false;
 
   try {
     if ($action === 'change_status') {
@@ -46,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $employerId > 0) {
       $result = candidates_schedule_interview($pdo, $employerId, $applicationId, $_POST);
 
       if (!empty($result['success'])) {
-        $_SESSION['status'] = 'Interview scheduled successfully.';
+        $showInterviewSuccessOnRedirect = true;
       } else {
         $errorMessage = (string)($result['error'] ?? 'Unable to schedule interview.');
       }
@@ -62,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $employerId > 0) {
       'position' => (string)$currentFilters['position'],
       'status' => (string)$currentFilters['status'],
       'sort' => (string)$currentFilters['sort'],
+      'interview_success' => $showInterviewSuccessOnRedirect ? '1' : null,
     ]);
     header('Location: ' . $baseUrl . '/layout.php?' . $queryString);
     exit;
@@ -99,6 +101,7 @@ $skillsByStudent = $candidateData['skills_by_student'];
 $positions = $candidateData['positions'];
 $statuses = $candidateData['statuses'];
 $selected = $candidateData['selected'];
+$showInterviewSuccessModal = ((int)($_GET['interview_success'] ?? 0) === 1);
 
 $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted', 'Rejected'];
 ?>
@@ -546,6 +549,16 @@ var candidatePolling = {
 
 // Start polling when page loads
 document.addEventListener('DOMContentLoaded', function() {
+  if (<?php echo $showInterviewSuccessModal ? 'true' : 'false'; ?>) {
+    openInterviewSuccessModal('The student will see the interview details immediately.');
+
+    if (window.history && window.history.replaceState) {
+      var cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('interview_success');
+      window.history.replaceState({}, document.title, cleanUrl.toString());
+    }
+  }
+
   if (document.querySelector('.cards-grid')) {
     candidatePolling.start();
   }

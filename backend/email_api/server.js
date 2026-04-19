@@ -4,9 +4,15 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 
 const PORT = Number(process.env.EMAIL_API_PORT || 3100);
+const EMAIL_PROVIDER = String(process.env.EMAIL_PROVIDER || '').trim().toLowerCase();
 const GMAIL_USER = String(process.env.GMAIL_SMTP_USER || process.env.GMAIL_USER || '').trim();
 const GMAIL_APP_PASSWORD = String(process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '');
+const BREVO_SMTP_LOGIN = String(process.env.BREVO_SMTP_LOGIN || '').trim();
+const BREVO_SMTP_KEY = String(process.env.BREVO_SMTP_KEY || '').replace(/\s+/g, '');
+const BREVO_SMTP_HOST = String(process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com').trim();
+const BREVO_SMTP_PORT = Number(process.env.BREVO_SMTP_PORT || 587);
 const EMAIL_FROM_NAME = String(process.env.EMAIL_FROM_NAME || 'SkillHive Adviser Team').trim();
+const EMAIL_FROM_ADDRESS = String(process.env.EMAIL_FROM_ADDRESS || '').trim();
 const EMAIL_SUBJECT = String(process.env.EMAIL_SUBJECT || 'SkillHive Notification').trim();
 const EMAIL_PREDEFINED_MESSAGE = String(
   process.env.EMAIL_PREDEFINED_MESSAGE ||
@@ -90,27 +96,70 @@ function buildEmailHtml(studentName, messageText, logoSrc) {
   </div>`;
 }
 
-function createTransporter() {
-  return nodemailer.createTransport({
+function resolveEmailProvider(payload) {
+  const payloadProvider = String((payload && payload.provider) || '').trim().toLowerCase();
+  if (payloadProvider === 'brevo' || payloadProvider === 'gmail') {
+    return payloadProvider;
+  }
+
+  if (EMAIL_PROVIDER === 'brevo' || EMAIL_PROVIDER === 'gmail') {
+    return EMAIL_PROVIDER;
+  }
+
+  if (BREVO_SMTP_LOGIN && BREVO_SMTP_KEY) {
+    return 'brevo';
+  }
+
+  return 'gmail';
+}
+
+function resolveTransportConfig(payload) {
+  const provider = resolveEmailProvider(payload);
+
+  if (provider === 'brevo') {
+    const payloadLogin = String((payload && payload.smtpLogin) || '').trim();
+    const payloadKey = String((payload && payload.smtpKey) || '').replace(/\s+/g, '');
+    const payloadFromEmail = String((payload && payload.fromEmail) || '').trim();
+
+    const login = payloadLogin || BREVO_SMTP_LOGIN;
+    const key = payloadKey || BREVO_SMTP_KEY;
+    const fromAddress = payloadFromEmail || EMAIL_FROM_ADDRESS || login;
+
+    return {
+      provider,
+      host: BREVO_SMTP_HOST,
+      port: BREVO_SMTP_PORT,
+      secure: BREVO_SMTP_PORT === 465,
+      authUser: login,
+      authPass: key,
+      fromAddress,
+    };
+  }
+
+  return {
+    provider: 'gmail',
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
+    authUser: GMAIL_USER,
+    authPass: GMAIL_APP_PASSWORD,
+    fromAddress: EMAIL_FROM_ADDRESS || GMAIL_USER,
+  };
+}
+
+function createTransporter(config) {
+  return nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
     auth: {
-      user: GMAIL_USER,
-      pass: GMAIL_APP_PASSWORD,
+      user: config.authUser,
+      pass: config.authPass,
     },
   });
 }
 
 async function handleSendEmail(req, res) {
-  if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-    sendJson(res, 500, {
-      ok: false,
-      error: 'Email service is not configured. Missing Gmail credentials.',
-    });
-    return;
-  }
-
   let rawBody = '';
   req.on('data', (chunk) => {
     rawBody += chunk;
@@ -139,11 +188,29 @@ async function handleSendEmail(req, res) {
       return;
     }
 
+    const transportConfig = resolveTransportConfig(payload);
+    if (!transportConfig.authUser || !transportConfig.authPass) {
+      const providerLabel = transportConfig.provider === 'brevo' ? 'Brevo SMTP' : 'Gmail SMTP';
+      sendJson(res, 500, {
+        ok: false,
+        error: 'Email service is not configured. Missing ' + providerLabel + ' credentials.',
+      });
+      return;
+    }
+
+    if (!isValidEmail(transportConfig.fromAddress)) {
+      sendJson(res, 500, {
+        ok: false,
+        error: 'Email service is not configured. Invalid sender email address.',
+      });
+      return;
+    }
+
     try {
-      const transporter = createTransporter();
+      const transporter = createTransporter(transportConfig);
       const logoConfig = buildLogoConfig(logoUrl);
       const info = await transporter.sendMail({
-        from: `"${EMAIL_FROM_NAME}" <${GMAIL_USER}>`,
+        from: `"${EMAIL_FROM_NAME}" <${transportConfig.fromAddress}>`,
         to: studentEmail,
         subject: subjectText,
         html: buildEmailHtml(studentName, messageText, logoConfig.src),
@@ -155,9 +222,10 @@ async function handleSendEmail(req, res) {
         messageId: info.messageId || null,
       });
     } catch (error) {
+      const providerLabel = transportConfig.provider === 'brevo' ? 'Brevo SMTP' : 'Gmail SMTP';
       sendJson(res, 500, {
         ok: false,
-        error: 'Failed to send email. Check Gmail SMTP credentials/app password.',
+        error: 'Failed to send email. Check ' + providerLabel + ' credentials and sender verification.',
       });
     }
   });
