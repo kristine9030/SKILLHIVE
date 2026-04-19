@@ -9,6 +9,7 @@ require_once __DIR__ . '/skill_queries.php';
 require_once __DIR__ . '/posting_validation.php';
 require_once __DIR__ . '/posting_create.php';
 require_once __DIR__ . '/posting_delete.php';
+require_once __DIR__ . '/posting_update.php';
 require_once __DIR__ . '/postings_query.php';
 require_once __DIR__ . '/dashboard_query.php';
 require_once __DIR__ . '/applicants_query.php';

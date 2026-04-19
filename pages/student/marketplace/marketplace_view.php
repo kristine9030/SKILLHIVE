@@ -842,7 +842,6 @@ function marketplace_render(array $data): void
                 <div style="margin-top:10px;padding:10px;border:1px dashed #d1d5db;border-radius:10px;background:#fff;display:flex;flex-direction:column;gap:6px">
                   <div style="font-size:.74rem;color:#64748b;font-weight:700">Data shared with employer</div>
                   <div style="font-size:.76rem;color:#475569">Resume file: <strong><?php echo marketplace_e((string) ($resumeRow['resume_file'] ?? '')); ?></strong></div>
-                  <div style="font-size:.76rem;color:#475569">Profile link: <strong><?php echo marketplace_e($baseUrl . '/layout.php?page=student/profile&student_id=' . (int) $userId); ?></strong></div>
                 </div>
                 <div style="font-size:.73rem;color:#64748b;margin-top:8px">Optional confirmations for your own documentation before submitting.</div>
               </div>

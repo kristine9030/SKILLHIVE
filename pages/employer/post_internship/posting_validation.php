@@ -58,11 +58,9 @@ if (!function_exists('validatePostInternshipPayload')) {
         $durationHours = filter_var($old['duration_hours'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 40]]);
         if ($durationHours === false) {
             $errors[] = 'Duration hours must be a whole number ≥ 40.';
-        } elseif (((int)$durationHours % 40) !== 0) {
-            $errors[] = 'Duration hours must be divisible by 40.';
         }
 
-        $durationWeeks = $durationHours === false ? false : (int)((int)$durationHours / 40);
+        $durationWeeks = $durationHours === false ? false : max(1, (int)ceil(((int)$durationHours) / 40));
 
         $allowance = filter_var($old['allowance'], FILTER_VALIDATE_FLOAT);
         if ($allowance === false || $allowance < 0) $errors[] = 'Allowance must be 0 or higher.';

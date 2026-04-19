@@ -52,7 +52,30 @@ $myPostings = [];
 
 // ── 3. Handle form submission ──────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if (isset($_POST['delete_posting_id'])) {
+  if (isset($_POST['edit_posting_id'])) {
+    $editPostingId = (int)($_POST['edit_posting_id'] ?? 0);
+    $editStatus = (string)($_POST['edit_status'] ?? '');
+    $editPage = max(1, (int)($_POST['postings_page'] ?? $postingsPage));
+
+    try {
+      $editResult = updateEmployerInternshipPostingStatus($pdo, (int)$employerId, $editPostingId, $editStatus);
+      if (!empty($editResult['success'])) {
+        $_SESSION['status'] = 'Posting updated successfully.';
+      } else {
+        $errors[] = (string)($editResult['error'] ?? 'Unable to update posting status.');
+      }
+    } catch (Throwable $e) {
+      if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+      }
+      $errors[] = 'Unable to update posting right now. Please try again.';
+    }
+
+    if (empty($errors)) {
+      header('Location: /SkillHive/layout.php?page=employer/post_internship&postings_page=' . $editPage . '&focus_posting=' . $editPostingId . '#my-postings');
+      exit;
+    }
+  } elseif (isset($_POST['delete_posting_id'])) {
     $deletePostingId = (int)($_POST['delete_posting_id'] ?? 0);
     $deletePage = max(1, (int)($_POST['postings_page'] ?? $postingsPage));
 
@@ -347,6 +370,16 @@ function posting_duration_hours_label($durationWeeks): string {
 
         <div class="job-card-actions" style="margin-top:12px;">
           <a id="detailApplicantsLink" href="/SkillHive/layout.php?page=employer/candidates&position=<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>" class="btn btn-ghost btn-sm">View Applicants</a>
+          <?php $selectedDetailStatus = strtolower((string)($selectedPosting['status'] ?? 'open')); ?>
+          <form method="post" action="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" style="margin:0;display:inline-flex;align-items:center;gap:6px;">
+            <input type="hidden" name="edit_posting_id" id="detailEditPostingId" value="<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>">
+            <input type="hidden" name="postings_page" value="<?php echo $postingsPage; ?>">
+            <select name="edit_status" id="detailEditStatus" class="form-control" style="padding:5px 8px;font-size:12px;min-width:112px;">
+              <option value="Open" <?php echo ($selectedDetailStatus === 'closed') ? '' : 'selected'; ?>>Open</option>
+              <option value="Closed" <?php echo ($selectedDetailStatus === 'closed') ? 'selected' : ''; ?>>Closed</option>
+            </select>
+            <button type="submit" class="btn btn-ghost btn-sm"><i class="fas fa-pen"></i> Edit</button>
+          </form>
           <form method="post" action="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Delete this posting?');" style="margin:0;display:inline-block;">
             <input type="hidden" name="delete_posting_id" id="detailDeletePostingId" value="<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>">
             <input type="hidden" name="postings_page" value="<?php echo $postingsPage; ?>">
@@ -453,8 +486,8 @@ function posting_duration_hours_label($durationWeeks): string {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Duration (hours) <span style="color:var(--red);">*</span></label>
-        <input class="form-control" type="number" min="40" step="40" name="duration_hours" placeholder="e.g. 480" value="<?php echo oldVal($old, 'duration_hours'); ?>" required>
-        <div style="font-size:11px;color:var(--grey,#888);margin-top:6px;">Use increments of 40 hours (for week-based OJT tracking).</div>
+        <input class="form-control" type="number" min="40" step="1" name="duration_hours" placeholder="e.g. 500" value="<?php echo oldVal($old, 'duration_hours', '500'); ?>" required>
+        <div style="font-size:11px;color:var(--grey,#888);margin-top:6px;">Default is 500 hours. You can change this value before posting.</div>
       </div>
       <div class="form-group">
         <label class="form-label">Allowance (₱) <span style="color:var(--red);">*</span></label>
@@ -592,9 +625,12 @@ function posting_duration_hours_label($durationWeeks): string {
   // Attach all inputs/selects/textareas inside .card forms to the single internshipForm
   document.querySelectorAll('.card input, .card select, .card textarea').forEach(el => {
     const parentForm = el.closest('form');
-    const isDeleteFormField = parentForm && parentForm.querySelector('input[name="delete_posting_id"]');
+    const isActionFormField = parentForm && (
+      parentForm.querySelector('input[name="delete_posting_id"]') ||
+      parentForm.querySelector('input[name="edit_posting_id"]')
+    );
 
-    if (isDeleteFormField) {
+    if (isActionFormField) {
       return;
     }
 
@@ -1160,6 +1196,14 @@ function posting_duration_hours_label($durationWeeks): string {
       ? ('/SkillHive/layout.php?page=employer/candidates&position=' + encodeURIComponent(String(internshipId)))
       : '/SkillHive/layout.php?page=employer/candidates';
     document.getElementById('detailApplicantsLink').setAttribute('href', applicantsHref);
+    const detailEditPostingId = document.getElementById('detailEditPostingId');
+    if (detailEditPostingId) {
+      detailEditPostingId.value = button.getAttribute('data-id') || '0';
+    }
+    const detailEditStatus = document.getElementById('detailEditStatus');
+    if (detailEditStatus) {
+      detailEditStatus.value = status.toLowerCase() === 'closed' ? 'Closed' : 'Open';
+    }
     const detailDeletePostingId = document.getElementById('detailDeletePostingId');
     if (detailDeletePostingId) {
       detailDeletePostingId.value = button.getAttribute('data-id') || '0';
