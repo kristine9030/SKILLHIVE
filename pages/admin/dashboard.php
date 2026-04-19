@@ -99,6 +99,20 @@ $statusStyles = [
     </div>
   </section>
 
+  <?php
+  // Banner variables for admin
+  $bannerGreeting = 'Welcome back';
+  $bannerUserName = 'Administrator';
+  $bannerTitle = 'System Overview';
+  $bannerDescription = 'Monitor platform health, manage users, verify companies, and ensure smooth operations across the entire system.';
+  $bannerStats = [
+    ['value' => number_format($stats['total_students'] ?? 0), 'label' => 'Students'],
+    ['value' => number_format($stats['total_employers'] ?? 0), 'label' => 'Companies'],
+    ['value' => number_format($stats['open_internships'] ?? 0), 'label' => 'Open Roles'],
+  ];
+  include __DIR__ . '/../../components/dashboard_banner.php';
+  ?>
+
   <section class="admin-stat-grid">
     <article class="admin-stat-card" style="--admin-accent:#111827;--admin-accent-soft:rgba(17,24,39,0.08)">
       <div class="admin-stat-top">

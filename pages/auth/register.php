@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../backend/db_connect.php';
 require_once __DIR__ . '/../../backend/auth.php';
 
 $baseUrl = '/Skillhive';
+$logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
 
 $errors = [];
 $old = [];
@@ -187,9 +188,12 @@ body {
 .auth-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
 .auth-logo-icon {
   width: 38px; height: 38px; border-radius: 10px;
-  background: linear-gradient(135deg, #bae6fd, #fef08a);
+  background: transparent;
   display: flex; align-items: center; justify-content: center;
-  color: #0f1729; font-size: 1rem;
+  overflow: hidden;
+}
+.auth-logo-icon img {
+  width: 100%; height: 100%; display: block; object-fit: cover;
 }
 .auth-brand-name { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1.2rem; color: #fff; }
 .auth-tagline { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1.55rem; line-height: 1.4; color: #fff; margin-bottom: 12px; }
@@ -336,7 +340,7 @@ body {
   <div class="auth-left">
     <div class="auth-left-inner">
       <div class="auth-brand">
-        <div class="auth-logo-icon"><i class="fas fa-hexagon-nodes"></i></div>
+        <div class="auth-logo-icon"><img src="<?php echo htmlspecialchars($logoAsset); ?>" alt="SkillHive"></div>
         <span class="auth-brand-name">SkillHive</span>
       </div>
       <h2 class="auth-tagline">Where Talent<br>Meets Opportunity</h2>

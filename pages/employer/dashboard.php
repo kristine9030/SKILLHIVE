@@ -100,6 +100,20 @@ $upcomingInterviews = $dashboardData['upcoming_interviews'];
   <?php endif; ?>
 </div>
 
+<?php
+// Banner variables for employer
+$bannerGreeting = 'Good afternoon';
+$bannerUserName = $userName ?? 'Employer';
+$bannerTitle = 'Build Your Team';
+$bannerDescription = 'Review applications, schedule interviews, and find your perfect candidates. Everything you need to hire is right here.';
+$bannerStats = [
+  ['value' => (int)($stats['active_postings'] ?? 0), 'label' => 'Active Postings'],
+  ['value' => (int)($stats['total_applicants'] ?? 0), 'label' => 'Total Applicants'],
+  ['value' => (int)($stats['interviews'] ?? 0), 'label' => 'Interviews'],
+];
+include __DIR__ . '/../../components/dashboard_banner.php';
+?>
+
 <?php if (!$isEmployerApproved): ?>
   <div class="panel-card" style="margin-bottom:14px;border-left:4px solid #F59E0B;">
     <div style="font-size:.85rem;color:#666;">

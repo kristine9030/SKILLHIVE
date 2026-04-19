@@ -60,6 +60,40 @@ if (!isset($baseUrl)) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>/assets/css/skillhive.css">
     <style>
+        .journal-cover {
+            height: 180px;
+            background: linear-gradient(135deg, #0080FF 0%, #0099FF 40%, #00B4FF 70%, #0088FF 100%);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 30px;
+            z-index: 1;
+        }
+
+        .journal-cover::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            pointer-events: none;
+        }
+
+        .journal-cover::after {
+            content: '';
+            position: absolute;
+            bottom: -40px;
+            left: -20px;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            pointer-events: none;
+        }
+
         .journal-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -74,79 +108,122 @@ if (!isset($baseUrl)) {
         }
 
         .journal-section {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid var(--border);
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
             padding: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+            transition: all .2s ease;
+        }
+
+        .journal-section::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: rgba(0, 128, 255, 0.06);
+            pointer-events: none;
+        }
+
+        .journal-section::after {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            left: -20px;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: rgba(0, 128, 255, 0.04);
+            pointer-events: none;
+        }
+
+        .journal-section:hover {
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
         }
 
         .journal-section h3 {
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             font-weight: 700;
-            margin-bottom: 16px;
-            color: var(--text1);
+            margin-bottom: 18px;
+            color: #0f172a;
+            position: relative;
+            z-index: 1;
         }
 
         .journal-form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
+            position: relative;
+            z-index: 1;
         }
 
         .journal-form-group label {
             display: block;
-            font-size: 0.9rem;
+            font-size: .85rem;
             font-weight: 600;
             margin-bottom: 8px;
-            color: var(--text2);
+            color: #0f172a;
         }
 
         .journal-form-group textarea {
             width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            padding: 12px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
             font-family: inherit;
-            font-size: 0.95rem;
+            font-size: .9rem;
             resize: vertical;
             min-height: 120px;
+            outline: none;
+            transition: border-color .18s ease, box-shadow .18s ease;
         }
 
         .journal-form-group textarea:focus {
-            outline: none;
-            border-color: #06B6D4;
-            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+            border-color: #0080FF;
+            box-shadow: 0 0 0 4px rgba(0, 128, 255, 0.1);
         }
 
         .button-group {
             display: flex;
             gap: 12px;
             margin-top: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         .btn {
-            padding: 10px 16px;
+            padding: 12px 18px;
             border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
+            border-radius: 12px;
+            font-size: .86rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all .2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #06B6D4, #0891B2);
+            background: #111827;
             color: white;
+            box-shadow: 0 4px 12px rgba(17, 24, 39, 0.3);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(6, 182, 212, 0.3);
+            box-shadow: 0 6px 20px rgba(17, 24, 39, 0.4);
+            background: #0f172a;
         }
 
         .btn-secondary {
             background: #f3f4f6;
-            color: var(--text1);
-            border: 1px solid var(--border);
+            color: #0f172a;
+            border: 1px solid #e5e7eb;
         }
 
         .btn-secondary:hover {
@@ -154,20 +231,24 @@ if (!isset($baseUrl)) {
         }
 
         .btn-success {
-            background: #10b981;
+            background: linear-gradient(135deg, #10b981, #059669);
             color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
         .btn-success:hover {
-            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
         }
 
         .journal-entry-preview {
-            background: #f9fafb;
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
             padding: 20px;
             margin-top: 16px;
+            position: relative;
+            z-index: 1;
         }
 
         .entry-section {
@@ -176,15 +257,15 @@ if (!isset($baseUrl)) {
 
         .entry-section-title {
             font-weight: 700;
-            color: #0891B2;
-            font-size: 0.95rem;
-            margin-bottom: 8px;
+            color: #0080FF;
+            font-size: .95rem;
+            margin-bottom: 10px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: .5px;
         }
 
         .entry-section-content {
-            color: var(--text2);
+            color: #475569;
             line-height: 1.6;
         }
 
@@ -196,7 +277,7 @@ if (!isset($baseUrl)) {
         }
 
         .entry-item-bullet {
-            color: #06B6D4;
+            color: #0080FF;
             font-weight: 700;
             flex-shrink: 0;
         }
@@ -205,8 +286,8 @@ if (!isset($baseUrl)) {
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 3px solid rgba(6, 182, 212, 0.3);
-            border-top-color: #06B6D4;
+            border: 3px solid rgba(0, 128, 255, 0.3);
+            border-top-color: #0080FF;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -217,9 +298,11 @@ if (!isset($baseUrl)) {
 
         .alert {
             padding: 12px 16px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 16px;
-            font-size: 0.9rem;
+            font-size: .9rem;
+            position: relative;
+            z-index: 1;
         }
 
         .alert-danger {
@@ -242,50 +325,55 @@ if (!isset($baseUrl)) {
 
         .journal-entries-list {
             margin-top: 24px;
+            position: relative;
+            z-index: 1;
         }
 
         .journal-entry-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 18px;
             margin-bottom: 12px;
-            transition: all 0.3s ease;
+            transition: all .2s ease;
         }
 
         .journal-entry-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-            border-color: #06B6D4;
+            box-shadow: 0 6px 20px rgba(0, 128, 255, 0.15);
+            border-color: #0080FF;
+            transform: translateY(-2px);
         }
 
         .entry-date {
             font-weight: 700;
-            color: #0891B2;
-            font-size: 0.95rem;
+            color: #0080FF;
+            font-size: .95rem;
         }
 
         .entry-date-human {
-            font-size: 0.85rem;
-            color: var(--text3);
+            font-size: .85rem;
+            color: #94a3b8;
             margin-top: 4px;
         }
 
         .entry-preview-text {
             margin-top: 12px;
-            color: var(--text2);
+            color: #475569;
             line-height: 1.6;
-            font-size: 0.9rem;
+            font-size: .9rem;
         }
 
         .entry-preview-text strong {
-            color: var(--text1);
+            color: #0f172a;
         }
 
         .tabs {
             display: flex;
             gap: 12px;
-            border-bottom: 2px solid var(--border);
+            border-bottom: 2px solid #e5e7eb;
             margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
         }
 
         .tab-btn {
@@ -294,16 +382,20 @@ if (!isset($baseUrl)) {
             border: none;
             cursor: pointer;
             font-weight: 600;
-            font-size: 0.95rem;
-            color: var(--text3);
+            font-size: .95rem;
+            color: #94a3b8;
             border-bottom: 3px solid transparent;
             margin-bottom: -2px;
-            transition: all 0.3s ease;
+            transition: all .2s ease;
         }
 
         .tab-btn.active {
-            color: #06B6D4;
-            border-bottom-color: #06B6D4;
+            color: #0080FF;
+            border-bottom-color: #0080FF;
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: #64748b;
         }
 
         .tab-content {
@@ -317,7 +409,9 @@ if (!isset($baseUrl)) {
         .report-section {
             margin-bottom: 24px;
             padding-bottom: 24px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid #e5e7eb;
+            position: relative;
+            z-index: 1;
         }
 
         .report-section:last-child {
@@ -325,14 +419,14 @@ if (!isset($baseUrl)) {
         }
 
         .report-section h4 {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 700;
-            color: #0891B2;
+            color: #0080FF;
             margin-bottom: 12px;
         }
 
         .report-section p {
-            color: var(--text2);
+            color: #475569;
             line-height: 1.8;
             text-align: justify;
         }
@@ -342,26 +436,35 @@ if (!isset($baseUrl)) {
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 12px;
             margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         .stat-box {
-            background: #f9fafb;
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
             padding: 16px;
             text-align: center;
+            transition: all .2s ease;
+        }
+
+        .stat-box:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
         }
 
         .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #06B6D4;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #0080FF;
         }
 
         .stat-label {
-            font-size: 0.85rem;
-            color: var(--text3);
-            margin-top: 4px;
+            font-size: .85rem;
+            color: #94a3b8;
+            margin-top: 6px;
+            font-weight: 600;
         }
 
         .quality-indicator {
@@ -369,9 +472,9 @@ if (!isset($baseUrl)) {
             align-items: center;
             gap: 8px;
             padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 600;
+            border-radius: 8px;
+            font-size: .85rem;
+            font-weight: 700;
             margin-top: 12px;
         }
 
@@ -399,10 +502,10 @@ if (!isset($baseUrl)) {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: .82rem;
+            font-weight: 700;
             margin: 8px 0;
         }
 
@@ -440,14 +543,14 @@ if (!isset($baseUrl)) {
             display: none;
             position: absolute;
             background: white;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
             z-index: 1000;
             min-width: 180px;
             top: 100%;
             right: 0;
-            margin-top: 4px;
+            margin-top: 8px;
         }
 
         .export-dropdown.active {
@@ -455,11 +558,11 @@ if (!isset($baseUrl)) {
         }
 
         .export-option {
-            padding: 10px 16px;
+            padding: 12px 16px;
             cursor: pointer;
-            transition: background 0.3s ease;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.9rem;
+            transition: all .2s ease;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: .9rem;
         }
 
         .export-option:last-child {
@@ -468,19 +571,27 @@ if (!isset($baseUrl)) {
 
         .export-option:hover {
             background: #f9fafb;
-            color: #06B6D4;
+            color: #0080FF;
+            padding-left: 20px;
         }
 
         .metric-box {
             display: inline-block;
-            background: #f0f9fc;
-            border: 1px solid #cffafe;
-            border-radius: 6px;
-            padding: 8px 12px;
+            background: linear-gradient(135deg, #e0f2fe 0%, #cffafe 100%);
+            border: 1px solid #7dd3fc;
+            border-radius: 10px;
+            padding: 10px 14px;
             margin-right: 8px;
             margin-bottom: 8px;
-            font-size: 0.9rem;
-            color: #0891B2;
+            font-size: .9rem;
+            color: #0080FF;
+            font-weight: 600;
+            transition: all .2s ease;
+        }
+
+        .metric-box:hover {
+            background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%);
+            box-shadow: 0 4px 12px rgba(0, 128, 255, 0.2);
         }
     </style>
 </head>
@@ -493,6 +604,8 @@ if (!isset($baseUrl)) {
                 <p class="page-subtitle">Transform your daily notes into professional, structured journal entries</p>
             </div>
         </div>
+
+        <div class="journal-cover"></div>
 
         <?php if ($errorMsg): ?>
             <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($errorMsg); ?></div>

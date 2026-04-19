@@ -69,11 +69,13 @@ if ($role === 'student') {
         ]],
     ];
 }
+
+$logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
 ?>
 <aside class="sidebar">
   <div class="sb-header">
     <a href="<?php echo $baseUrl; ?>/layout.php" class="sb-logo">
-      <div class="logo-icon"><i class="fas fa-hexagon-nodes"></i></div>
+      <div class="logo-icon"><img src="<?php echo htmlspecialchars($logoAsset); ?>" alt="SkillHive"></div>
       <span class="sb-logo-text">SkillHive</span>
     </a>
     <button class="sb-toggle" type="button" onclick="toggleSidebar()"><i class="fas fa-chevron-left"></i></button>

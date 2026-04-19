@@ -3,6 +3,7 @@ session_start();
 $isLoggedIn = isset($_SESSION['user_id']);
 $role = $_SESSION['role'] ?? null;
 $baseUrl = '/SkillHive';
+$logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -18,7 +19,7 @@ $baseUrl = '/SkillHive';
 <!-- NAV -->
 <nav class="land-nav">
   <a href="<?php echo $baseUrl; ?>/index.php" class="land-logo">
-    <div class="logo-icon"><i class="fas fa-hexagon-nodes"></i></div>
+    <div class="logo-icon"><img src="<?php echo htmlspecialchars($logoAsset); ?>" alt="SkillHive"></div>
     SkillHive
   </a>
   <ul class="land-nav-links">
@@ -407,7 +408,7 @@ $baseUrl = '/SkillHive';
 <footer class="land-footer">
   <div class="footer-grid">
     <div class="footer-brand">
-      <div class="land-logo"><div class="logo-icon"><i class="fas fa-hexagon-nodes"></i></div>SkillHive</div>
+      <div class="land-logo"><div class="logo-icon"><img src="<?php echo htmlspecialchars($logoAsset); ?>" alt="SkillHive"></div>SkillHive</div>
       <p>Helping students find the right opportunities and enabling companies to hire faster through smart, simple, and reliable technology.</p>
     </div>
     <div class="footer-col">

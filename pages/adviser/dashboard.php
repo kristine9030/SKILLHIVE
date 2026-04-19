@@ -69,6 +69,42 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     display: flex;
     flex-direction: column;
     gap: 14px;
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition);
+  }
+
+  .adviser-stat-card::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: rgba(156, 163, 175, 0.08);
+    pointer-events: none;
+  }
+
+  .adviser-stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: -40px;
+    left: -20px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(156, 163, 175, 0.06);
+    pointer-events: none;
+  }
+
+  .adviser-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.10);
+  }
+
+  .adviser-dashboard-panel {
+    padding: 18px;
   }
 
   .adviser-stat-icon {
@@ -79,6 +115,11 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     align-items: center;
     justify-content: center;
     font-size: 1rem;
+    background: rgba(156, 163, 175, 0.12);
+    color: #6B7280;
+    box-shadow: 0 2px 8px rgba(156, 163, 175, 0.12);
+    position: relative;
+    z-index: 2;
   }
 
   .adviser-stat-label {
@@ -347,6 +388,20 @@ $atRiskStudents = $dashboardData['at_risk_students'];
 </style>
 
 <div class="adviser-dashboard-page">
+
+  <?php
+  // Banner variables for adviser
+  $bannerGreeting = 'Good afternoon';
+  $bannerUserName = $profile['first_name'] ?? 'Adviser';
+  $bannerTitle = 'Empower Your Students';
+  $bannerDescription = 'Guide students through their journey, provide endorsements, monitor progress, and help them succeed in their internship placements.';
+  $bannerStats = [
+    ['value' => (int)($stats['my_students'] ?? 0), 'label' => 'My Students'],
+    ['value' => (int)($stats['placed_students'] ?? 0), 'label' => 'Placed'],
+    ['value' => (int)($stats['pending_review'] ?? 0), 'label' => 'Pending Review'],
+  ];
+  include __DIR__ . '/../../components/dashboard_banner.php';
+  ?>
 
   <div class="adviser-dashboard-stats">
     <div class="adviser-stat-card">

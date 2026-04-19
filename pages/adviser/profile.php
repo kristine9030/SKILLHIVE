@@ -252,67 +252,139 @@ if ($adviserName === '') {
     font-size: var(--font-size-body);
   }
 
+  .adviser-profile-cover {
+    height: 180px;
+    background: linear-gradient(135deg, #0a0e27 0%, #162550 40%, #1a3a5c 70%, #0f2a45 100%);
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: -60px;
+    z-index: 1;
+  }
+
+  .adviser-profile-cover::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+  }
+
+  .adviser-profile-cover::after {
+    content: '';
+    position: absolute;
+    bottom: -40px;
+    left: -20px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    pointer-events: none;
+  }
+
   .adviser-profile-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(300px, .82fr);
     gap: 16px;
+    position: relative;
+    z-index: 2;
   }
 
   .adviser-profile-panel {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--card-shadow);
-    padding: 18px;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition);
+  }
+
+  .adviser-profile-panel::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.06);
+    pointer-events: none;
+  }
+
+  .adviser-profile-panel::after {
+    content: '';
+    position: absolute;
+    bottom: -50px;
+    left: -20px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.04);
+    pointer-events: none;
+  }
+
+  .adviser-profile-panel:hover {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
   }
 
   .adviser-profile-title {
-    margin: 0 0 14px;
-    font-size: 1rem;
+    margin: 0 0 18px;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--text);
+    position: relative;
+    z-index: 1;
   }
 
   .adviser-profile-form {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
+    position: relative;
+    z-index: 1;
   }
 
   .adviser-profile-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 14px;
   }
 
   .adviser-profile-label {
     display: block;
-    margin: 0 0 6px;
-    font-size: .8rem;
+    margin: 0 0 8px;
+    font-size: .82rem;
     font-weight: 600;
     color: var(--text);
   }
 
   .adviser-profile-input {
     width: 100%;
-    border: 1px solid #d8dee8;
+    border: 1px solid #e5e7eb;
     border-radius: 12px;
     background: #fff;
     color: var(--text);
-    font-size: .84rem;
-    padding: 10px 12px;
+    font-size: .86rem;
+    padding: 12px 14px;
     outline: none;
     transition: border-color .18s ease, box-shadow .18s ease;
   }
 
   .adviser-profile-input:focus {
-    border-color: #e7a39f;
-    box-shadow: 0 0 0 4px rgba(229, 57, 53, .08);
+    border-color: #8B5CF6;
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
   }
 
   .adviser-profile-input[readonly] {
     background: #f9fafb;
     color: #6b7280;
+    cursor: not-allowed;
   }
 
   .adviser-profile-btn {
@@ -320,16 +392,24 @@ if ($adviserName === '') {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    border-radius: 999px;
-    border: 1px solid transparent;
-    min-height: 38px;
-    padding: 0 14px;
+    border-radius: 12px;
+    border: none;
+    min-height: 42px;
+    padding: 0 20px;
     cursor: pointer;
     text-decoration: none;
-    font-size: .82rem;
+    font-size: .86rem;
     font-weight: 700;
-    background: #111;
+    background: #111827;
     color: #fff;
+    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.3);
+    transition: all .2s ease;
+  }
+
+  .adviser-profile-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(17, 24, 39, 0.4);
+    background: #0f172a;
   }
 
   .adviser-profile-error {
@@ -337,8 +417,10 @@ if ($adviserName === '') {
     background: #fff1f2;
     color: #b91c1c;
     border-radius: 12px;
-    padding: 10px 12px;
+    padding: 12px 14px;
     font-size: .82rem;
+    position: relative;
+    z-index: 1;
   }
 
   .adviser-profile-card {
@@ -346,63 +428,85 @@ if ($adviserName === '') {
   }
 
   .adviser-profile-avatar {
-    width: 86px;
-    height: 86px;
-    margin: 0 auto 10px;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 16px;
     border-radius: 999px;
-    background: linear-gradient(135deg,#e53935 0%,#f97316 100%);
+    background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
     color: #fff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     font-weight: 700;
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+    border: 4px solid #fff;
+    position: relative;
+    z-index: 1;
   }
 
   .adviser-profile-name {
-    margin: 0;
-    font-size: 1rem;
+    margin: 0 0 8px;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--text);
+    position: relative;
+    z-index: 1;
   }
 
   .adviser-profile-meta {
     margin: 4px 0 0;
     color: var(--text3);
-    font-size: .82rem;
+    font-size: .86rem;
+    position: relative;
+    z-index: 1;
   }
 
   .adviser-profile-stats {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin-top: 14px;
+    gap: 12px;
+    margin-top: 18px;
+    position: relative;
+    z-index: 1;
   }
 
   .adviser-profile-stat {
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 10px 8px;
-    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px 12px;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    transition: all .2s ease;
+  }
+
+  .adviser-profile-stat:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   }
 
   .adviser-profile-stat-value {
-    font-size: 1.08rem;
+    font-size: 1.4rem;
     font-weight: 800;
-    color: var(--text);
+    color: #8B5CF6;
   }
 
   .adviser-profile-stat-label {
-    margin-top: 4px;
-    font-size: .7rem;
+    margin-top: 6px;
+    font-size: .75rem;
     color: var(--text3);
     text-transform: uppercase;
-    letter-spacing: .04em;
+    letter-spacing: .05em;
+    font-weight: 600;
   }
 
   @media (max-width: 1000px) {
     .adviser-profile-layout {
       grid-template-columns: 1fr;
+    }
+
+    .adviser-profile-cover {
+      height: 150px;
+      margin-bottom: -50px;
     }
   }
 
@@ -414,16 +518,22 @@ if ($adviserName === '') {
     .adviser-profile-stats {
       grid-template-columns: 1fr;
     }
+
+    .adviser-profile-panel {
+      padding: 18px;
+    }
   }
 </style>
 
 <div class="adviser-profile-page">
+  <div class="adviser-profile-cover"></div>
+
   <div class="adviser-profile-layout">
     <section class="adviser-profile-panel">
       <h3 class="adviser-profile-title">Profile Details</h3>
 
       <?php if ($profileError !== ''): ?>
-        <div class="adviser-profile-error" style="margin-bottom:10px;"><?php echo adviser_profile_escape($profileError); ?></div>
+        <div class="adviser-profile-error" style="margin-bottom:14px;"><?php echo adviser_profile_escape($profileError); ?></div>
       <?php endif; ?>
 
       <form class="adviser-profile-form" method="post" action="<?php echo $baseUrl; ?>/layout.php?page=adviser/profile">
