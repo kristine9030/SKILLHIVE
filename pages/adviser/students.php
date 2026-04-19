@@ -21,7 +21,7 @@ if ($adviserId > 0) {
     try {
         $pageData = getAdviserStudentsPageData($pdo, $adviserId, $currentFilters);
     } catch (Throwable $e) {
-        $pageData = $pageData;
+        // Keep default pageData on error
     }
 }
 
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
       try {
         $pageData = getAdviserStudentsPageData($pdo, $adviserId, $currentFilters);
       } catch (Throwable $e) {
-        $pageData = $pageData;
+        // Keep previous pageData on error
       }
 
       $selected = $pageData['selected'];
@@ -108,7 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
 
 <style>
   .adv-students { display:flex; flex-direction:column; gap:18px; font-size:var(--font-size-body); color:var(--text); }
-  .adv-toolbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .adv-toolbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:space-between; }
+  .adv-toolbar-left { display:flex; align-items:center; gap:12px; flex-wrap:wrap; flex:1; }
+  .adv-toolbar-right { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .adv-search, .adv-select { height:44px; border:1px solid var(--border); border-radius:18px; background:var(--card); box-shadow:var(--card-shadow); color:var(--text); }
   .adv-search { flex:1 1 290px; max-width:420px; min-width:280px; display:flex; align-items:center; gap:10px; padding:0 16px; }
   .adv-search i { color:var(--text3); font-size:.92rem; }
@@ -129,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
   .adv-avatar { width:38px; height:38px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:.88rem; font-weight:700; flex:0 0 auto; }
   .adv-name { margin:0; font-size:.98rem; font-weight:700; color:var(--text); }
   .adv-subtext, .adv-company-meta { margin:2px 0 0; font-size:.82rem; color:var(--text3); }
-  .adv-dept { display:inline-flex; align-items:center; justify-content:center; min-height:28px; padding:0 10px; border-radius:999px; background:#f0edff; color:#e11d48; font-size:.76rem; font-weight:700; }
+  .adv-dept { display:inline-flex; align-items:center; justify-content:center; min-height:28px; padding:0 10px; border-radius:999px; background:#f0edff; color:#000; font-size:.76rem; font-weight:700; }
   .adv-company { margin:0; font-size:.96rem; font-weight:700; color:var(--text); }
   .adv-hours { font-size:.98rem; font-weight:700; color:var(--text); }
   .adv-req { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -169,31 +171,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
 </style>
 
 <div class="adv-students">
+  <!-- Adviser Students Banner -->
+  <div style="background:linear-gradient(90deg, #0d1b2e 0%, #1a2f4a 40%, rgba(13, 27, 46, 0.3) 100%), url('/Skillhive/assets/media/element%203.png') right center / auto 100% no-repeat;border-radius:16px;padding:28px;margin-bottom:20px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(13, 27, 46, 0.4);">
+    <div style="z-index:2;flex:1;">
+      <h2 style="font-size:1.8rem;font-weight:900;margin:0 0 12px 0;line-height:1.2;color:white;">Empower Your Students</h2>
+      <p style="font-size:0.95rem;margin:0;line-height:1.6;color:#e0e0e0;">Guide students through their journey, provide endorsements, monitor progress, and help them succeed in their internship placements.</p>
+    </div>
+  </div>
+
   <form class="adv-toolbar" method="get" action="<?php echo $baseUrl; ?>/layout.php">
     <input type="hidden" name="page" value="adviser/students">
 
-    <label class="adv-search" aria-label="Search students">
-      <i class="fas fa-search"></i>
-      <input type="text" name="search" placeholder="Search students..." value="<?php echo adviser_students_escape($selected['search'] ?? ''); ?>">
-    </label>
+    <div class="adv-toolbar-left">
+      <label class="adv-search" aria-label="Search students">
+        <i class="fas fa-search"></i>
+        <input type="text" name="search" placeholder="Search students..." value="<?php echo adviser_students_escape($selected['search'] ?? ''); ?>">
+      </label>
 
-    <select class="adv-select" name="department" aria-label="Filter by department">
-      <option value="">All Section</option>
-      <?php foreach (($filterOptions['departments'] ?? []) as $departmentOption): ?>
-        <option value="<?php echo adviser_students_escape($departmentOption); ?>" <?php echo ($selected['department'] ?? '') === $departmentOption ? 'selected' : ''; ?>><?php echo adviser_students_escape($departmentOption); ?></option>
-      <?php endforeach; ?>
-    </select>
+      <select class="adv-select" name="department" aria-label="Filter by department">
+        <option value="">All Section</option>
+        <?php foreach (($filterOptions['departments'] ?? []) as $departmentOption): ?>
+          <option value="<?php echo adviser_students_escape($departmentOption); ?>" <?php echo ($selected['department'] ?? '') === $departmentOption ? 'selected' : ''; ?>><?php echo adviser_students_escape($departmentOption); ?></option>
+        <?php endforeach; ?>
+      </select>
 
-    <select class="adv-select" name="status" aria-label="Filter by status">
-      <option value="">All Status</option>
-      <?php foreach (($filterOptions['statuses'] ?? []) as $statusOption): ?>
-        <option value="<?php echo adviser_students_escape($statusOption); ?>" <?php echo ($selected['status'] ?? '') === $statusOption ? 'selected' : ''; ?>><?php echo adviser_students_escape($statusOption); ?></option>
-      <?php endforeach; ?>
-    </select>
+      <select class="adv-select" name="status" aria-label="Filter by status">
+        <option value="">All Status</option>
+        <?php foreach (($filterOptions['statuses'] ?? []) as $statusOption): ?>
+          <option value="<?php echo adviser_students_escape($statusOption); ?>" <?php echo ($selected['status'] ?? '') === $statusOption ? 'selected' : ''; ?>><?php echo adviser_students_escape($statusOption); ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
 
-    <button class="adv-btn is-secondary" type="submit">Apply Filters</button>
-    <button class="adv-btn is-secondary" type="button" onclick="openBulkImportModal()"><i class="fas fa-file-upload"></i>Bulk Import</button>
-    <button class="adv-btn" type="button" onclick="openAddStudentModal()"><i class="fas fa-user-plus"></i>Add Student</button>
+    <div class="adv-toolbar-right">
+      <button class="adv-btn is-secondary" type="button" onclick="openBulkImportModal()"><i class="fas fa-file-upload"></i>Bulk Import</button>
+      <button class="adv-btn" type="button" onclick="openAddStudentModal()"><i class="fas fa-user-plus"></i>Add Student</button>
+    </div>
   </form>
 
   <div class="adv-card">
