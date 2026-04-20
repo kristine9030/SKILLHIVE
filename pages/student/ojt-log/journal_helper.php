@@ -49,8 +49,11 @@ function journal_extract_skills(string $text): array
             }
         }
     }
-    
-    return array_values($found_skills);
+
+    $found_skills['technical'] = array_values(array_unique($found_skills['technical']));
+    $found_skills['soft'] = array_values(array_unique($found_skills['soft']));
+
+    return $found_skills;
 }
 
 /**
@@ -115,15 +118,15 @@ function journal_generate_insights(string $text): array
 function journal_process_raw_notes(string $raw_notes, array $ojt_record): array
 {
     // Clean and normalize the input
-    $notes = htmlspecialchars_decode($raw_notes);
-    $notes = trim($notes);
+    $notes = trim(htmlspecialchars_decode($raw_notes));
     
     if (empty($notes)) {
         return ['ok' => false, 'error' => 'No notes provided'];
     }
     
     // Split notes by lines and identify sections
-    $lines = array_filter(array_map('trim', explode("\n", $notes)));
+    $lines = preg_split('/\r\n|\r|\n/', $notes) ?: [];
+    $lines = array_values(array_filter(array_map('trim', $lines), static fn($line) => $line !== ''));
     
     // Initialize structured entry
     $entry = [
@@ -135,80 +138,70 @@ function journal_process_raw_notes(string $raw_notes, array $ojt_record): array
         'key_learnings_insights' => [],
         'reflection' => ''
     ];
-    
-    // Parse tasks (look for bullet points or numbered items)
+
+    $sectionKeyMap = [
+        'tasks' => 'tasks_accomplished',
+        'skills' => 'skills_applied_learned',
+        'challenges' => 'challenges_encountered',
+        'solutions' => 'solutions_actions_taken',
+        'insights' => 'key_learnings_insights',
+    ];
+
+    $sectionMatchers = [
+        'tasks' => '/^(?:tasks?|accomplishments?|activities?|worked on|work done|completed|did)\b[\s:\-]*/i',
+        'skills' => '/^(?:skills?|learned|learning|gained?|techniques?|methods?|improved?|approach)\b[\s:\-]*/i',
+        'challenges' => '/^(?:challenges?|struggles?|difficult(?:y|ies)?|issues?|problems?|bugs?|errors?)\b[\s:\-]*/i',
+        'solutions' => '/^(?:solutions?|resolved?|fix(?:ed)?|actions?|steps?)\b[\s:\-]*/i',
+        'insights' => '/^(?:insights?|learn(?:ing|ings)?|reali[sz](?:e|ed)|thoughts?|reflections?|conclusions?|takeaways?|notes?)\b[\s:\-]*/i',
+    ];
+
     $current_section = 'tasks';
     $section_content = '';
+
+    $pushSectionContent = static function(array &$entry, string $section, string &$content) use ($sectionKeyMap): void {
+        $normalized = trim($content);
+        if ($normalized === '') {
+            $content = '';
+            return;
+        }
+
+        $targetKey = $sectionKeyMap[$section] ?? 'key_learnings_insights';
+        $entry[$targetKey][] = $normalized;
+        $content = '';
+    };
     
     foreach ($lines as $line) {
-        $line_lower = strtolower($line);
-        
-        // Detect section headers
-        if (preg_match('/^(task|accomplish|work|activity|did|completed|worked on)/i', $line)) {
-            if (!empty($section_content)) {
-                $entry[$current_section][] = $section_content;
-                $section_content = '';
+        $matchedSection = null;
+        $cleanLine = trim($line);
+        $strippedLine = $cleanLine;
+
+        foreach ($sectionMatchers as $section => $pattern) {
+            if (preg_match($pattern, $cleanLine) === 1) {
+                $matchedSection = $section;
+                $strippedLine = trim((string) preg_replace($pattern, '', $cleanLine));
+                break;
             }
-            $current_section = 'tasks';
-            $section_content = preg_replace('/^(task|accomplish|work|activity|did|completed|worked on)[:\s]*/i', '', $line);
-        } elseif (preg_match('/^(skill|learn|learned|gain|technique|method|approach|improve)/i', $line)) {
-            if (!empty($section_content)) {
-                $entry['skills_applied_learned'][] = $section_content;
-                $section_content = '';
+        }
+
+        if ($matchedSection !== null) {
+            $pushSectionContent($entry, $current_section, $section_content);
+            $current_section = $matchedSection;
+            if ($strippedLine !== '') {
+                $section_content = $strippedLine;
             }
-            $current_section = 'skills';
-            $section_content = preg_replace('/^(skill|learn|learned|gain|technique|method|approach|improve)[:\s]*/i', '', $line);
-        } elseif (preg_match('/^(challenge|struggle|difficult|issue|problem|bug|error)/i', $line)) {
-            if (!empty($section_content)) {
-                $entry['challenges_encountered'][] = $section_content;
-                $section_content = '';
-            }
-            $current_section = 'challenges';
-            $section_content = preg_replace('/^(challenge|struggle|difficult|issue|problem|bug|error)[:\s]*/i', '', $line);
-        } elseif (preg_match('/^(solution|resolve|fix|action|approach|step|did)/i', $line)) {
-            if (!empty($section_content)) {
-                $entry['solutions_actions_taken'][] = $section_content;
-                $section_content = '';
-            }
-            $current_section = 'solutions';
-            $section_content = preg_replace('/^(solution|resolve|fix|action|approach|step|did)[:\s]*/i', '', $line);
-        } elseif (preg_match('/^(insight|learn|reali[sz]e?d?|thought|reflection|conclusion|takeaway|note)/i', $line)) {
-            if (!empty($section_content)) {
-                $entry['key_learnings_insights'][] = $section_content;
-                $section_content = '';
-            }
-            $current_section = 'insights';
-            $section_content = preg_replace('/^(insight|learn|reali[sz]e?d?|thought|reflection|conclusion|takeaway|note)[:\s]*/i', '', $line);
+            continue;
+        }
+
+        if (preg_match('/^[-*•~\d+.)]+\s+/', $cleanLine) === 1) {
+            $pushSectionContent($entry, $current_section, $section_content);
+            $section_content = trim((string) preg_replace('/^[-*•~\d+.)]+\s*/', '', $cleanLine));
         } else {
-            // Add to current section
-            if (!empty($line) && preg_match('/^[-*•~\d+.)]+\s/', $line)) {
-                // Bullet point or numbered item
-                if (!empty($section_content)) {
-                    $entry[$current_section][] = $section_content;
-                }
-                $section_content = preg_replace('/^[-*•~\d+.)]+\s*/', '', $line);
-            } else {
-                if (!empty($section_content)) {
-                    $section_content .= ' ' . $line;
-                } else {
-                    $section_content = $line;
-                }
-            }
+            $section_content = $section_content === '' ? $cleanLine : ($section_content . ' ' . $cleanLine);
         }
     }
     
     // Add remaining content
-    if (!empty($section_content)) {
-        $key = match($current_section) {
-            'tasks' => 'tasks_accomplished',
-            'skills' => 'skills_applied_learned',
-            'challenges' => 'challenges_encountered',
-            'solutions' => 'solutions_actions_taken',
-            'insights' => 'key_learnings_insights',
-            default => 'key_learnings_insights'
-        };
-        $entry[$key][] = $section_content;
-    }
+    $pushSectionContent($entry, $current_section, $section_content);
     
     // If no structured sections found, treat entire content as task accomplishment
     if (empty($entry['tasks_accomplished']) && empty($entry['skills_applied_learned'])) {
@@ -216,7 +209,6 @@ function journal_process_raw_notes(string $raw_notes, array $ojt_record): array
     }
     
     // Auto-extract skills from the notes
-    $text_lower = strtolower($notes);
     $extracted_skills = journal_extract_skills($notes);
     if (!empty($extracted_skills['technical']) || !empty($extracted_skills['soft'])) {
         $entry['skills_applied_learned'] = array_merge(
@@ -252,8 +244,6 @@ function journal_process_raw_notes(string $raw_notes, array $ojt_record): array
  */
 function journal_generate_reflection(string $notes, array $entry): string
 {
-    $reflection_parts = [];
-    
     // Determine sentiment and accomplishment tone
     $positive_words = ['successfully', 'improved', 'completed', 'achieved', 'learned', 'mastered', 'excellent', 'great', 'fantastic'];
     $challenging_words = ['struggled', 'difficult', 'challenging', 'complicated'];
@@ -278,14 +268,20 @@ function journal_generate_reflection(string $notes, array $entry): string
     
     $num_tasks = count($entry['tasks_accomplished'] ?? []);
     $num_skills = count($entry['skills_applied_learned'] ?? []);
+    $taskLabel = $num_tasks === 1 ? 'task' : 'tasks';
     
     if ($has_positive && $has_challenging) {
-        $reflection = "Today presented both opportunities and challenges. While I successfully tackled {$num_tasks} important tasks, I also encountered obstacles that pushed me to think creatively and problem-solve. " .
+        $reflection = "Today presented both opportunities and challenges. While I successfully tackled {$num_tasks} important {$taskLabel}, I also encountered obstacles that pushed me to think creatively and problem-solve. " .
                      "This experience reinforced the value of perseverance and continuous learning in professional development.";
     } elseif ($has_positive) {
-        $reflection = "Today was productive and rewarding. I successfully completed {$num_tasks} tasks and continued to develop my " . 
-                     implode(', ', array_slice($entry['skills_applied_learned'], 0, 2)) . 
-                     " skills. This solid progress reinforces my confidence and dedication to this internship.";
+        $topSkills = implode(', ', array_slice($entry['skills_applied_learned'] ?? [], 0, 2));
+        if ($topSkills !== '') {
+            $reflection = "Today was productive and rewarding. I successfully completed {$num_tasks} {$taskLabel} and continued to develop my {$topSkills} skills. " .
+                         "This solid progress reinforces my confidence and dedication to this internship.";
+        } else {
+            $reflection = "Today was productive and rewarding. I successfully completed {$num_tasks} {$taskLabel} and made meaningful progress in my internship responsibilities. " .
+                         "This solid progress reinforces my confidence and dedication to this internship.";
+        }
     } elseif ($has_challenging) {
         $reflection = "Today highlighted areas for growth. While facing some challenges, I remained focused and utilized problem-solving techniques to overcome them. " .
                      "These experiences are valuable learning opportunities that will contribute to my professional development.";

@@ -309,7 +309,7 @@ function posting_duration_hours_label($durationWeeks): string {
           $cardBorder = $isActivePosting ? '2px solid var(--red,#8b0000)' : '1px solid var(--border,#e8e0e0)';
           $cardBg = $isActivePosting ? 'rgba(139,0,0,.04)' : '#fff';
           ?>
-          <div style="border:<?php echo $cardBorder; ?>;background:<?php echo $cardBg; ?>;border-radius:10px;padding:10px;">
+          <div data-posting-card-wrap="1" style="border:<?php echo $cardBorder; ?>;background:<?php echo $cardBg; ?>;border-radius:10px;padding:10px;">
             <button
               type="button"
               data-posting-card="1"
@@ -1137,15 +1137,17 @@ function posting_duration_hours_label($durationWeeks): string {
   function setPostingCardActiveState(button) {
     document.querySelectorAll('[data-posting-card="1"]').forEach(card => {
       card.dataset.active = '0';
-      const wrap = card.closest('div[style*="border-radius:10px"]');
-      if (wrap) {
-        wrap.style.border = '1px solid var(--border,#e8e0e0)';
-        wrap.style.background = '#fff';
-      }
+      card.setAttribute('aria-pressed', 'false');
+    });
+
+    document.querySelectorAll('[data-posting-card-wrap="1"]').forEach(wrap => {
+      wrap.style.border = '1px solid var(--border,#e8e0e0)';
+      wrap.style.background = '#fff';
     });
 
     button.dataset.active = '1';
-    const currentWrap = button.closest('div[style*="border-radius:10px"]');
+    button.setAttribute('aria-pressed', 'true');
+    const currentWrap = button.closest('[data-posting-card-wrap="1"]');
     if (currentWrap) {
       currentWrap.style.border = '2px solid var(--red,#8b0000)';
       currentWrap.style.background = 'rgba(139,0,0,.04)';

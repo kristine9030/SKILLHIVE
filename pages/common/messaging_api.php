@@ -191,7 +191,7 @@ if (!function_exists('messaging_get_user_profile_summary')) {
                 $row = [];
                 try {
                     $stmt = $pdo->prepare(
-                        "SELECT email, department FROM internship_adviser WHERE adviser_id = ? LIMIT 1"
+                        "SELECT email, department, profile_picture FROM internship_adviser WHERE adviser_id = ? LIMIT 1"
                     );
                     $stmt->execute([$userId]);
                     $row = $stmt->fetch() ?: [];
@@ -212,6 +212,11 @@ if (!function_exists('messaging_get_user_profile_summary')) {
                     $summary['headline'] = $department;
                 }
                 $summary['email'] = (string)($row['email'] ?? '');
+                
+                $profilePic = trim((string)($row['profile_picture'] ?? ''));
+                if ($profilePic !== '') {
+                    $summary['profile_picture'] = '/SkillHive/assets/backend/uploads/profile/' . rawurlencode($profilePic);
+                }
             } elseif ($role === 'admin') {
                 $stmt = $pdo->prepare(
                     "SELECT email FROM admin WHERE admin_id = ? LIMIT 1"
@@ -591,6 +596,7 @@ if (!messaging_validate_role($role) || $userId <= 0) {
 try {
     // ==================== LIST CONVERSATIONS ====================
     if ($action === 'list_conversations') {
+        // Get direct message conversations
         $stmt = $pdo->prepare(
             "SELECT 
                 CASE 
@@ -611,10 +617,23 @@ try {
              LIMIT 100"
         );
         $stmt->execute([$userId, $role, $userId, $role, $userId, $role, $userId, $role, $userId, $role]);
-        $conversations = $stmt->fetchAll();
+        $directConversations = $stmt->fetchAll();
+
+        // Get group chat conversations
+        $gcStmt = $pdo->prepare(
+            "SELECT g.group_chat_id, g.group_name, g.created_at as last_msg_at
+             FROM group_chat g
+             INNER JOIN group_chat_members m ON g.group_chat_id = m.group_chat_id
+             WHERE m.member_id = ? AND m.member_role = ?
+             ORDER BY g.created_at DESC"
+        );
+        $gcStmt->execute([$userId, $role]);
+        $groupChats = $gcStmt->fetchAll();
 
         $result = [];
-        foreach ($conversations as $conv) {
+
+        // Process direct conversations
+        foreach ($directConversations as $conv) {
             $other_id = (int)($conv['other_user_id'] ?? 0);
             $other_role = (string)($conv['other_user_role'] ?? '');
             $last_msg_at = (string)($conv['last_message_at'] ?? '');
@@ -637,6 +656,7 @@ try {
             $profileSummary = messaging_get_user_profile_summary($pdo, $other_role, $other_id);
 
             $result[] = [
+                'type' => 'direct',
                 'conversation_id' => $other_id . '_' . $other_role,
                 'other_user_id' => $other_id,
                 'other_user_role' => $other_role,
@@ -648,6 +668,26 @@ try {
                 'unread_count' => $unread,
             ];
         }
+
+        // Process group chats
+        foreach ($groupChats as $gc) {
+            $result[] = [
+                'type' => 'group',
+                'conversation_id' => 'gc_' . $gc['group_chat_id'],
+                'group_chat_id' => (int)$gc['group_chat_id'],
+                'group_name' => (string)$gc['group_name'],
+                'last_message' => '',
+                'last_message_time' => messaging_format_time((string)$gc['last_msg_at']),
+                'unread_count' => 0,
+            ];
+        }
+
+        // Sort by last activity
+        usort($result, function($a, $b) {
+            $timeA = strtotime($a['last_message_time'] ?? '0');
+            $timeB = strtotime($b['last_message_time'] ?? '0');
+            return $timeB - $timeA;
+        });
 
         messaging_api_respond([
             'ok' => true,
@@ -1260,6 +1300,351 @@ try {
             'is_online' => $is_online,
             'last_seen' => $last_seen,
         ]);
+    }
+
+    // ==================== GET CURRENT USER PROFILE ====================
+    if ($action === 'get_current_user_profile') {
+        $profileSummary = messaging_get_user_profile_summary($pdo, $role, $userId);
+        $currentName = messaging_get_user_name($pdo, $role, $userId) ?: 'Unknown User';
+
+        messaging_api_respond([
+            'ok' => true,
+            'user_id' => $userId,
+            'user_role' => $role,
+            'user_name' => $currentName,
+            'user_headline' => (string)($profileSummary['headline'] ?? ''),
+            'user_email' => (string)($profileSummary['email'] ?? ''),
+            'user_profile_picture' => (string)($profileSummary['profile_picture'] ?? ''),
+        ]);
+    }
+
+    // ==================== CREATE GROUP CHAT ====================
+    if ($action === 'create_group_chat') {
+        $groupName = trim((string)($_POST['group_name'] ?? ''));
+        $memberIds = $_POST['member_ids'] ?? [];
+
+        if (!$groupName || empty($memberIds)) {
+            messaging_api_respond(['ok' => false, 'error' => 'Group name and members are required'], 400);
+        }
+
+        if (!is_array($memberIds)) {
+            $memberIds = (array)$memberIds;
+        }
+
+        $memberIds = array_filter(array_map('intval', $memberIds));
+
+        if (empty($memberIds)) {
+            messaging_api_respond(['ok' => false, 'error' => 'Valid members are required'], 400);
+        }
+
+        try {
+            // Ensure tables exist first
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS group_chat (
+                    group_chat_id INT AUTO_INCREMENT PRIMARY KEY,
+                    group_name VARCHAR(255) NOT NULL,
+                    creator_id INT NOT NULL,
+                    creator_role VARCHAR(50) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX (creator_id, creator_role)
+                )"
+            );
+
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS group_chat_members (
+                    group_member_id INT AUTO_INCREMENT PRIMARY KEY,
+                    group_chat_id INT NOT NULL,
+                    member_id INT NOT NULL,
+                    member_role VARCHAR(50) NOT NULL,
+                    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX (group_chat_id),
+                    INDEX (member_id, member_role)
+                )"
+            );
+
+            // Create group_chat_messages table
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS group_chat_messages (
+                    message_id INT AUTO_INCREMENT PRIMARY KEY,
+                    group_chat_id INT NOT NULL,
+                    sender_id INT NOT NULL,
+                    sender_role VARCHAR(50) NOT NULL,
+                    message_text TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX (group_chat_id),
+                    INDEX (sender_id, sender_role),
+                    FOREIGN KEY (group_chat_id) REFERENCES group_chat(group_chat_id) ON DELETE CASCADE
+                )"
+            );
+
+            // Create group chat entry
+            $stmt = $pdo->prepare(
+                "INSERT INTO group_chat (group_name, creator_id, creator_role) 
+                 VALUES (?, ?, ?)"
+            );
+            $stmt->execute([$groupName, $userId, $role]);
+            $groupChatId = $pdo->lastInsertId();
+
+            // Add members to group
+            $stmt = $pdo->prepare(
+                "INSERT INTO group_chat_members (group_chat_id, member_id, member_role) 
+                 VALUES (?, ?, ?)"
+            );
+
+            // Add creator
+            $stmt->execute([$groupChatId, $userId, $role]);
+
+            // Add other members - need to lookup their roles
+            foreach ($memberIds as $memberId) {
+                // Try to find member in student table
+                $memberRole = null;
+                try {
+                    $checkStmt = $pdo->prepare("SELECT 1 FROM student WHERE student_id = ? LIMIT 1");
+                    $checkStmt->execute([$memberId]);
+                    if ($checkStmt->fetchColumn()) {
+                        $memberRole = 'student';
+                    }
+                } catch (Throwable $e) {}
+
+                // Try employer table
+                if (!$memberRole) {
+                    try {
+                        $checkStmt = $pdo->prepare("SELECT 1 FROM employer WHERE employer_id = ? LIMIT 1");
+                        $checkStmt->execute([$memberId]);
+                        if ($checkStmt->fetchColumn()) {
+                            $memberRole = 'employer';
+                        }
+                    } catch (Throwable $e) {}
+                }
+
+                // Try adviser table
+                if (!$memberRole && messaging_has_internship_adviser_table($pdo)) {
+                    try {
+                        $checkStmt = $pdo->prepare("SELECT 1 FROM internship_adviser WHERE adviser_id = ? LIMIT 1");
+                        $checkStmt->execute([$memberId]);
+                        if ($checkStmt->fetchColumn()) {
+                            $memberRole = 'adviser';
+                        }
+                    } catch (Throwable $e) {}
+                }
+
+                // Try admin table
+                if (!$memberRole) {
+                    try {
+                        $checkStmt = $pdo->prepare("SELECT 1 FROM admin WHERE admin_id = ? LIMIT 1");
+                        $checkStmt->execute([$memberId]);
+                        if ($checkStmt->fetchColumn()) {
+                            $memberRole = 'admin';
+                        }
+                    } catch (Throwable $e) {}
+                }
+
+                // Add member if role found
+                if ($memberRole) {
+                    $stmt->execute([$groupChatId, $memberId, $memberRole]);
+                }
+            }
+
+            messaging_api_respond([
+                'ok' => true,
+                'group_chat_id' => (int)$groupChatId,
+                'message' => 'Group chat created successfully',
+            ]);
+        } catch (Throwable $e) {
+            messaging_api_respond(['ok' => false, 'error' => 'Failed to create group chat: ' . $e->getMessage()], 400);
+        }
+    }
+
+    // ==================== GET GROUP CHAT MESSAGES ====================
+    if ($action === 'get_group_messages') {
+        $groupChatId = (int)($_GET['group_chat_id'] ?? 0);
+
+        if ($groupChatId <= 0) {
+            messaging_api_respond(['ok' => false, 'error' => 'Invalid group chat ID'], 400);
+        }
+
+        try {
+            // Ensure tables exist
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS group_chat (
+                    group_chat_id INT AUTO_INCREMENT PRIMARY KEY,
+                    group_name VARCHAR(255) NOT NULL,
+                    creator_id INT NOT NULL,
+                    creator_role VARCHAR(50) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX (creator_id, creator_role)
+                )"
+            );
+
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS group_chat_members (
+                    group_member_id INT AUTO_INCREMENT PRIMARY KEY,
+                    group_chat_id INT NOT NULL,
+                    member_id INT NOT NULL,
+                    member_role VARCHAR(50) NOT NULL,
+                    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX (group_chat_id),
+                    INDEX (member_id, member_role)
+                )"
+            );
+
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS group_chat_messages (
+                    message_id INT AUTO_INCREMENT PRIMARY KEY,
+                    group_chat_id INT NOT NULL,
+                    sender_id INT NOT NULL,
+                    sender_role VARCHAR(50) NOT NULL,
+                    message_text TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX (group_chat_id),
+                    INDEX (sender_id, sender_role),
+                    FOREIGN KEY (group_chat_id) REFERENCES group_chat(group_chat_id) ON DELETE CASCADE
+                )"
+            );
+
+            // Verify user is member of this group
+            $stmt = $pdo->prepare(
+                "SELECT 1 FROM group_chat_members 
+                 WHERE group_chat_id = ? AND member_id = ? AND member_role = ?
+                 LIMIT 1"
+            );
+            $stmt->execute([$groupChatId, $userId, $role]);
+            if (!$stmt->fetchColumn()) {
+                messaging_api_respond(['ok' => false, 'error' => 'Access denied'], 403);
+            }
+
+            // Get group info
+            $stmt = $pdo->prepare(
+                "SELECT group_name FROM group_chat WHERE group_chat_id = ? LIMIT 1"
+            );
+            $stmt->execute([$groupChatId]);
+            $groupInfo = $stmt->fetch() ?: [];
+
+            // Get messages
+            $stmt = $pdo->prepare(
+                "SELECT message_id, sender_id, sender_role, message_text, created_at
+                 FROM group_chat_messages
+                 WHERE group_chat_id = ?
+                 ORDER BY created_at ASC
+                 LIMIT 100"
+            );
+            $stmt->execute([$groupChatId]);
+            $messages = $stmt->fetchAll();
+
+            // Get members
+            $stmt = $pdo->prepare(
+                "SELECT member_id, member_role FROM group_chat_members
+                 WHERE group_chat_id = ?
+                 ORDER BY joined_at ASC"
+            );
+            $stmt->execute([$groupChatId]);
+            $members = $stmt->fetchAll();
+
+            // Enrich messages with sender info
+            $enrichedMessages = [];
+            foreach ($messages as $msg) {
+                $senderName = messaging_get_user_name($pdo, (string)$msg['sender_role'], (int)$msg['sender_id']);
+                $profileSummary = messaging_get_user_profile_summary($pdo, (string)$msg['sender_role'], (int)$msg['sender_id']);
+                $enrichedMessages[] = [
+                    'message_id' => (int)$msg['message_id'],
+                    'sender_id' => (int)$msg['sender_id'],
+                    'sender_role' => (string)$msg['sender_role'],
+                    'sender_name' => $senderName ?: 'Unknown',
+                    'sender_profile_picture' => (string)($profileSummary['profile_picture'] ?? ''),
+                    'message_text' => (string)$msg['message_text'],
+                    'created_at' => (string)$msg['created_at'],
+                ];
+            }
+
+            messaging_api_respond([
+                'ok' => true,
+                'group_chat_id' => $groupChatId,
+                'group_name' => (string)($groupInfo['group_name'] ?? ''),
+                'messages' => $enrichedMessages,
+                'members' => $members,
+            ]);
+        } catch (Throwable $e) {
+            messaging_api_respond(['ok' => false, 'error' => 'Failed to load messages: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // ==================== SEND GROUP MESSAGE ====================
+    if ($action === 'send_group_message') {
+        $groupChatId = (int)($_POST['group_chat_id'] ?? 0);
+        $messageText = messaging_sanitize_message((string)($_POST['message'] ?? ''));
+
+        if ($groupChatId <= 0 || empty($messageText)) {
+            messaging_api_respond(['ok' => false, 'error' => 'Invalid group chat or message'], 400);
+        }
+
+        try {
+            // Ensure tables exist
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS group_chat (
+                    group_chat_id INT AUTO_INCREMENT PRIMARY KEY,
+                    group_name VARCHAR(255) NOT NULL,
+                    creator_id INT NOT NULL,
+                    creator_role VARCHAR(50) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX (creator_id, creator_role)
+                )"
+            );
+
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS group_chat_members (
+                    group_member_id INT AUTO_INCREMENT PRIMARY KEY,
+                    group_chat_id INT NOT NULL,
+                    member_id INT NOT NULL,
+                    member_role VARCHAR(50) NOT NULL,
+                    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX (group_chat_id),
+                    INDEX (member_id, member_role)
+                )"
+            );
+
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS group_chat_messages (
+                    message_id INT AUTO_INCREMENT PRIMARY KEY,
+                    group_chat_id INT NOT NULL,
+                    sender_id INT NOT NULL,
+                    sender_role VARCHAR(50) NOT NULL,
+                    message_text TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX (group_chat_id),
+                    INDEX (sender_id, sender_role),
+                    FOREIGN KEY (group_chat_id) REFERENCES group_chat(group_chat_id) ON DELETE CASCADE
+                )"
+            );
+
+            // Verify user is member of this group
+            $stmt = $pdo->prepare(
+                "SELECT 1 FROM group_chat_members 
+                 WHERE group_chat_id = ? AND member_id = ? AND member_role = ?
+                 LIMIT 1"
+            );
+            $stmt->execute([$groupChatId, $userId, $role]);
+            if (!$stmt->fetchColumn()) {
+                messaging_api_respond(['ok' => false, 'error' => 'Access denied'], 403);
+            }
+
+            // Insert message
+            $stmt = $pdo->prepare(
+                "INSERT INTO group_chat_messages (group_chat_id, sender_id, sender_role, message_text)
+                 VALUES (?, ?, ?, ?)"
+            );
+            $stmt->execute([$groupChatId, $userId, $role, $messageText]);
+
+            messaging_api_respond([
+                'ok' => true,
+                'message_id' => (int)$pdo->lastInsertId(),
+                'message' => 'Message sent successfully',
+            ]);
+        } catch (Throwable $e) {
+            messaging_api_respond(['ok' => false, 'error' => 'Failed to send message: ' . $e->getMessage()], 500);
+        }
     }
 
     // Unknown action

@@ -618,9 +618,9 @@ if (!isset($baseUrl)) {
         <?php if ($ojt_record): ?>
             <!-- Tabs -->
             <div class="tabs" style="margin-top: 24px;">
-                <button class="tab-btn active" onclick="switchTab('journal')"><i class="fas fa-feather-alt"></i> New Entry</button>
-                <button class="tab-btn" onclick="switchTab('entries')"><i class="fas fa-list"></i> My Entries</button>
-                <button class="tab-btn" onclick="switchTab('report')"><i class="fas fa-file-pdf"></i> Final Report</button>
+                <button class="tab-btn active" data-tab="journal" onclick="switchTab('journal')"><i class="fas fa-feather-alt"></i> New Entry</button>
+                <button class="tab-btn" data-tab="entries" onclick="switchTab('entries')"><i class="fas fa-list"></i> My Entries</button>
+                <button class="tab-btn" data-tab="report" onclick="switchTab('report')"><i class="fas fa-file-pdf"></i> Final Report</button>
             </div>
 
             <!-- TAB 1: NEW ENTRY -->
@@ -723,25 +723,56 @@ if (!isset($baseUrl)) {
 
     <script>
         const baseUrl = '<?php echo $baseUrl; ?>';
+        let latestSavedJournalId = null;
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[char] || char);
+        }
+
+        function normalizeArrayField(value) {
+            if (Array.isArray(value)) {
+                return value.map(item => String(item ?? '').trim()).filter(Boolean);
+            }
+
+            if (typeof value === 'string') {
+                const trimmed = value.trim();
+                if (!trimmed) {
+                    return [];
+                }
+
+                try {
+                    const parsed = JSON.parse(trimmed);
+                    if (Array.isArray(parsed)) {
+                        return parsed.map(item => String(item ?? '').trim()).filter(Boolean);
+                    }
+                } catch (_error) {
+                    return [trimmed];
+                }
+
+                return [trimmed];
+            }
+
+            return [];
+        }
         
         function switchTab(tabName) {
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.toggle('active', el.dataset.tab === tabName);
+            });
             
             // Show selected tab
             const tabEl = document.getElementById(tabName + '-tab');
             if (tabEl) {
                 tabEl.classList.add('active');
             }
-            
-            // Update button state
-            const buttons = document.querySelectorAll('.tab-btn');
-            buttons.forEach(btn => {
-                if (btn.textContent.includes(tabName === 'journal' ? 'New Entry' : tabName === 'entries' ? 'My Entries' : 'Final Report')) {
-                    btn.classList.add('active');
-                }
-            });
             
             // Load data for specific tabs
             if (tabName === 'entries') {
@@ -752,14 +783,10 @@ if (!isset($baseUrl)) {
         }
 
         function loadMyEntries() {
-            const container = document.getElementById('entries-tab');
-            if (!container) return;
-            
-            const btn = document.createElement('button');
-            btn.className = 'btn btn-primary';
-            btn.innerHTML = '<span class="loading-spinner"></span> Loading entries...';
-            container.innerHTML = '';
-            container.appendChild(btn);
+            const entriesList = document.getElementById('entriesList');
+            if (!entriesList) return;
+
+            entriesList.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);"><span class="loading-spinner"></span> Loading entries...</div>';
             
             const formData = new FormData();
             formData.append('action', 'load_entries');
@@ -772,50 +799,52 @@ if (!isset($baseUrl)) {
             .then(r => r.json())
             .then(data => {
                 if (data.ok && data.entries && data.entries.length > 0) {
-                    let html = '<div class="entries-list">';
+                    let html = '';
                     data.entries.forEach(entry => {
-                        const date = new Date(entry.entry_date).toLocaleDateString('en-US', { 
+                        const parsedDate = new Date(entry.entry_date);
+                        const date = Number.isNaN(parsedDate.getTime())
+                            ? String(entry.entry_date || '')
+                            : parsedDate.toLocaleDateString('en-US', {
                             year: 'numeric', month: 'short', day: 'numeric' 
                         });
-                        const qualityClass = entry.quality_score >= 80 ? 'excellent' : 
-                                            entry.quality_score >= 60 ? 'good' :
-                                            entry.quality_score >= 40 ? 'fair' : 'basic';
-                        html += `<div class="entry-card">
-                            <div class="entry-header">
-                                <span class="entry-date">${date}</span>
-                                <span class="quality-badge quality-${qualityClass}">Quality: ${entry.quality_score}%</span>
-                            </div>`;
-                        
-                        if (entry.tasks_accomplished) {
-                            const tasks = JSON.parse(entry.tasks_accomplished || '[]');
-                            if (tasks.length > 0) {
-                                html += `<div class="entry-preview"><strong>Tasks:</strong> ${tasks.slice(0, 2).join(', ')}</div>`;
-                            }
-                        }
-                        
-                        html += '</div>';
+                        const qualityScore = Number(entry.quality_score || 0);
+                        const qualityClass = qualityScore >= 80 ? 'excellent'
+                            : qualityScore >= 60 ? 'good'
+                            : qualityScore >= 40 ? 'fair'
+                            : 'basic';
+                        const sentimentLabel = String(entry.sentiment_analysis || 'neutral');
+                        const sentimentText = sentimentLabel.replace(/_/g, ' ').toUpperCase();
+                        const tasks = normalizeArrayField(entry.tasks_accomplished);
+                        const tasksPreview = tasks.length > 0
+                            ? `<strong>Tasks:</strong> ${escapeHtml(tasks.slice(0, 2).join(', '))}${tasks.length > 2 ? '...' : ''}`
+                            : '<em>No tasks recorded</em>';
+
+                        html += `<div class="journal-entry-card" onclick="expandEntry(this)">
+                            <div class="entry-date">${escapeHtml(date)}</div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+                                <span class="quality-indicator quality-${qualityClass}" style="margin-top:0;padding:6px 10px;">Quality: ${qualityScore}%</span>
+                                <span class="sentiment-indicator sentiment-${escapeHtml(sentimentLabel)}" style="margin:0;padding:6px 10px;">${escapeHtml(sentimentText)}</span>
+                            </div>
+                            <div class="entry-preview-text">${tasksPreview}</div>
+                        </div>`;
                     });
-                    html += '</div>';
-                    container.innerHTML = html;
+                    entriesList.innerHTML = html;
                 } else {
-                    container.innerHTML = '<p style="text-align: center; color: var(--text3); padding: 40px;">No entries yet. Create your first entry above!</p>';
+                    entriesList.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text3);"><i class="fas fa-book-open" style="font-size:2rem;margin-bottom:12px;"></i><p>No entries yet. Create your first entry above!</p></div>';
                 }
             })
             .catch(err => {
                 console.error(err);
-                container.innerHTML = '<p style="color: red;">Error loading entries: ' + err.message + '</p>';
+                entriesList.innerHTML = '<p style="color:red;">Error loading entries: ' + escapeHtml(err.message) + '</p>';
             });
         }
 
         function loadReport() {
-            const container = document.getElementById('report-tab');
-            if (!container) return;
-            
-            const btn = document.createElement('button');
-            btn.className = 'btn btn-primary';
-            btn.innerHTML = '<span class="loading-spinner"></span> Loading report...';
-            container.innerHTML = '';
-            container.appendChild(btn);
+            const reportContainer = document.getElementById('reportContainer');
+            if (!reportContainer) return;
+
+            reportContainer.style.display = 'block';
+            reportContainer.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);"><span class="loading-spinner"></span> Loading report...</div>';
             
             const formData = new FormData();
             formData.append('action', 'load_report');
@@ -827,14 +856,14 @@ if (!isset($baseUrl)) {
             .then(r => r.json())
             .then(data => {
                 if (data.ok && data.report) {
-                    displayReport(data.report);
+                    displayReport(data.report, reportContainer);
                 } else {
-                    container.innerHTML = '<button class="btn btn-primary" onclick="generateReport()"><i class="fas fa-cog"></i> Generate Final Report</button>';
+                    reportContainer.innerHTML = '<p style="color:var(--text3);">No generated report yet. Click "Generate Final Report" to create one.</p>';
                 }
             })
             .catch(err => {
                 console.error(err);
-                container.innerHTML = '<p style="color: red;">Error loading report: ' + err.message + '</p>';
+                reportContainer.innerHTML = '<p style="color:red;">Error loading report: ' + escapeHtml(err.message) + '</p>';
             });
         }
 
@@ -1020,8 +1049,21 @@ if (!isset($baseUrl)) {
 
         function toggleExportMenu() {
             const dropdown = document.getElementById('exportDropdown');
-            dropdown.classList.toggle('active');
+            if (dropdown) {
+                dropdown.classList.toggle('active');
+            }
         }
+
+        document.addEventListener('click', (event) => {
+            const dropdown = document.getElementById('exportDropdown');
+            if (!dropdown) {
+                return;
+            }
+
+            if (!event.target.closest('.export-menu')) {
+                dropdown.classList.remove('active');
+            }
+        });
 
         function calculateEntryQuality(entry) {
             let score = 0;
@@ -1080,7 +1122,11 @@ if (!isset($baseUrl)) {
         }
 
         function exportEntryEmail() {
-            // Get the most recently saved entry from display or use journal ID
+            if (!latestSavedJournalId) {
+                alert('Save an entry first before exporting by email.');
+                return;
+            }
+
             const email = prompt('Enter recipient email address:');
             if (!email) return;
             
@@ -1090,9 +1136,28 @@ if (!isset($baseUrl)) {
                 alert('Please enter a valid email address.');
                 return;
             }
-            
-            // For now, show note about future implementation
-            alert('Note: You can export entries after viewing them in "My Entries" tab.');
+
+            const formData = new FormData();
+            formData.append('action', 'export_entry_email');
+            formData.append('journal_id', String(latestSavedJournalId));
+            formData.append('recipient_email', email);
+
+            fetch(baseUrl + '/pages/student/ojt-log/journal_endpoint.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    alert('Entry sent successfully to ' + email);
+                } else {
+                    alert('Error: ' + (data.message || data.error || 'Failed to send email'));
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('An error occurred: ' + err.message);
+            });
         }
 
         function exportReportEmail() {
@@ -1159,6 +1224,7 @@ if (!isset($baseUrl)) {
             .then(r => r.json())
             .then(data => {
                 if (data.ok) {
+                    latestSavedJournalId = Number(data.journal_id || 0) || null;
                     alert('Entry saved successfully! Journal ID: ' + data.journal_id);
                     document.getElementById('journalForm').reset();
                     document.getElementById('previewContainer').innerHTML = 
@@ -1180,14 +1246,11 @@ if (!isset($baseUrl)) {
         }
 
         function generateReport() {
-            const container = document.getElementById('report-tab');
-            if (!container) return;
-            
-            const btn = document.createElement('button');
-            btn.className = 'btn btn-primary';
-            btn.innerHTML = '<span class="loading-spinner"></span> Generating Report...';
-            container.innerHTML = '';
-            container.appendChild(btn);
+            const reportContainer = document.getElementById('reportContainer');
+            if (!reportContainer) return;
+
+            reportContainer.style.display = 'block';
+            reportContainer.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);"><span class="loading-spinner"></span> Generating report...</div>';
 
             const formData = new FormData();
             formData.append('action', 'generate_report');
@@ -1199,7 +1262,7 @@ if (!isset($baseUrl)) {
             .then(r => r.json())
             .then(data => {
                 if (data.ok) {
-                    displayReport(data.report, container);
+                    displayReport(data.report, reportContainer);
                 } else {
                     alert('Error generating report: ' + (data.message || 'Unknown error'));
                 }
@@ -1211,8 +1274,14 @@ if (!isset($baseUrl)) {
         }
 
         function displayReport(report, containerEl) {
-            const container = containerEl || document.getElementById('report-tab') || document.getElementById('reportContainer');
+            const container = containerEl || document.getElementById('reportContainer');
             if (!container) return;
+
+            container.style.display = 'block';
+
+            const hoursCompleted = Number(report.hours_completed || 0);
+            const hoursRequired = Number(report.hours_required || 0);
+            const completionPct = hoursRequired > 0 ? Math.round((hoursCompleted / hoursRequired) * 100) : 0;
             
             let html = `
                 <div class="stats-grid">
@@ -1225,11 +1294,11 @@ if (!isset($baseUrl)) {
                         <div class="stat-label">Entries</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-value">${(report.hours_completed || 0).toFixed(1)}</div>
+                        <div class="stat-value">${hoursCompleted.toFixed(1)}</div>
                         <div class="stat-label">Hours</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-value">${Math.round(((report.hours_completed || 0) / (report.hours_required || 1)) * 100)}%</div>
+                        <div class="stat-value">${completionPct}%</div>
                         <div class="stat-label">Complete</div>
                     </div>
                 </div>

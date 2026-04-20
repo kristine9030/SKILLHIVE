@@ -332,4 +332,20 @@ try {
 } catch (Throwable $e) {
     // Non-fatal: app should continue even if migration fails.
 }
+
+// Schema Migration: Add profile_picture column to internship_adviser table
+try {
+    $stmt = $pdo->prepare(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+         WHERE TABLE_SCHEMA = DATABASE() 
+         AND TABLE_NAME = 'internship_adviser' 
+         AND COLUMN_NAME = 'profile_picture'"
+    );
+    $stmt->execute();
+    if ($stmt->rowCount() === 0) {
+        $pdo->exec("ALTER TABLE internship_adviser ADD COLUMN profile_picture VARCHAR(255) NULL DEFAULT NULL");
+    }
+} catch (Throwable $e) {
+    // Non-fatal: app should continue even if migration fails.
+}
 ?>

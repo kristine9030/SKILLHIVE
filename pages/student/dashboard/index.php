@@ -215,10 +215,29 @@ $recommendedStmt = $pdo->query(
 $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 ?>
 
+<!-- Welcome Banner -->
+<div style="background:linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);border-radius:16px;padding:32px;margin-bottom:24px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(59, 130, 246, 0.2);">
+  <div style="z-index:2;flex:1;">
+    <h2 style="font-size:1.8rem;font-weight:800;margin:0 0 12px 0;line-height:1.2;">Welcome back, <?php echo htmlspecialchars($firstName); ?>! 👋</h2>
+    <p style="font-size:1rem;margin:0 0 16px 0;opacity:0.95;line-height:1.4;">You're <?php echo number_format((float)($student['internship_readiness_score'] ?? 0), 0); ?>% ready for internship opportunities. Keep improving your profile!</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <a href="<?php echo $baseUrl; ?>/layout.php?page=student/profile" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.2);color:white;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600;border:1px solid rgba(255,255,255,0.3);transition:all 0.2s;cursor:pointer;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+        <i class="fas fa-user"></i> Complete Profile
+      </a>
+      <a href="<?php echo $baseUrl; ?>/layout.php?page=student/marketplace" style="display:inline-flex;align-items:center;gap:8px;background:white;color:#3b82f6;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600;transition:all 0.2s;cursor:pointer;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(59,130,246,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+        <i class="fas fa-briefcase"></i> Browse Internships
+      </a>
+    </div>
+  </div>
+  <div style="z-index:1;opacity:0.15;position:absolute;right:0;top:0;font-size:8rem;line-height:1;">
+    <i class="fas fa-briefcase"></i>
+  </div>
+</div>
+
 <div class="page-header">
   <div>
-    <h2 class="page-title">Welcome back, <span class="name-gradient"><?php echo htmlspecialchars($firstName); ?></span>! 👋</h2>
-    <p class="page-subtitle">Here's what's happening with your internship journey.</p>
+    <h2 class="page-title">Your Internship Journey</h2>
+    <p class="page-subtitle">Track your applications and opportunities.</p>
   </div>
 </div>
 

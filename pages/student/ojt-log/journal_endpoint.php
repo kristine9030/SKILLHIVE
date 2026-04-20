@@ -109,6 +109,9 @@ if ($action === 'save_entry') {
     $log_ids = isset($_POST['log_ids']) ? array_map('intval', (array) $_POST['log_ids']) : [];
     
     $result = journal_save_entry($pdo, (int) $ojt_record['record_id'], $entry_data, $log_ids);
+    if (($result['ok'] ?? false) !== true && !isset($result['message']) && isset($result['error'])) {
+        $result['message'] = (string) $result['error'];
+    }
     echo json_encode($result);
     exit;
 }
