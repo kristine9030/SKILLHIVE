@@ -252,6 +252,7 @@ try {
                 sentiment_analysis VARCHAR(50) NOT NULL DEFAULT 'neutral',
                 productivity_score TINYINT UNSIGNED NOT NULL DEFAULT 0,
                 is_structured TINYINT(1) NOT NULL DEFAULT 1,
+                is_visible_to_adviser TINYINT(1) NOT NULL DEFAULT 1,
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (journal_id),
@@ -293,6 +294,17 @@ try {
         $check_productivity->execute();
         if ($check_productivity->rowCount() === 0) {
             $pdo->exec("ALTER TABLE ojt_journal_entries ADD COLUMN productivity_score TINYINT UNSIGNED NOT NULL DEFAULT 0");
+        }
+
+        $check_visibility = $pdo->prepare(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+             AND TABLE_NAME = 'ojt_journal_entries'
+             AND COLUMN_NAME = 'is_visible_to_adviser'"
+        );
+        $check_visibility->execute();
+        if ($check_visibility->rowCount() === 0) {
+            $pdo->exec("ALTER TABLE ojt_journal_entries ADD COLUMN is_visible_to_adviser TINYINT(1) NOT NULL DEFAULT 1 AFTER is_structured");
         }
     }
 } catch (Throwable $e) {

@@ -59,6 +59,24 @@ $selectedStudent = null;
 $journalEntries = [];
 $studentStats = null;
 $entryQualityScores = [];
+$journalVisibilityColumnExists = false;
+
+try {
+    $visibilityCheckStmt = $pdo->prepare(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'ojt_journal_entries'
+           AND COLUMN_NAME = 'is_visible_to_adviser'"
+    );
+    $visibilityCheckStmt->execute();
+    $journalVisibilityColumnExists = $visibilityCheckStmt->rowCount() > 0;
+} catch (Throwable $e) {
+    $journalVisibilityColumnExists = false;
+}
+
+$journalVisibilityJoinSql = $journalVisibilityColumnExists
+    ? 'LEFT JOIN ojt_journal_entries jje ON jje.record_id = o.record_id AND COALESCE(jje.is_visible_to_adviser, 1) = 1'
+    : 'LEFT JOIN ojt_journal_entries jje ON jje.record_id = o.record_id';
 
 $studentsStmt = $pdo->prepare(
     'SELECT
@@ -77,7 +95,7 @@ $studentsStmt = $pdo->prepare(
             COUNT(DISTINCT jje.journal_id) AS journal_count,
             MAX(jje.entry_date) AS last_entry_date
         FROM ojt_record o
-        LEFT JOIN ojt_journal_entries jje ON jje.record_id = o.record_id
+                ' . $journalVisibilityJoinSql . '
         GROUP BY o.student_id
      ) jstats ON jstats.student_id = s.student_id
      WHERE aa.adviser_id = :adviser_id
@@ -133,10 +151,16 @@ if ($studentId > 0) {
                 ? 'ORDER BY entry_date ASC, journal_id ASC'
                 : 'ORDER BY entry_date DESC, journal_id DESC';
 
+            $journalVisibilityWhereSql = $journalVisibilityColumnExists
+                ? 'AND COALESCE(is_visible_to_adviser, 1) = 1'
+                : '';
+
             $entriesStmt = $pdo->prepare(
                 'SELECT
                     journal_id,
                     entry_date,
+                    company_department,
+                    reflection,
                     tasks_accomplished,
                     skills_applied_learned,
                     challenges_encountered,
@@ -144,6 +168,7 @@ if ($studentId > 0) {
                     key_learnings_insights
                  FROM ojt_journal_entries
                  WHERE record_id = :record_id
+                      ' . $journalVisibilityWhereSql . '
                  ' . $orderBySql . '
                  LIMIT 200'
             );
@@ -151,6 +176,8 @@ if ($studentId > 0) {
             $rawEntries = $entriesStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
             foreach ($rawEntries as $entry) {
+                $entry['company_department'] = trim((string)($entry['company_department'] ?? ''));
+                $entry['reflection'] = trim((string)($entry['reflection'] ?? ''));
                 $entry['tasks_accomplished'] = adviser_journal_decode_array_field($entry['tasks_accomplished'] ?? null);
                 $entry['skills_applied_learned'] = adviser_journal_decode_array_field($entry['skills_applied_learned'] ?? null);
                 $entry['challenges_encountered'] = adviser_journal_decode_array_field($entry['challenges_encountered'] ?? null);
@@ -408,6 +435,56 @@ $sortChangeBaseUrl = $baseUrl . '/layout.php?' . http_build_query([
         color: #9f1239;
     }
 
+    .entry-details {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px dashed #d1d5db;
+    }
+
+    .entry-details summary {
+        list-style: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text1);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .entry-details summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .entry-details-grid {
+        display: grid;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .entry-detail-block h5 {
+        margin: 0 0 6px 0;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #0891B2;
+    }
+
+    .entry-detail-block ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--text2);
+        font-size: 0.9rem;
+    }
+
+    .entry-detail-block p {
+        margin: 0;
+        color: var(--text2);
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+        line-height: 1.45;
+    }
+
     .empty-state {
         text-align: center;
         padding: 40px 20px;
@@ -461,7 +538,7 @@ $sortChangeBaseUrl = $baseUrl . '/layout.php?' . http_build_query([
 <div class="page-header">
     <div>
         <h2 class="page-title"><i class="fas fa-chart-bar"></i> Student Journal Analytics</h2>
-        <p class="page-subtitle">Monitor student internship journal entries and progress</p>
+        <p class="page-subtitle">Monitor student internship journal entries and progress. Only your assigned students are visible.</p>
     </div>
 </div>
 
@@ -585,7 +662,20 @@ $sortChangeBaseUrl = $baseUrl . '/layout.php?' . http_build_query([
                         <?php
                         $entryTasks = is_array($entry['tasks_accomplished'] ?? null) ? $entry['tasks_accomplished'] : [];
                         $entrySkills = is_array($entry['skills_applied_learned'] ?? null) ? $entry['skills_applied_learned'] : [];
+                        $entryChallenges = is_array($entry['challenges_encountered'] ?? null) ? $entry['challenges_encountered'] : [];
+                        $entrySolutions = is_array($entry['solutions_actions_taken'] ?? null) ? $entry['solutions_actions_taken'] : [];
+                        $entryInsights = is_array($entry['key_learnings_insights'] ?? null) ? $entry['key_learnings_insights'] : [];
+                        $entryCompanyDepartment = trim((string)($entry['company_department'] ?? ''));
+                        $entryReflection = trim((string)($entry['reflection'] ?? ''));
                         $entryId = (int)($entry['journal_id'] ?? 0);
+                        $hasFullDetails =
+                            !empty($entryTasks) ||
+                            !empty($entrySkills) ||
+                            !empty($entryChallenges) ||
+                            !empty($entrySolutions) ||
+                            !empty($entryInsights) ||
+                            $entryCompanyDepartment !== '' ||
+                            $entryReflection !== '';
                         ?>
                         <div class="journal-entry-preview">
                             <div class="entry-date">
@@ -623,6 +713,82 @@ $sortChangeBaseUrl = $baseUrl . '/layout.php?' . http_build_query([
                                     <?php echo htmlspecialchars((string)($quality['level'] ?? 'Basic'), ENT_QUOTES, 'UTF-8'); ?>
                                     (<?php echo (int)($quality['overall'] ?? 0); ?>%)
                                 </div>
+                            <?php endif; ?>
+
+                            <?php if ($hasFullDetails): ?>
+                                <details class="entry-details">
+                                    <summary><i class="fas fa-eye"></i> View full journal details</summary>
+                                    <div class="entry-details-grid">
+                                        <?php if ($entryCompanyDepartment !== ''): ?>
+                                            <div class="entry-detail-block">
+                                                <h5>Company/Department</h5>
+                                                <p><?php echo htmlspecialchars($entryCompanyDepartment, ENT_QUOTES, 'UTF-8'); ?></p>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <?php if (!empty($entryTasks)): ?>
+                                            <div class="entry-detail-block">
+                                                <h5>Tasks Accomplished</h5>
+                                                <ul>
+                                                    <?php foreach ($entryTasks as $item): ?>
+                                                        <li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <?php if (!empty($entrySkills)): ?>
+                                            <div class="entry-detail-block">
+                                                <h5>Skills Applied/Learned</h5>
+                                                <ul>
+                                                    <?php foreach ($entrySkills as $item): ?>
+                                                        <li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <?php if (!empty($entryChallenges)): ?>
+                                            <div class="entry-detail-block">
+                                                <h5>Challenges Encountered</h5>
+                                                <ul>
+                                                    <?php foreach ($entryChallenges as $item): ?>
+                                                        <li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <?php if (!empty($entrySolutions)): ?>
+                                            <div class="entry-detail-block">
+                                                <h5>Solutions/Actions Taken</h5>
+                                                <ul>
+                                                    <?php foreach ($entrySolutions as $item): ?>
+                                                        <li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <?php if (!empty($entryInsights)): ?>
+                                            <div class="entry-detail-block">
+                                                <h5>Key Learnings/Insights</h5>
+                                                <ul>
+                                                    <?php foreach ($entryInsights as $item): ?>
+                                                        <li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <?php if ($entryReflection !== ''): ?>
+                                            <div class="entry-detail-block">
+                                                <h5>Reflection</h5>
+                                                <p><?php echo htmlspecialchars($entryReflection, ENT_QUOTES, 'UTF-8'); ?></p>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </details>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>

@@ -34,6 +34,15 @@ if (!in_array($action, ['generate_entry', 'save_entry', 'load_entries', 'generat
     exit;
 }
 
+if ($action === 'export_entry_email' || $action === 'export_report_email') {
+    http_response_code(403);
+    echo json_encode([
+        'ok' => false,
+        'message' => 'Email export is disabled. Your assigned adviser can view your journal directly in the system.'
+    ]);
+    exit;
+}
+
 // Load (or auto-create) OJT record
 $ojt_basic = ojt_get_or_create_record($pdo, $userId);
 $ojt_record = null;
@@ -302,6 +311,159 @@ exit;
 
 // ======================== EMAIL HELPER FUNCTIONS ========================
 
+function journal_email_api_url(): string
+{
+    $apiUrl = '';
+
+    if (defined('SKILLHIVE_EMAIL_API_URL')) {
+        $apiUrl = trim((string) constant('SKILLHIVE_EMAIL_API_URL'));
+    }
+
+    if ($apiUrl === '') {
+        $apiUrl = trim((string) (getenv('SKILLHIVE_EMAIL_API_URL') ?: ''));
+    }
+
+    if ($apiUrl === '') {
+        $apiUrl = 'http://127.0.0.1:3100/send-email';
+    }
+
+    return $apiUrl;
+}
+
+function journal_brevo_smtp_config(): array
+{
+    $login = '';
+    $key = '';
+    $fromEmail = '';
+
+    if (defined('BREVO_SMTP_LOGIN')) {
+        $login = trim((string) BREVO_SMTP_LOGIN);
+    }
+    if ($login === '') {
+        $login = trim((string) (getenv('BREVO_SMTP_LOGIN') ?: ''));
+    }
+
+    if (defined('BREVO_SMTP_KEY')) {
+        $key = trim((string) BREVO_SMTP_KEY);
+    }
+    if ($key === '') {
+        $key = trim((string) (getenv('BREVO_SMTP_KEY') ?: ''));
+    }
+
+    if (defined('BREVO_FROM_EMAIL')) {
+        $fromEmail = trim((string) BREVO_FROM_EMAIL);
+    }
+    if ($fromEmail === '') {
+        $fromEmail = trim((string) (getenv('BREVO_FROM_EMAIL') ?: ''));
+    }
+    if ($fromEmail === '') {
+        $fromEmail = $login;
+    }
+
+    return [
+        'enabled' => ($login !== '' && $key !== ''),
+        'login' => $login,
+        'key' => $key,
+        'from_email' => $fromEmail,
+    ];
+}
+
+function journal_send_via_email_api(string $recipientEmail, string $recipientName, string $subject, string $message): array
+{
+    $payload = [
+        'studentEmail' => trim($recipientEmail),
+        'studentName' => trim($recipientName) !== '' ? trim($recipientName) : 'Recipient',
+        'subject' => trim($subject),
+        'message' => trim($message),
+    ];
+
+    $brevoConfig = journal_brevo_smtp_config();
+    if (!empty($brevoConfig['enabled'])) {
+        $payload['provider'] = 'brevo';
+        $payload['smtpLogin'] = (string) $brevoConfig['login'];
+        $payload['smtpKey'] = (string) $brevoConfig['key'];
+        $payload['fromEmail'] = (string) $brevoConfig['from_email'];
+    }
+
+    $body = json_encode($payload);
+    if (!is_string($body)) {
+        return ['ok' => false, 'error' => 'Unable to prepare email payload.'];
+    }
+
+    $apiUrl = journal_email_api_url();
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($apiUrl);
+        if ($ch === false) {
+            return ['ok' => false, 'error' => 'Unable to initialize email API request.'];
+        }
+
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_POSTFIELDS => $body,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 12,
+        ]);
+
+        $responseRaw = curl_exec($ch);
+        $curlError = curl_error($ch);
+        $statusCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($curlError !== '') {
+            return ['ok' => false, 'error' => 'Email API is unreachable: ' . $curlError];
+        }
+
+        $decoded = is_string($responseRaw) ? json_decode($responseRaw, true) : null;
+        if ($statusCode >= 200 && $statusCode < 300 && is_array($decoded) && !empty($decoded['ok'])) {
+            return ['ok' => true, 'error' => ''];
+        }
+
+        $messageText = is_array($decoded) && !empty($decoded['error'])
+            ? (string) $decoded['error']
+            : 'Email API returned HTTP ' . $statusCode . '.';
+
+        return ['ok' => false, 'error' => $messageText];
+    }
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-Type: application/json\r\n",
+            'content' => $body,
+            'timeout' => 12,
+            'ignore_errors' => true,
+        ],
+    ]);
+
+    $responseRaw = @file_get_contents($apiUrl, false, $context);
+    if (!is_string($responseRaw)) {
+        return ['ok' => false, 'error' => 'Email API is unreachable.'];
+    }
+
+    $statusCode = 0;
+    if (isset($http_response_header) && is_array($http_response_header)) {
+        foreach ($http_response_header as $headerLine) {
+            if (preg_match('/^HTTP\/[0-9.]+\s+(\d+)/i', $headerLine, $matches) === 1) {
+                $statusCode = (int) $matches[1];
+                break;
+            }
+        }
+    }
+
+    $decoded = json_decode($responseRaw, true);
+    if ($statusCode >= 200 && $statusCode < 300 && is_array($decoded) && !empty($decoded['ok'])) {
+        return ['ok' => true, 'error' => ''];
+    }
+
+    $messageText = is_array($decoded) && !empty($decoded['error'])
+        ? (string) $decoded['error']
+        : 'Email API request failed.';
+
+    return ['ok' => false, 'error' => $messageText];
+}
+
 /**
  * Send journal entry as email
  */
@@ -309,9 +471,60 @@ function journal_send_entry_email(array $ojt_record, array $entry, string $recip
 {
     // Load student info
     $student_email = $_SESSION['email'] ?? '';
-    $student_name = ($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? '');
+    $student_name = trim((($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? '')));
+    if ($student_name === '') {
+        $student_name = 'Student';
+    }
+    $recipient_name = trim((string) strstr($recipient_email, '@', true));
+    if ($recipient_name === '') {
+        $recipient_name = 'Recipient';
+    }
     
     $subject = 'OJT Journal Entry - ' . date('F j, Y', strtotime($entry['entry_date']));
+
+    $apiMessageLines = [
+        'OJT Journal Entry',
+        'Student: ' . $student_name,
+        'Date: ' . date('F j, Y', strtotime($entry['entry_date'])),
+        'Company/Department: ' . (string) ($entry['company_department'] ?? ''),
+    ];
+
+    $entrySections = [
+        'Tasks Accomplished' => is_array($entry['tasks_accomplished'] ?? null) ? $entry['tasks_accomplished'] : [],
+        'Skills Applied/Learned' => is_array($entry['skills_applied_learned'] ?? null) ? $entry['skills_applied_learned'] : [],
+        'Challenges Encountered' => is_array($entry['challenges_encountered'] ?? null) ? $entry['challenges_encountered'] : [],
+        'Solutions/Actions Taken' => is_array($entry['solutions_actions_taken'] ?? null) ? $entry['solutions_actions_taken'] : [],
+        'Key Learnings/Insights' => is_array($entry['key_learnings_insights'] ?? null) ? $entry['key_learnings_insights'] : [],
+    ];
+
+    foreach ($entrySections as $label => $items) {
+        if (empty($items)) {
+            continue;
+        }
+        $apiMessageLines[] = '';
+        $apiMessageLines[] = $label . ':';
+        foreach ($items as $item) {
+            $line = trim((string) $item);
+            if ($line !== '') {
+                $apiMessageLines[] = '- ' . $line;
+            }
+        }
+    }
+
+    $reflectionText = trim((string) ($entry['reflection'] ?? ''));
+    if ($reflectionText !== '') {
+        $apiMessageLines[] = '';
+        $apiMessageLines[] = 'Reflection:';
+        $apiMessageLines[] = $reflectionText;
+    }
+
+    $apiResult = journal_send_via_email_api($recipient_email, $recipient_name, $subject, implode("\n", $apiMessageLines));
+    if (($apiResult['ok'] ?? false) === true) {
+        return [
+            'ok' => true,
+            'message' => 'Journal entry sent successfully to ' . htmlspecialchars($recipient_email)
+        ];
+    }
     
     // Build HTML email
     $html = "<html><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>";
@@ -375,11 +588,20 @@ function journal_send_entry_email(array $ojt_record, array $entry, string $recip
     $html .= "</div></body></html>";
     
     // Send email
+    $fallbackFrom = trim((string) $student_email);
+    if (!filter_var($fallbackFrom, FILTER_VALIDATE_EMAIL)) {
+        $brevoConfig = journal_brevo_smtp_config();
+        $fallbackFrom = trim((string) ($brevoConfig['from_email'] ?? ''));
+    }
+    if (!filter_var($fallbackFrom, FILTER_VALIDATE_EMAIL)) {
+        $fallbackFrom = 'no-reply@skillhive.local';
+    }
+
     $headers = "MIME-Version: 1.0" . "\r\n";
     $headers .= "Content-type: text/html; charset=UTF-8" . "\r\n";
-    $headers .= "From: " . $student_email . "\r\n";
+    $headers .= "From: " . $fallbackFrom . "\r\n";
     
-    $success = mail($recipient_email, $subject, $html, $headers);
+    $success = @mail($recipient_email, $subject, $html, $headers);
     
     if ($success) {
         return [
@@ -387,9 +609,17 @@ function journal_send_entry_email(array $ojt_record, array $entry, string $recip
             'message' => 'Journal entry sent successfully to ' . htmlspecialchars($recipient_email)
         ];
     } else {
+        $apiError = trim((string) ($apiResult['error'] ?? ''));
+        $errorMessage = $apiError;
+        if ($errorMessage === '') {
+            $errorMessage = 'Please try again.';
+        }
+        if (stripos($errorMessage, 'failed to send email') === false) {
+            $errorMessage = 'Failed to send email. ' . $errorMessage;
+        }
         return [
             'ok' => false,
-            'error' => 'Failed to send email. Please try again.'
+            'error' => $errorMessage
         ];
     }
 }
@@ -400,9 +630,54 @@ function journal_send_entry_email(array $ojt_record, array $entry, string $recip
 function journal_send_report_email(array $ojt_record, array $report, string $recipient_email): array
 {
     $student_email = $_SESSION['email'] ?? '';
-    $student_name = ($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? '');
+    $student_name = trim((($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? '')));
+    if ($student_name === '') {
+        $student_name = 'Student';
+    }
+    $recipient_name = trim((string) strstr($recipient_email, '@', true));
+    if ($recipient_name === '') {
+        $recipient_name = 'Recipient';
+    }
     
     $subject = 'OJT Final Report - ' . htmlspecialchars($ojt_record['company_name'] ?? 'Internship');
+
+    $apiMessageLines = [
+        'Internship Final Report',
+        'Student: ' . $student_name,
+        'Generated: ' . date('F j, Y H:i:s'),
+        'Company: ' . (string) ($ojt_record['company_name'] ?? ''),
+        'Duration (days): ' . (string) ($report['duration_days'] ?? 0),
+        'Journal Entries: ' . (string) ($report['total_journal_entries'] ?? 0),
+        'Hours Completed: ' . (string) ($report['hours_completed'] ?? 0) . ' / ' . (string) ($report['hours_required'] ?? 0),
+    ];
+
+    $reportSections = [
+        'Internship Overview' => (string) ($report['internship_overview'] ?? ''),
+        'Key Responsibilities' => (string) ($report['key_responsibilities'] ?? ''),
+        'Skills Developed' => (string) ($report['skills_developed'] ?? ''),
+        'Challenges and Resolutions' => (string) ($report['challenges_resolutions'] ?? ''),
+        'Major Contributions and Achievements' => (string) ($report['contributions_achievements'] ?? ''),
+        'Personal and Professional Growth' => (string) ($report['personal_professional_growth'] ?? ''),
+        'Conclusion and Overall Reflection' => (string) ($report['conclusion_reflection'] ?? ''),
+    ];
+
+    foreach ($reportSections as $label => $text) {
+        $cleanText = trim($text);
+        if ($cleanText === '') {
+            continue;
+        }
+        $apiMessageLines[] = '';
+        $apiMessageLines[] = $label . ':';
+        $apiMessageLines[] = $cleanText;
+    }
+
+    $apiResult = journal_send_via_email_api($recipient_email, $recipient_name, $subject, implode("\n", $apiMessageLines));
+    if (($apiResult['ok'] ?? false) === true) {
+        return [
+            'ok' => true,
+            'message' => 'Report sent successfully to ' . htmlspecialchars($recipient_email)
+        ];
+    }
     
     // Build HTML email
     $html = "<html><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>";
@@ -464,11 +739,20 @@ function journal_send_report_email(array $ojt_record, array $report, string $rec
     $html .= "</div></body></html>";
     
     // Send email
+    $fallbackFrom = trim((string) $student_email);
+    if (!filter_var($fallbackFrom, FILTER_VALIDATE_EMAIL)) {
+        $brevoConfig = journal_brevo_smtp_config();
+        $fallbackFrom = trim((string) ($brevoConfig['from_email'] ?? ''));
+    }
+    if (!filter_var($fallbackFrom, FILTER_VALIDATE_EMAIL)) {
+        $fallbackFrom = 'no-reply@skillhive.local';
+    }
+
     $headers = "MIME-Version: 1.0" . "\r\n";
     $headers .= "Content-type: text/html; charset=UTF-8" . "\r\n";
-    $headers .= "From: " . $student_email . "\r\n";
+    $headers .= "From: " . $fallbackFrom . "\r\n";
     
-    $success = mail($recipient_email, $subject, $html, $headers);
+    $success = @mail($recipient_email, $subject, $html, $headers);
     
     if ($success) {
         return [
@@ -476,9 +760,17 @@ function journal_send_report_email(array $ojt_record, array $report, string $rec
             'message' => 'Report sent successfully to ' . htmlspecialchars($recipient_email)
         ];
     } else {
+        $apiError = trim((string) ($apiResult['error'] ?? ''));
+        $errorMessage = $apiError;
+        if ($errorMessage === '') {
+            $errorMessage = 'Please try again.';
+        }
+        if (stripos($errorMessage, 'failed to send email') === false) {
+            $errorMessage = 'Failed to send email. ' . $errorMessage;
+        }
         return [
             'ok' => false,
-            'error' => 'Failed to send email. Please try again.'
+            'error' => $errorMessage
         ];
     }
 }

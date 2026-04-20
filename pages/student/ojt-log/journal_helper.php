@@ -208,28 +208,8 @@ function journal_process_raw_notes(string $raw_notes, array $ojt_record): array
         $entry['tasks_accomplished'] = [$notes];
     }
     
-    // Auto-extract skills from the notes
-    $extracted_skills = journal_extract_skills($notes);
-    if (!empty($extracted_skills['technical']) || !empty($extracted_skills['soft'])) {
-        $entry['skills_applied_learned'] = array_merge(
-            $entry['skills_applied_learned'],
-            $extracted_skills['technical'],
-            $extracted_skills['soft']
-        );
-    }
-    
-    // Auto-extract challenges if none provided
-    if (empty($entry['challenges_encountered'])) {
-        $entry['challenges_encountered'] = journal_extract_challenges($notes);
-    }
-    
-    // Auto-generate insights if none provided
-    if (empty($entry['key_learnings_insights'])) {
-        $entry['key_learnings_insights'] = journal_generate_insights($notes);
-    }
-    
-    // Generate reflection summary
-    $entry['reflection'] = journal_generate_reflection($notes, $entry);
+    // Keep reflection empty unless explicitly provided by user input.
+    $entry['reflection'] = '';
     
     // Clean and deduplicate
     foreach (['tasks_accomplished', 'skills_applied_learned', 'challenges_encountered', 'solutions_actions_taken', 'key_learnings_insights'] as $key) {
@@ -318,40 +298,53 @@ function journal_format_entry_display(array $entry): array
 /**
  * Save journal entry to database
  */
+function journal_has_adviser_visibility_column(PDO $pdo): bool
+{
+    static $hasColumn = null;
+
+    if ($hasColumn !== null) {
+        return $hasColumn;
+    }
+
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = 'ojt_journal_entries'
+               AND COLUMN_NAME = 'is_visible_to_adviser'"
+        );
+        $stmt->execute();
+        $hasColumn = $stmt->rowCount() > 0;
+    } catch (Throwable $e) {
+        $hasColumn = false;
+    }
+
+    return $hasColumn;
+}
+
 function journal_save_entry(PDO $pdo, int $record_id, array $entry, array $log_ids = []): array
 {
     try {
         $log_ids_str = implode(',', array_map('intval', $log_ids));
+        $isVisibleToAdviser = ((int)($entry['is_visible_to_adviser'] ?? 1) === 0) ? 0 : 1;
+        $hasVisibilityColumn = journal_has_adviser_visibility_column($pdo);
         
         // Calculate quality and sentiment if not provided
         $quality_score = isset($entry['quality_score']) ? (int)$entry['quality_score'] : 0;
         $sentiment_analysis = $entry['sentiment_analysis'] ?? 'neutral';
         $productivity_score = isset($entry['productivity_score']) ? (int)$entry['productivity_score'] : 0;
-        
-        // Check if entry exists for today
-        $stmt = $pdo->prepare('SELECT journal_id FROM ojt_journal_entries WHERE record_id = ? AND entry_date = CURDATE()');
-        $stmt->execute([$record_id]);
-        $existing = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($existing) {
-            // Update existing entry
+
+        // Always create a new journal row on each save action.
+        if ($hasVisibilityColumn) {
             $stmt = $pdo->prepare('
-                UPDATE ojt_journal_entries SET
-                    log_ids = ?,
-                    company_department = ?,
-                    tasks_accomplished = ?,
-                    skills_applied_learned = ?,
-                    challenges_encountered = ?,
-                    solutions_actions_taken = ?,
-                    key_learnings_insights = ?,
-                    reflection = ?,
-                    quality_score = ?,
-                    sentiment_analysis = ?,
-                    productivity_score = ?,
-                    updated_at = NOW()
-                WHERE journal_id = ?
+                INSERT INTO ojt_journal_entries 
+                (record_id, log_ids, entry_date, company_department, tasks_accomplished, skills_applied_learned, 
+                 challenges_encountered, solutions_actions_taken, key_learnings_insights, reflection, 
+                 quality_score, sentiment_analysis, productivity_score, is_visible_to_adviser, created_at)
+                VALUES (?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ');
             $stmt->execute([
+                $record_id,
                 $log_ids_str,
                 $entry['company_department'] ?? '',
                 json_encode($entry['tasks_accomplished'] ?? []),
@@ -363,11 +356,9 @@ function journal_save_entry(PDO $pdo, int $record_id, array $entry, array $log_i
                 $quality_score,
                 $sentiment_analysis,
                 $productivity_score,
-                $existing['journal_id']
+                $isVisibleToAdviser
             ]);
-            return ['ok' => true, 'message' => 'Journal entry updated', 'journal_id' => $existing['journal_id']];
         } else {
-            // Insert new entry
             $stmt = $pdo->prepare('
                 INSERT INTO ojt_journal_entries 
                 (record_id, log_ids, entry_date, company_department, tasks_accomplished, skills_applied_learned, 
@@ -389,8 +380,9 @@ function journal_save_entry(PDO $pdo, int $record_id, array $entry, array $log_i
                 $sentiment_analysis,
                 $productivity_score
             ]);
-            return ['ok' => true, 'message' => 'Journal entry created', 'journal_id' => $pdo->lastInsertId()];
         }
+
+        return ['ok' => true, 'message' => 'Journal entry created', 'journal_id' => $pdo->lastInsertId()];
     } catch (Throwable $e) {
         return ['ok' => false, 'error' => 'Database error: ' . $e->getMessage()];
     }
@@ -405,7 +397,7 @@ function journal_load_entries(PDO $pdo, int $record_id, int $limit = 50): array
         $stmt = $pdo->prepare('
             SELECT * FROM ojt_journal_entries 
             WHERE record_id = ? 
-            ORDER BY entry_date DESC 
+            ORDER BY entry_date DESC, journal_id DESC 
             LIMIT ?
         ');
         $stmt->bindValue(1, $record_id, PDO::PARAM_INT);
@@ -421,6 +413,7 @@ function journal_load_entries(PDO $pdo, int $record_id, int $limit = 50): array
             $entry['challenges_encountered'] = json_decode($entry['challenges_encountered'] ?? '[]', true) ?? [];
             $entry['solutions_actions_taken'] = json_decode($entry['solutions_actions_taken'] ?? '[]', true) ?? [];
             $entry['key_learnings_insights'] = json_decode($entry['key_learnings_insights'] ?? '[]', true) ?? [];
+            $entry['is_visible_to_adviser'] = ((int)($entry['is_visible_to_adviser'] ?? 1) === 0) ? 0 : 1;
         }
         
         return $entries;
