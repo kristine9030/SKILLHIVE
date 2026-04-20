@@ -159,7 +159,8 @@ function oldVal(array $old, string $key, string $default = ''): string {
 }
 
 function posting_duration_hours_label($durationWeeks): string {
-  $hours = max(0, (int)$durationWeeks) * 40;
+  $requiredHoursFloor = defined('SKILLHIVE_REQUIRED_OJT_HOURS') ? (int)SKILLHIVE_REQUIRED_OJT_HOURS : 500;
+  $hours = max($requiredHoursFloor, max(0, (int)$durationWeeks) * 40);
   if ($hours <= 0) {
     return 'N/A';
   }
@@ -319,7 +320,7 @@ function posting_duration_hours_label($durationWeeks): string {
               data-status="<?php echo e((string)($posting['status'] ?? 'pending')); ?>"
               data-posted="<?php echo e((string)($posting['posted_at'] ?? '')); ?>"
               data-location="<?php echo e((string)($posting['location'] ?? 'N/A')); ?>"
-              data-duration-hours="<?php echo max(0, (int)($posting['duration_weeks'] ?? 0)) * 40; ?>"
+              data-duration-hours="<?php echo max((defined('SKILLHIVE_REQUIRED_OJT_HOURS') ? (int)SKILLHIVE_REQUIRED_OJT_HOURS : 500), max(0, (int)($posting['duration_weeks'] ?? 0)) * 40); ?>"
               data-applicants="<?php echo (int)($posting['applicants_count'] ?? 0); ?>"
               data-work-setup="<?php echo e((string)($posting['work_setup'] ?? 'N/A')); ?>"
               data-allowance="<?php echo number_format((float)($posting['allowance'] ?? 0), 2, '.', ''); ?>"
@@ -486,7 +487,7 @@ function posting_duration_hours_label($durationWeeks): string {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Duration (hours) <span style="color:var(--red);">*</span></label>
-        <input class="form-control" type="number" min="40" step="1" name="duration_hours" placeholder="e.g. 500" value="<?php echo oldVal($old, 'duration_hours', '500'); ?>" required>
+        <input class="form-control" type="number" min="500" step="1" name="duration_hours" placeholder="e.g. 500" value="<?php echo oldVal($old, 'duration_hours', '500'); ?>" required>
         <div style="font-size:11px;color:var(--grey,#888);margin-top:6px;">Default is 500 hours. You can change this value before posting.</div>
       </div>
       <div class="form-group">

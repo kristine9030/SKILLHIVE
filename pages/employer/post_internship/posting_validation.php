@@ -30,10 +30,12 @@ if (!function_exists('validatePostInternshipPayload')) {
         $old['slots_available'] = trim((string)($post['slots_available'] ?? ''));
         $old['status'] = trim((string)($post['status'] ?? 'Open'));
 
+        $requiredHoursFloor = defined('SKILLHIVE_REQUIRED_OJT_HOURS') ? (int)SKILLHIVE_REQUIRED_OJT_HOURS : 500;
+
         if ($old['duration_hours'] === '') {
             $legacyWeeks = filter_var($old['duration_weeks'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
             if ($legacyWeeks !== false) {
-                $old['duration_hours'] = (string)((int)$legacyWeeks * 40);
+                $old['duration_hours'] = (string)max($requiredHoursFloor, (int)$legacyWeeks * 40);
             }
         }
 
@@ -55,9 +57,9 @@ if (!function_exists('validatePostInternshipPayload')) {
         if ($old['description'] === '') $errors[] = 'Description is required.';
         if ($old['location'] === '') $errors[] = 'Location is required.';
 
-        $durationHours = filter_var($old['duration_hours'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 40]]);
+        $durationHours = filter_var($old['duration_hours'], FILTER_VALIDATE_INT, ['options' => ['min_range' => $requiredHoursFloor]]);
         if ($durationHours === false) {
-            $errors[] = 'Duration hours must be a whole number ≥ 40.';
+            $errors[] = 'Duration hours must be a whole number ≥ ' . $requiredHoursFloor . '.';
         }
 
         $durationWeeks = $durationHours === false ? false : max(1, (int)ceil(((int)$durationHours) / 40));

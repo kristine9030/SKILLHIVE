@@ -139,7 +139,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
       <div class="stat-card-num">248</div>
       <div class="stat-card-label">OJT Hours</div>
     </div>
-    <div class="stat-card-trend neutral">of 400 target</div>
+    <div class="stat-card-trend neutral">of 500 target</div>
   </div>
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(111,66,193,.1)"><i class="fas fa-star" style="color:#6F42C1"></i></div>

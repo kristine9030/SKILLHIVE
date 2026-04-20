@@ -33,6 +33,7 @@ function ojt_get_or_create_record(PDO $pdo, int $studentId): ?array
 
   $internshipId = (int) ($accepted['internship_id'] ?? 0);
   $durationWeeks = max(1, (int) ($accepted['duration_weeks'] ?? 12));
+  $requiredHours = defined('SKILLHIVE_REQUIRED_OJT_HOURS') ? (float) SKILLHIVE_REQUIRED_OJT_HOURS : 500.00;
   $startDate = date('Y-m-d');
   $endDate = date('Y-m-d', strtotime($startDate . ' +' . $durationWeeks . ' weeks'));
 
@@ -49,7 +50,7 @@ function ojt_get_or_create_record(PDO $pdo, int $studentId): ?array
   $stmt->execute([
     $studentId,
     $internshipId,
-    400.00,
+    $requiredHours,
     0.00,
     $startDate,
     $endDate,

@@ -125,7 +125,7 @@ Waitlisted → (not used in transitions)
    - Updates: `application.status` and `application.updated_at`
 
 3. **If Status = 'Accepted'** → Ensures OJT record exists:
-   - Calculated `hours_required` = `internship.duration_weeks * 40`
+   - Calculated `hours_required` = `max(500, internship.duration_weeks * 40)`
    - Creates `ojt_record` with `completion_status='Ongoing'`
    - Sets `start_date=TODAY()`, `end_date=TODAY() + duration_weeks`
 

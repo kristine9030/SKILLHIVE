@@ -306,10 +306,10 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
       <div class="mini-card">
         <div class="mini-label" style="margin-bottom:10px">OJT Progress</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div><div style="font-family:'Poppins', sans-serif;font-weight:600;font-size:1.4rem;color:#111">248</div><div style="font-size:.72rem;color:#999">of 400 hours</div></div>
-          <div style="font-size:.78rem;color:#10B981">62% complete</div>
+          <div><div style="font-family:'Poppins', sans-serif;font-weight:600;font-size:1.4rem;color:#111">248</div><div style="font-size:.72rem;color:#999">of 500 hours</div></div>
+          <div style="font-size:.78rem;color:#10B981">50% complete</div>
         </div>
-        <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:62%;background:linear-gradient(90deg,#06B6D4,#10B981);height:10px;border-radius:50px"></div></div>
+        <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:50%;background:linear-gradient(90deg,#06B6D4,#10B981);height:10px;border-radius:50px"></div></div>
       </div>
     </div>
   </div>

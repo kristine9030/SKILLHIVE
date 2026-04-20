@@ -205,7 +205,7 @@ action=generate_report
         "duration_days": 90,
         "total_journal_entries": 30,
         "hours_completed": 320,
-        "hours_required": 400
+        "hours_required": 500
     }
 }
 ```

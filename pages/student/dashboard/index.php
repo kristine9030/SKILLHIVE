@@ -1,14 +1,21 @@
 <?php
 require_once __DIR__ . '/../../../backend/db_connect.php';
 
-$firstName = explode(' ', $userName)[0];
-
 // Fetch student data
-$stmt = $pdo->prepare("SELECT * FROM student WHERE student_id = ?");
+$stmt = $pdo->prepare('SELECT * FROM student WHERE student_id = ?');
 $stmt->execute([$userId]);
-$student = $stmt->fetch(PDO::FETCH_ASSOC);
+$student = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
-// Compute readiness score dynamically and persist if needed.
+$firstName = trim((string) ($student['first_name'] ?? ''));
+if ($firstName === '') {
+  $nameParts = preg_split('/\s+/', trim((string) $userName)) ?: ['Student'];
+  $firstName = trim((string) ($nameParts[0] ?? 'Student'));
+  if ($firstName === '') {
+    $firstName = 'Student';
+  }
+}
+
+// Fetch skills once and reuse across readiness + completeness widgets.
 $stmt = $pdo->prepare(
   'SELECT ss.skill_level, ss.verified
    FROM student_skill ss
@@ -17,8 +24,17 @@ $stmt = $pdo->prepare(
 $stmt->execute([$userId]);
 $studentSkills = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+$hasBasicInfo = !empty($student['first_name'])
+  && !empty($student['last_name'])
+  && !empty($student['program'])
+  && !empty($student['department'])
+  && !empty($student['year_level']);
+$hasSkills = count($studentSkills) > 0;
 $hasResume = !empty($student['resume_file']);
 $hasPortfolio = !empty($student['profile_picture']);
+$hasPortfolioProject = $hasPortfolio
+  || trim((string) ($student['portfolio_url'] ?? '')) !== ''
+  || trim((string) ($student['portfolio_entries'] ?? '')) !== '';
 
 $readinessScore = 0.0;
 $basicFields = [
@@ -50,7 +66,9 @@ if ($hasPortfolio) {
   $readinessScore += 10;
 }
 
-if (count($studentSkills) > 0) {
+$verifiedSkillCount = 0;
+
+if ($hasSkills) {
   $skillMap = [
     'Beginner' => 40,
     'Intermediate' => 70,
@@ -62,6 +80,7 @@ if (count($studentSkills) > 0) {
     $value = $skillMap[$row['skill_level']] ?? 40;
     if ((int) ($row['verified'] ?? 0) === 1) {
       $value = min(100, $value + 10);
+      $verifiedSkillCount++;
     }
     $totalSkillValue += $value;
   }
@@ -78,6 +97,99 @@ if (abs($storedScore - $readinessScore) >= 0.01) {
 }
 
 $student['internship_readiness_score'] = $readinessScore;
+
+$readinessDelta = round($readinessScore - $storedScore, 2);
+$readinessTrendClass = 'neutral';
+$readinessTrendIcon = 'fa-minus';
+$readinessTrendText = 'No change';
+if ($readinessDelta > 0.01) {
+  $readinessTrendClass = 'up';
+  $readinessTrendIcon = 'fa-arrow-up';
+  $readinessTrendText = '+' . number_format($readinessDelta, 2) . ' pts';
+} elseif ($readinessDelta < -0.01) {
+  $readinessTrendClass = 'down';
+  $readinessTrendIcon = 'fa-arrow-down';
+  $readinessTrendText = number_format($readinessDelta, 2) . ' pts';
+}
+
+$weekStart = date('Y-m-d', strtotime('monday this week'));
+$weekEnd = date('Y-m-d', strtotime($weekStart . ' +6 days'));
+$todayDate = date('Y-m-d');
+
+$applicationStatsStmt = $pdo->prepare(
+  'SELECT
+      COUNT(*) AS total_applications,
+      SUM(CASE WHEN LOWER(TRIM(COALESCE(status, ""))) = "shortlisted" THEN 1 ELSE 0 END) AS shortlisted_total,
+      SUM(CASE WHEN DATE(application_date) BETWEEN ? AND ? THEN 1 ELSE 0 END) AS applications_this_week,
+      SUM(CASE WHEN LOWER(TRIM(COALESCE(status, ""))) = "shortlisted" AND DATE(application_date) = ? THEN 1 ELSE 0 END) AS shortlisted_today
+   FROM application
+   WHERE student_id = ?'
+);
+$applicationStatsStmt->execute([$weekStart, $weekEnd, $todayDate, $userId]);
+$applicationStats = $applicationStatsStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+$totalApplications = (int) ($applicationStats['total_applications'] ?? 0);
+$shortlistedApplications = (int) ($applicationStats['shortlisted_total'] ?? 0);
+$applicationsThisWeek = (int) ($applicationStats['applications_this_week'] ?? 0);
+$shortlistedToday = (int) ($applicationStats['shortlisted_today'] ?? 0);
+
+$applicationsTrendClass = $applicationsThisWeek > 0 ? 'up' : 'neutral';
+$applicationsTrendIcon = $applicationsThisWeek > 0 ? 'fa-arrow-up' : 'fa-minus';
+$applicationsTrendText = $applicationsThisWeek > 0
+  ? '+' . number_format($applicationsThisWeek) . ' this week'
+  : 'No new this week';
+
+$shortlistedTrendClass = $shortlistedToday > 0 ? 'up' : 'neutral';
+$shortlistedTrendIcon = $shortlistedToday > 0 ? 'fa-arrow-up' : 'fa-minus';
+$shortlistedTrendText = $shortlistedToday > 0
+  ? '+' . number_format($shortlistedToday) . ' today'
+  : 'No shortlist today';
+
+$ojtStatsStmt = $pdo->prepare(
+  'SELECT
+      COALESCE(SUM(hours_completed), 0) AS completed_hours,
+      COALESCE(SUM(hours_required), 0) AS required_hours
+   FROM ojt_record
+   WHERE student_id = ?'
+);
+$ojtStatsStmt->execute([$userId]);
+$ojtStats = $ojtStatsStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+$totalOjtHours = round((float) ($ojtStats['completed_hours'] ?? 0), 2);
+$ojtTargetHours = round((float) ($ojtStats['required_hours'] ?? 0), 2);
+
+$totalOjtHoursLabel = abs($totalOjtHours - round($totalOjtHours)) < 0.01
+  ? number_format($totalOjtHours, 0)
+  : number_format($totalOjtHours, 2);
+$ojtTargetHoursLabel = abs($ojtTargetHours - round($ojtTargetHours)) < 0.01
+  ? number_format($ojtTargetHours, 0)
+  : number_format($ojtTargetHours, 2);
+$ojtTargetText = $ojtTargetHours > 0
+  ? 'of ' . $ojtTargetHoursLabel . ' target'
+  : 'No OJT target yet';
+
+$hasCertification = $verifiedSkillCount > 0;
+$profileChecklist = [
+  ['label' => 'Basic information', 'complete' => $hasBasicInfo],
+  ['label' => 'Skills added', 'complete' => $hasSkills],
+  ['label' => 'Resume uploaded', 'complete' => $hasResume],
+  ['label' => 'Add portfolio project', 'complete' => $hasPortfolioProject],
+  ['label' => 'Add certification', 'complete' => $hasCertification],
+];
+
+$profileCompletedChecks = 0;
+foreach ($profileChecklist as $checkItem) {
+  if (!empty($checkItem['complete'])) {
+    $profileCompletedChecks++;
+  }
+}
+
+$profileCompleteness = (int) round(($profileCompletedChecks / max(1, count($profileChecklist))) * 100);
+$profileDashArray = 220;
+$profileDashOffset = (int) round($profileDashArray * (1 - ($profileCompleteness / 100)));
+$profileScoreColor = $profileCompleteness >= 75
+  ? '#10B981'
+  : ($profileCompleteness >= 50 ? '#F59E0B' : '#EF4444');
 
 $recommendedStmt = $pdo->query(
   "SELECT
@@ -116,8 +228,8 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     <div class="stat-card-icon" style="background:rgba(6,182,212,.1)"><i class="fas fa-paper-plane" style="color:#06B6D4"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
-        <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +3 this week</div>
-        <div class="stat-card-num">12</div>
+        <div class="stat-card-trend <?php echo htmlspecialchars($applicationsTrendClass); ?>"><i class="fas <?php echo htmlspecialchars($applicationsTrendIcon); ?>"></i> <?php echo htmlspecialchars($applicationsTrendText); ?></div>
+        <div class="stat-card-num"><?php echo number_format($totalApplications); ?></div>
       </div>
       <div class="stat-card-label">Applications</div>
     </div>
@@ -126,8 +238,8 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-circle" style="color:#10B981"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
-        <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +1 today</div>
-        <div class="stat-card-num">4</div>
+        <div class="stat-card-trend <?php echo htmlspecialchars($shortlistedTrendClass); ?>"><i class="fas <?php echo htmlspecialchars($shortlistedTrendIcon); ?>"></i> <?php echo htmlspecialchars($shortlistedTrendText); ?></div>
+        <div class="stat-card-num"><?php echo number_format($shortlistedApplications); ?></div>
       </div>
       <div class="stat-card-label">Shortlisted</div>
     </div>
@@ -136,8 +248,8 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     <div class="stat-card-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-clock" style="color:#F59E0B"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
-        <div class="stat-card-trend neutral">of 400 target</div>
-        <div class="stat-card-num">248</div>
+        <div class="stat-card-trend neutral"><?php echo htmlspecialchars($ojtTargetText); ?></div>
+        <div class="stat-card-num"><?php echo htmlspecialchars($totalOjtHoursLabel); ?></div>
       </div>
       <div class="stat-card-label">OJT Hours</div>
     </div>
@@ -146,7 +258,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     <div class="stat-card-icon" style="background:rgba(111,66,193,.1)"><i class="fas fa-star" style="color:#6F42C1"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
-        <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +5 pts</div>
+        <div class="stat-card-trend <?php echo htmlspecialchars($readinessTrendClass); ?>"><i class="fas <?php echo htmlspecialchars($readinessTrendIcon); ?>"></i> <?php echo htmlspecialchars($readinessTrendText); ?></div>
         <div class="stat-card-num"><?php echo number_format((float) ($student['internship_readiness_score'] ?? 0), 2); ?></div>
       </div>
       <div class="stat-card-label">Readiness Score</div>
@@ -171,6 +283,9 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         'linear-gradient(135deg,#22C55E,#06B6D4)',
       ];
       ?>
+      <?php if (empty($recommendedInternships)): ?>
+        <div class="mini-row"><span style="color:#999">No open internships available right now.</span></div>
+      <?php endif; ?>
       <?php foreach ($recommendedInternships as $idx => $internship): ?>
         <?php
         $companyName = (string) ($internship['company_name'] ?? 'Company');
@@ -237,16 +352,22 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
       <div class="panel-card-header"><h3>Profile Completeness</h3></div>
       <div style="display:flex;align-items:center;justify-content:center;margin-bottom:20px">
         <div style="position:relative;width:90px;height:90px">
-          <svg width="90" height="90"><circle cx="45" cy="45" r="35" stroke="#F0F0F0" stroke-width="6" fill="none"/><circle cx="45" cy="45" r="35" fill="none" stroke="#06B6D4" stroke-width="6" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="33" transform="rotate(-90,45,45)"/></svg>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:800;font-size:1.1rem;color:#EF4444">85%</div>
+          <svg width="90" height="90"><circle cx="45" cy="45" r="35" stroke="#F0F0F0" stroke-width="6" fill="none"/><circle cx="45" cy="45" r="35" fill="none" stroke="#06B6D4" stroke-width="6" stroke-linecap="round" stroke-dasharray="<?php echo (int) $profileDashArray; ?>" stroke-dashoffset="<?php echo (int) $profileDashOffset; ?>" transform="rotate(-90,45,45)"/></svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:800;font-size:1.1rem;color:<?php echo htmlspecialchars($profileScoreColor); ?>"><?php echo (int) $profileCompleteness; ?>%</div>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <div class="mini-row"><span><i class="fas fa-check-circle" style="color:#10B981;margin-right:6px"></i>Basic information</span></div>
-        <div class="mini-row"><span><i class="fas fa-check-circle" style="color:#10B981;margin-right:6px"></i>Skills added</span></div>
-        <div class="mini-row"><span><i class="fas fa-check-circle" style="color:#10B981;margin-right:6px"></i>Resume uploaded</span></div>
-        <div class="mini-row"><span><i class="fas fa-circle" style="color:#ddd;margin-right:6px;font-size:.7rem"></i><span style="color:#999">Add portfolio project</span></span></div>
-        <div class="mini-row"><span><i class="fas fa-circle" style="color:#ddd;margin-right:6px;font-size:.7rem"></i><span style="color:#999">Add certification</span></span></div>
+        <?php foreach ($profileChecklist as $checkItem): ?>
+          <div class="mini-row">
+            <span>
+              <?php if (!empty($checkItem['complete'])): ?>
+                <i class="fas fa-check-circle" style="color:#10B981;margin-right:6px"></i><?php echo htmlspecialchars((string) $checkItem['label']); ?>
+              <?php else: ?>
+                <i class="fas fa-circle" style="color:#ddd;margin-right:6px;font-size:.7rem"></i><span style="color:#999"><?php echo htmlspecialchars((string) $checkItem['label']); ?></span>
+              <?php endif; ?>
+            </span>
+          </div>
+        <?php endforeach; ?>
       </div>
     </div>
   </div>

@@ -488,11 +488,12 @@ function journal_send_report_email(array $ojt_record, array $report, string $rec
  */
 function journal_generate_final_report(PDO $pdo, array $ojt_record, array $journal_entries): array
 {
+    $defaultRequiredHours = defined('SKILLHIVE_REQUIRED_OJT_HOURS') ? (float) SKILLHIVE_REQUIRED_OJT_HOURS : 500.00;
     $company_name = $ojt_record['company_name'] ?? 'N/A';
     $internship_title = $ojt_record['internship_title'] ?? 'Internship Position';
     $start_date = $ojt_record['start_date'] ?? date('Y-m-d');
     $hours_completed = (float) ($ojt_record['hours_completed'] ?? 0);
-    $hours_required = (float) ($ojt_record['hours_required'] ?? 400);
+    $hours_required = (float) ($ojt_record['hours_required'] ?? $defaultRequiredHours);
     
     // Calculate duration
     $start = new DateTime($start_date);

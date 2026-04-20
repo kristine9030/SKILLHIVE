@@ -86,7 +86,7 @@ Dashboard displays:
 - Unique Skills: 12
 - Total Challenges: 8
 - Avg Daily Tasks: 3.2
-- Hours Progress: 320 / 400 hours
+- Hours Progress: 320 / 500 hours
 ```
 
 #### 4. Review Student Journal Entries

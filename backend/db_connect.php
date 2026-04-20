@@ -16,6 +16,9 @@ if (!defined('RAPIDAPI_ACTIVE_JOBS_KEY')) {
 if (!defined('RAPIDAPI_ACTIVE_JOBS_HOST')) {
     define('RAPIDAPI_ACTIVE_JOBS_HOST', 'active-jobs-search-api.p.rapidapi.com');
 }
+if (!defined('SKILLHIVE_REQUIRED_OJT_HOURS')) {
+    define('SKILLHIVE_REQUIRED_OJT_HOURS', 500.00);
+}
 
 $host = 'localhost';
 $db   = 'skillhive';
@@ -39,6 +42,9 @@ try {
 // Ensure OJT auto-provision triggers exist. This keeps ojt_record synced when
 // application status becomes Accepted from any module.
 try {
+    $requiredOjtHours = (float)SKILLHIVE_REQUIRED_OJT_HOURS;
+    $requiredOjtHoursLiteral = number_format($requiredOjtHours, 2, '.', '');
+
     $triggerNames = [
         'trg_application_ai_create_ojt',
         'trg_application_au_create_ojt',
@@ -46,15 +52,31 @@ try {
 
     $inPlaceholders = implode(',', array_fill(0, count($triggerNames), '?'));
     $stmt = $pdo->prepare(
-        "SELECT TRIGGER_NAME
+        "SELECT TRIGGER_NAME, ACTION_STATEMENT
          FROM information_schema.TRIGGERS
          WHERE TRIGGER_SCHEMA = DATABASE()
            AND TRIGGER_NAME IN ($inPlaceholders)"
     );
     $stmt->execute($triggerNames);
-    $existing = array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    $triggerRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $triggerActions = [];
+    foreach ($triggerRows as $row) {
+        $name = (string)($row['TRIGGER_NAME'] ?? '');
+        if ($name === '') {
+            continue;
+        }
+        $triggerActions[$name] = (string)($row['ACTION_STATEMENT'] ?? '');
+    }
 
-    if (!in_array('trg_application_ai_create_ojt', $existing, true)) {
+    $aiTriggerSql = (string)($triggerActions['trg_application_ai_create_ojt'] ?? '');
+    $needsAiTriggerRefresh = $aiTriggerSql === ''
+        || stripos($aiTriggerSql, $requiredOjtHoursLiteral) === false
+        || stripos($aiTriggerSql, 'GREATEST') === false;
+    if ($needsAiTriggerRefresh) {
+        if (isset($triggerActions['trg_application_ai_create_ojt'])) {
+            $pdo->exec('DROP TRIGGER IF EXISTS trg_application_ai_create_ojt');
+        }
+
         $pdo->exec(
             "CREATE TRIGGER trg_application_ai_create_ojt
              AFTER INSERT ON application
@@ -66,7 +88,7 @@ try {
              SELECT
                 NEW.student_id,
                 NEW.internship_id,
-                400.00,
+                     GREATEST({$requiredOjtHoursLiteral}, COALESCE(i.duration_weeks, 0) * 40.00),
                 0.00,
                 CURDATE(),
                 DATE_ADD(CURDATE(), INTERVAL IFNULL(i.duration_weeks, 12) WEEK),
@@ -85,7 +107,15 @@ try {
         );
     }
 
-    if (!in_array('trg_application_au_create_ojt', $existing, true)) {
+    $auTriggerSql = (string)($triggerActions['trg_application_au_create_ojt'] ?? '');
+    $needsAuTriggerRefresh = $auTriggerSql === ''
+        || stripos($auTriggerSql, $requiredOjtHoursLiteral) === false
+        || stripos($auTriggerSql, 'GREATEST') === false;
+    if ($needsAuTriggerRefresh) {
+        if (isset($triggerActions['trg_application_au_create_ojt'])) {
+            $pdo->exec('DROP TRIGGER IF EXISTS trg_application_au_create_ojt');
+        }
+
         $pdo->exec(
             "CREATE TRIGGER trg_application_au_create_ojt
              AFTER UPDATE ON application
@@ -97,7 +127,7 @@ try {
              SELECT
                 NEW.student_id,
                 NEW.internship_id,
-                400.00,
+                     GREATEST({$requiredOjtHoursLiteral}, COALESCE(i.duration_weeks, 0) * 40.00),
                 0.00,
                 CURDATE(),
                 DATE_ADD(CURDATE(), INTERVAL IFNULL(i.duration_weeks, 12) WEEK),
@@ -118,6 +148,19 @@ try {
     }
 } catch (Throwable $e) {
     // Non-fatal: app should continue even if DB user lacks TRIGGER privilege.
+}
+
+// Schema migration: keep required OJT hours aligned with current policy.
+try {
+    $requiredOjtHours = (float)SKILLHIVE_REQUIRED_OJT_HOURS;
+    $stmt = $pdo->prepare(
+        'UPDATE ojt_record
+         SET hours_required = ?, updated_at = NOW()
+         WHERE COALESCE(hours_required, 0) < ?'
+    );
+    $stmt->execute([$requiredOjtHours, $requiredOjtHours]);
+} catch (Throwable $e) {
+    // Non-fatal: app should continue even if migration fails.
 }
 
 // Schema Migration: Ensure interview_time column exists on interview table

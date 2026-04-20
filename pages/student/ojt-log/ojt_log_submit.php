@@ -4,6 +4,7 @@ function ojt_log_handle_submit(PDO $pdo, ?array $ojt): array
 {
   $errorMsg = '';
   $successMsg = '';
+  $defaultRequiredHours = defined('SKILLHIVE_REQUIRED_OJT_HOURS') ? (float) SKILLHIVE_REQUIRED_OJT_HOURS : 500.00;
 
   if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['log_entry'])) {
     return ['errorMsg' => $errorMsg, 'successMsg' => $successMsg];
@@ -69,14 +70,14 @@ function ojt_log_handle_submit(PDO $pdo, ?array $ojt): array
 
   $stmt = $pdo->prepare('SELECT hours_completed, hours_required FROM ojt_record WHERE record_id = ? LIMIT 1');
   $stmt->execute([(int) $ojt['record_id']]);
-  $updatedOjt = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['hours_completed' => 0, 'hours_required' => 400];
+  $updatedOjt = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['hours_completed' => 0, 'hours_required' => $defaultRequiredHours];
 
   $stmt = $pdo->prepare('SELECT COUNT(DISTINCT log_date) AS days, COUNT(*) AS tasks FROM daily_log WHERE record_id = ?');
   $stmt->execute([(int) $ojt['record_id']]);
   $counts = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['days' => 0, 'tasks' => 0];
 
   $hoursCompleted = (float) ($updatedOjt['hours_completed'] ?? 0);
-  $hoursRequired = (float) ($updatedOjt['hours_required'] ?? 400);
+  $hoursRequired = (float) ($updatedOjt['hours_required'] ?? $defaultRequiredHours);
   $progressPct = $hoursRequired > 0 ? (int) round(($hoursCompleted / $hoursRequired) * 100) : 0;
 
   if ($isAjax) {

@@ -2,8 +2,9 @@
 
 function ojt_load_summary(PDO $pdo, ?array $ojt): array
 {
+  $defaultRequiredHours = defined('SKILLHIVE_REQUIRED_OJT_HOURS') ? (float) SKILLHIVE_REQUIRED_OJT_HOURS : 500.00;
   $hoursLogged = (float) ($ojt['hours_completed'] ?? 0);
-  $hoursTarget = (float) ($ojt['hours_required'] ?? 400);
+  $hoursTarget = (float) ($ojt['hours_required'] ?? $defaultRequiredHours);
   $progress = $hoursTarget > 0 ? (int) round(($hoursLogged / $hoursTarget) * 100) : 0;
   $daysPresent = 0;
   $tasksCompleted = 0;

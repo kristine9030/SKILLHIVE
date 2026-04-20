@@ -300,7 +300,8 @@ if (!function_exists('candidates_ensure_ojt_record')) {
         $studentId = (int)($details['student_id'] ?? 0);
         $internshipId = (int)($details['internship_id'] ?? 0);
         $durationWeeks = max(0, (int)($details['duration_weeks'] ?? 0));
-        $hoursRequired = $durationWeeks > 0 ? (float)($durationWeeks * 40) : 0.0;
+        $requiredHoursFloor = defined('SKILLHIVE_REQUIRED_OJT_HOURS') ? (float)SKILLHIVE_REQUIRED_OJT_HOURS : 500.00;
+        $hoursRequired = $durationWeeks > 0 ? max($requiredHoursFloor, (float)($durationWeeks * 40)) : $requiredHoursFloor;
 
         $existsStmt = $pdo->prepare(
             'SELECT record_id
