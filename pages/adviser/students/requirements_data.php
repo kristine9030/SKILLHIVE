@@ -28,9 +28,10 @@ if ($requestMethod === 'POST') {
     $internshipIdRaw = trim((string)($_POST['internship_id'] ?? ''));
     $internshipId = $internshipIdRaw === '' ? null : (int)$internshipIdRaw;
     $requirementId = (int)($_POST['requirement_id'] ?? 0);
+    $requirementKey = trim((string)($_POST['requirement_key'] ?? ''));
     $isChecked = ((string)($_POST['is_checked'] ?? '0')) === '1';
 
-    if ($studentId <= 0 || $requirementId <= 0) {
+    if ($studentId <= 0 || ($requirementId <= 0 && $requirementKey === '')) {
         http_response_code(422);
         echo json_encode(['success' => false, 'message' => 'Invalid requirement toggle payload']);
         exit;
@@ -43,6 +44,7 @@ if ($requestMethod === 'POST') {
             $studentId,
             $internshipId,
             $requirementId,
+            $requirementKey,
             $isChecked
         );
 

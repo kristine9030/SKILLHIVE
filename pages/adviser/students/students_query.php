@@ -54,21 +54,21 @@ if (!function_exists('adviser_students_get_rows')) {
                                         ORDER BY e_latest.endorsement_id DESC
                                         LIMIT 1
                                 ) AS moa_status,
-                (
-                    SELECT COUNT(*)
-                    FROM requirement r_total
-                    WHERE r_total.applicable_to IN ("Student", "Both")
-                ) AS total_requirements,
+                    (
+                      SELECT COUNT(*)
+                      FROM requirement r_total
+                      WHERE r_total.applicable_to = "Student"
+                    ) AS total_requirements,
                 (
                     SELECT COUNT(DISTINCT sr.requirement_id)
                     FROM student_requirement sr
                     INNER JOIN requirement r_link ON r_link.requirement_id = sr.requirement_id
                     WHERE sr.student_id = s.student_id
-                      AND r_link.applicable_to IN ("Student", "Both")
+                        AND r_link.applicable_to = "Student"
                       AND sr.status IN ("Submitted", "Approved")
                       AND (
-                            o.internship_id IS NULL
-                            OR sr.internship_id = o.internship_id
+                            (o.internship_id IS NULL AND sr.internship_id IS NULL)
+                            OR (o.internship_id IS NOT NULL AND sr.internship_id = o.internship_id)
                       )
                 ) AS submitted_requirements
             FROM (

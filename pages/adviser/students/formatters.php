@@ -100,6 +100,59 @@ if (!function_exists('adviser_students_requirements_summary')) {
     }
 }
 
+if (!function_exists('adviser_students_normalize_requirement_name')) {
+    function adviser_students_normalize_requirement_name(?string $name): string
+    {
+        return strtolower(trim((string)($name ?? '')));
+    }
+}
+
+if (!function_exists('adviser_students_requirement_key')) {
+    function adviser_students_requirement_key(?string $name): string
+    {
+        $normalized = adviser_students_normalize_requirement_name($name);
+        if ($normalized === '') {
+            return '';
+        }
+
+        $normalized = preg_replace('/[^a-z0-9]+/', '-', $normalized);
+        return trim((string)$normalized, '-');
+    }
+}
+
+if (!function_exists('adviser_students_local_ojt_requirements')) {
+    function adviser_students_local_ojt_requirements(): array
+    {
+        return [
+            ['name' => 'Internship Training Agreement', 'phase' => 'Pre-OJT'],
+            ['name' => "Notarized Parent/Guardian's Consent", 'phase' => 'Pre-OJT'],
+            ['name' => 'Personal History Statement/Resume', 'phase' => 'Pre-OJT'],
+            ['name' => 'Photocopy of Enrollment/Registration Form', 'phase' => 'Pre-OJT'],
+            ['name' => 'Photocopy of Insurance Certificate', 'phase' => 'Pre-OJT'],
+            ['name' => 'Medical Certificate', 'phase' => 'Pre-OJT'],
+            ['name' => 'Received Copy of Endorsement Letter', 'phase' => 'Pre-OJT'],
+            ['name' => 'Copy of Acceptance Letter from Training Establishment', 'phase' => 'Pre-OJT'],
+            ['name' => 'OJT Time Frame', 'phase' => 'Pre-OJT'],
+            ['name' => 'Copy of Internship Plan', 'phase' => 'Pre-OJT'],
+        ];
+    }
+}
+
+if (!function_exists('adviser_students_local_ojt_requirement_names')) {
+    function adviser_students_local_ojt_requirement_names(): array
+    {
+        $names = [];
+        foreach (adviser_students_local_ojt_requirements() as $item) {
+            $name = trim((string)($item['name'] ?? ''));
+            if ($name !== '') {
+                $names[] = $name;
+            }
+        }
+
+        return $names;
+    }
+}
+
 if (!function_exists('adviser_students_year_level_label')) {
     function adviser_students_year_level_label($value): string
     {

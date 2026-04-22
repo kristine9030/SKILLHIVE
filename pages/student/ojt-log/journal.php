@@ -1109,6 +1109,19 @@ if (!isset($baseUrl)) {
         </div>
     </div>
 
+    <div id="entrySaveSuccessModal" class="entry-modal" aria-hidden="true">
+        <div class="entry-modal-backdrop" onclick="closeSaveSuccessModal()"></div>
+        <div class="entry-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="entrySaveSuccessTitle">
+            <div class="entry-modal-header">
+                <h3 id="entrySaveSuccessTitle" class="entry-modal-title"><i class="fas fa-check-circle"></i> Journal Entry Saved</h3>
+                <button type="button" class="entry-modal-close" onclick="closeSaveSuccessModal()" aria-label="Close saved entry modal">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+            <div id="entrySaveSuccessBody" class="entry-modal-body"></div>
+        </div>
+    </div>
+
     <script>
         const baseUrl = '<?php echo $baseUrl; ?>';
         let latestSavedJournalId = null;
@@ -1635,7 +1648,7 @@ if (!isset($baseUrl)) {
             .then(data => {
                 if (data.ok) {
                     latestSavedJournalId = Number(data.journal_id || 0) || null;
-                    alert('Entry saved successfully! Journal ID: ' + data.journal_id);
+                    openSaveSuccessModal();
                     document.getElementById('journalForm').reset();
                     document.getElementById('previewContainer').innerHTML = 
                         '<div style="text-align: center; padding: 40px 20px; color: var(--text3);"><i class="fas fa-check-circle" style="font-size: 2rem; color: #10b981; margin-bottom: 12px;"></i><p>Entry saved! Generate another entry or view your journal.</p></div>';
@@ -1706,6 +1719,36 @@ if (!isset($baseUrl)) {
             return html;
         }
 
+        function openSaveSuccessModal() {
+            const modal = document.getElementById('entrySaveSuccessModal');
+            const modalBody = document.getElementById('entrySaveSuccessBody');
+            if (!modal || !modalBody) {
+                return;
+            }
+
+            modalBody.innerHTML =
+                '<div style="text-align:center;padding:22px 12px;">'
+                + '<i class="fas fa-circle-check" style="font-size:2.15rem;color:#10b981;margin-bottom:10px;"></i>'
+                + '<p style="margin:0;color:#0f172a;font-weight:700;font-size:1rem;">Entry saved successfully.</p>'
+                + '<p style="margin:10px 0 0;color:#64748b;font-size:.88rem;">You can create another entry or view your saved journal entries.</p>'
+                + '</div>';
+
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSaveSuccessModal() {
+            const modal = document.getElementById('entrySaveSuccessModal');
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+
         function openEntryModal(entry) {
             const modal = document.getElementById('entryDetailModal');
             const modalBody = document.getElementById('entryModalBody');
@@ -1759,6 +1802,12 @@ if (!isset($baseUrl)) {
 
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape') {
+                return;
+            }
+
+            const saveSuccessModal = document.getElementById('entrySaveSuccessModal');
+            if (saveSuccessModal && saveSuccessModal.classList.contains('active')) {
+                closeSaveSuccessModal();
                 return;
             }
 

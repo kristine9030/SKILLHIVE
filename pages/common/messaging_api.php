@@ -512,6 +512,51 @@ if (!function_exists('messaging_has_employer_adviser_relationship')) {
     }
 }
 
+if (!function_exists('messaging_students_share_active_adviser')) {
+    function messaging_students_share_active_adviser($pdo, int $studentAId, int $studentBId): bool
+    {
+        static $cache = [];
+
+        $studentAId = (int)$studentAId;
+        $studentBId = (int)$studentBId;
+        if ($studentAId <= 0 || $studentBId <= 0 || $studentAId === $studentBId) {
+            return false;
+        }
+
+        $first = min($studentAId, $studentBId);
+        $second = max($studentAId, $studentBId);
+        $key = $first . '_' . $second;
+
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+
+        try {
+            $stmt = $pdo->prepare(
+                'SELECT 1
+                 FROM adviser_assignment aa1
+                 INNER JOIN adviser_assignment aa2
+                    ON aa2.adviser_id = aa1.adviser_id
+                 WHERE aa1.student_id = :student_a
+                   AND aa2.student_id = :student_b
+                   AND COALESCE(NULLIF(TRIM(aa1.status), ""), "Active") = "Active"
+                   AND COALESCE(NULLIF(TRIM(aa2.status), ""), "Active") = "Active"
+                 LIMIT 1'
+            );
+            $stmt->execute([
+                ':student_a' => $studentAId,
+                ':student_b' => $studentBId,
+            ]);
+
+            $cache[$key] = (bool)$stmt->fetchColumn();
+            return $cache[$key];
+        } catch (Throwable $e) {
+            $cache[$key] = false;
+            return false;
+        }
+    }
+}
+
 if (!function_exists('messaging_can_message')) {
     function messaging_can_message($pdo, string $fromRole, int $fromId, string $toRole, int $toId): bool
     {
@@ -524,7 +569,14 @@ if (!function_exists('messaging_can_message')) {
             return false;
         }
 
+        if (!messaging_role_exists($pdo, $fromRole, $fromId) || !messaging_role_exists($pdo, $toRole, $toId)) {
+            return false;
+        }
+
         if ($fromRole === $toRole) {
+            if ($fromRole === 'student') {
+                return messaging_students_share_active_adviser($pdo, $fromId, $toId);
+            }
             return false;
         }
 
@@ -543,10 +595,6 @@ if (!function_exists('messaging_can_message')) {
         ];
 
         if (!in_array($pair, $allowedPairs, true)) {
-            return false;
-        }
-
-        if (!messaging_role_exists($pdo, $fromRole, $fromId) || !messaging_role_exists($pdo, $toRole, $toId)) {
             return false;
         }
 
@@ -593,6 +641,10 @@ if (!messaging_validate_role($role) || $userId <= 0) {
     messaging_api_respond(['ok' => false, 'error' => 'Unauthorized'], 401);
 }
 
+if (in_array($action, ['create_group_chat', 'get_group_messages', 'send_group_message'], true)) {
+    messaging_api_respond(['ok' => false, 'error' => 'Group chat is disabled'], 403);
+}
+
 try {
     // ==================== LIST CONVERSATIONS ====================
     if ($action === 'list_conversations') {
@@ -618,17 +670,6 @@ try {
         );
         $stmt->execute([$userId, $role, $userId, $role, $userId, $role, $userId, $role, $userId, $role]);
         $directConversations = $stmt->fetchAll();
-
-        // Get group chat conversations
-        $gcStmt = $pdo->prepare(
-            "SELECT g.group_chat_id, g.group_name, g.created_at as last_msg_at
-             FROM group_chat g
-             INNER JOIN group_chat_members m ON g.group_chat_id = m.group_chat_id
-             WHERE m.member_id = ? AND m.member_role = ?
-             ORDER BY g.created_at DESC"
-        );
-        $gcStmt->execute([$userId, $role]);
-        $groupChats = $gcStmt->fetchAll();
 
         $result = [];
 
@@ -666,19 +707,6 @@ try {
                 'last_message_at' => $last_msg_at,
                 'last_message_time' => messaging_format_time($last_msg_at),
                 'unread_count' => $unread,
-            ];
-        }
-
-        // Process group chats
-        foreach ($groupChats as $gc) {
-            $result[] = [
-                'type' => 'group',
-                'conversation_id' => 'gc_' . $gc['group_chat_id'],
-                'group_chat_id' => (int)$gc['group_chat_id'],
-                'group_name' => (string)$gc['group_name'],
-                'last_message' => '',
-                'last_message_time' => messaging_format_time((string)$gc['last_msg_at']),
-                'unread_count' => 0,
             ];
         }
 

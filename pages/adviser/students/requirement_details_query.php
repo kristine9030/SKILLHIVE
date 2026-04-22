@@ -4,6 +4,8 @@
  * Tables/columns used: adviser_assignment(adviser_id, student_id, status), requirement(requirement_id, name, phase, applicable_to, sort_order), student_requirement(req_submission_id, student_id, internship_id, requirement_id, status, submitted_at, reviewed_at, deadline).
  */
 
+require_once __DIR__ . '/formatters.php';
+
 if (!function_exists('adviser_students_format_modal_date')) {
     function adviser_students_format_modal_date(?string $rawDate): string
     {
@@ -18,6 +20,239 @@ if (!function_exists('adviser_students_format_modal_date')) {
         } catch (Throwable $e) {
             return '';
         }
+    }
+}
+
+if (!function_exists('adviser_students_ensure_requirement_storage_schema')) {
+    function adviser_students_ensure_requirement_storage_schema(PDO $pdo): void
+    {
+        static $ensured = false;
+        if ($ensured) {
+            return;
+        }
+
+        // Allow checklist writes even when internship context does not exist yet.
+        try {
+            $nullableStmt = $pdo->prepare(
+                'SELECT IS_NULLABLE
+                 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = "student_requirement"
+                   AND COLUMN_NAME = "internship_id"
+                 LIMIT 1'
+            );
+            $nullableStmt->execute();
+            $isNullable = strtoupper((string)($nullableStmt->fetchColumn() ?: 'NO'));
+            if ($isNullable !== 'YES') {
+                $pdo->exec('ALTER TABLE student_requirement MODIFY internship_id INT(10) UNSIGNED NULL');
+            }
+        } catch (Throwable $e) {
+            // Non-fatal; downstream logic will continue with best effort.
+        }
+
+        try {
+            $pdo->exec(
+                'CREATE TABLE IF NOT EXISTS adviser_requirement_draft (
+                    draft_id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+                    student_id INT(10) UNSIGNED NOT NULL,
+                    requirement_key VARCHAR(191) NOT NULL,
+                    is_checked TINYINT(1) NOT NULL DEFAULT 0,
+                    updated_by INT(10) UNSIGNED DEFAULT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (draft_id),
+                    UNIQUE KEY uq_ard_student_requirement (student_id, requirement_key),
+                    KEY idx_ard_student (student_id),
+                    CONSTRAINT fk_ard_student FOREIGN KEY (student_id)
+                        REFERENCES student(student_id)
+                        ON DELETE CASCADE
+                        ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+            );
+        } catch (Throwable $e) {
+            // Non-fatal; draft table may already be managed outside this module.
+        }
+
+        $ensured = true;
+    }
+}
+
+if (!function_exists('adviser_students_get_requirement_draft_map')) {
+    function adviser_students_get_requirement_draft_map(PDO $pdo, int $studentId): array
+    {
+        if ($studentId <= 0) {
+            return [];
+        }
+
+        adviser_students_ensure_requirement_storage_schema($pdo);
+
+        try {
+            $stmt = $pdo->prepare(
+                'SELECT requirement_key, is_checked
+                 FROM adviser_requirement_draft
+                 WHERE student_id = :student_id'
+            );
+            $stmt->execute([':student_id' => $studentId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($rows as $row) {
+            $normalizedRequirementKey = adviser_students_requirement_key((string)($row['requirement_key'] ?? ''));
+            if ($normalizedRequirementKey === '') {
+                continue;
+            }
+
+            $rawValue = $row['is_checked'] ?? 0;
+            $result[$normalizedRequirementKey] = ((string)$rawValue === '1' || $rawValue === 1 || $rawValue === true);
+        }
+
+        return $result;
+    }
+}
+
+if (!function_exists('adviser_students_set_requirement_draft_status')) {
+    function adviser_students_set_requirement_draft_status(PDO $pdo, int $studentId, string $requirementKey, bool $isChecked, ?int $adviserId = null): void
+    {
+        $normalizedRequirementKey = adviser_students_requirement_key($requirementKey);
+        if ($studentId <= 0 || $normalizedRequirementKey === '') {
+            return;
+        }
+
+        adviser_students_ensure_requirement_storage_schema($pdo);
+
+        $upsertStmt = $pdo->prepare(
+            'INSERT INTO adviser_requirement_draft (
+                student_id,
+                requirement_key,
+                is_checked,
+                updated_by,
+                created_at,
+                updated_at
+            ) VALUES (
+                :student_id_insert,
+                :requirement_key_insert,
+                :is_checked_insert,
+                :updated_by_insert,
+                NOW(),
+                NOW()
+            )
+            ON DUPLICATE KEY UPDATE
+                is_checked = :is_checked_update,
+                updated_by = :updated_by_update,
+                updated_at = NOW()'
+        );
+        $upsertStmt->execute([
+            ':student_id_insert' => $studentId,
+            ':requirement_key_insert' => $normalizedRequirementKey,
+            ':is_checked_insert' => $isChecked ? 1 : 0,
+            ':updated_by_insert' => ($adviserId !== null && $adviserId > 0) ? $adviserId : null,
+            ':is_checked_update' => $isChecked ? 1 : 0,
+            ':updated_by_update' => ($adviserId !== null && $adviserId > 0) ? $adviserId : null,
+        ]);
+    }
+}
+
+if (!function_exists('adviser_students_clear_requirement_draft_status')) {
+    function adviser_students_clear_requirement_draft_status(PDO $pdo, int $studentId, string $requirementKey): void
+    {
+        $normalizedRequirementKey = adviser_students_requirement_key($requirementKey);
+        if ($studentId <= 0 || $normalizedRequirementKey === '') {
+            return;
+        }
+
+        adviser_students_ensure_requirement_storage_schema($pdo);
+
+        try {
+            $stmt = $pdo->prepare(
+                'DELETE FROM adviser_requirement_draft
+                 WHERE student_id = :student_id
+                   AND requirement_key = :requirement_key'
+            );
+            $stmt->execute([
+                ':student_id' => $studentId,
+                ':requirement_key' => $normalizedRequirementKey,
+            ]);
+        } catch (Throwable $e) {
+            // Non-fatal cleanup.
+        }
+    }
+}
+
+if (!function_exists('adviser_students_local_requirement_key_set')) {
+    function adviser_students_local_requirement_key_set(PDO $pdo): array
+    {
+        $keys = [];
+        foreach (array_keys(adviser_students_requirement_ids_by_key($pdo)) as $key) {
+            $normalizedKey = adviser_students_requirement_key($key);
+            if ($normalizedKey !== '') {
+                $keys[$normalizedKey] = true;
+            }
+        }
+
+        return $keys;
+    }
+}
+
+if (!function_exists('adviser_students_requirement_ids_by_key')) {
+    function adviser_students_requirement_ids_by_key(PDO $pdo): array
+    {
+        $stmt = $pdo->prepare(
+            'SELECT requirement_id, name
+             FROM requirement
+             WHERE applicable_to = "Student"'
+        );
+        $stmt->execute();
+
+        $map = [];
+        foreach (($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) as $row) {
+            $key = adviser_students_requirement_key((string)($row['name'] ?? ''));
+            if ($key === '') {
+                continue;
+            }
+            if (!isset($map[$key])) {
+                $map[$key] = (int)($row['requirement_id'] ?? 0);
+            }
+        }
+
+        return $map;
+    }
+}
+
+if (!function_exists('adviser_students_student_requirements')) {
+    function adviser_students_student_requirements(PDO $pdo): array
+    {
+        $stmt = $pdo->prepare(
+            'SELECT requirement_id, name, phase
+             FROM requirement
+             WHERE applicable_to = "Student"
+             ORDER BY FIELD(phase, "Pre-OJT", "During OJT", "Post-OJT"), sort_order ASC, requirement_id ASC'
+        );
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $result = [];
+        foreach ($rows as $row) {
+            $name = trim((string)($row['name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            $phase = trim((string)($row['phase'] ?? 'Pre-OJT'));
+            if (!in_array($phase, ['Pre-OJT', 'During OJT', 'Post-OJT'], true)) {
+                $phase = 'Pre-OJT';
+            }
+
+            $result[] = [
+                'requirement_id' => (int)($row['requirement_id'] ?? 0),
+                'name' => $name,
+                'phase' => $phase,
+            ];
+        }
+
+        return $result;
     }
 }
 
@@ -50,40 +285,70 @@ if (!function_exists('adviser_students_get_requirements_modal_data')) {
         $resolvedInternshipId = $internshipFilterId > 0
             ? $internshipFilterId
             : (int)(adviser_students_resolve_internship_id($pdo, $studentId) ?? 0);
+        $effectiveInternshipFilterId = $internshipFilterId > 0
+            ? $internshipFilterId
+            : $resolvedInternshipId;
 
-        $stmt = $pdo->prepare(
-            'SELECT
-                r.requirement_id,
-                r.name,
-                r.phase,
-                r.sort_order,
-                sr.status AS submission_status,
-                sr.submitted_at,
-                sr.reviewed_at,
-                sr.deadline
-             FROM requirement r
-             LEFT JOIN (
-                SELECT sr1.*
-                FROM student_requirement sr1
-                INNER JOIN (
+        adviser_students_ensure_requirement_storage_schema($pdo);
+
+        $localRequirements = adviser_students_student_requirements($pdo);
+
+        $localRequirementIds = [];
+        foreach ($localRequirements as $localRequirement) {
+            $localRequirementId = (int)($localRequirement['requirement_id'] ?? 0);
+            if ($localRequirementId > 0) {
+                $localRequirementIds[] = $localRequirementId;
+            }
+        }
+        $localRequirementIds = array_values(array_unique($localRequirementIds));
+
+        $submissionByRequirementId = [];
+        if ($localRequirementIds !== []) {
+            $submissionRequirementPlaceholders = [];
+            $submissionParams = [
+                ':student_id_latest' => $studentId,
+            ];
+
+            $submissionInternshipFilterSql = 'AND internship_id IS NULL';
+            if ($effectiveInternshipFilterId > 0) {
+                $submissionInternshipFilterSql = 'AND internship_id = :internship_id_match';
+                $submissionParams[':internship_id_match'] = $effectiveInternshipFilterId;
+            }
+
+            foreach ($localRequirementIds as $index => $localRequirementId) {
+                $placeholder = ':submission_req_id_' . $index;
+                $submissionRequirementPlaceholders[] = $placeholder;
+                $submissionParams[$placeholder] = (int)$localRequirementId;
+            }
+
+            $submissionStmt = $pdo->prepare(
+                'SELECT
+                    sr.requirement_id,
+                    sr.status AS submission_status,
+                    sr.submitted_at,
+                    sr.reviewed_at,
+                    sr.deadline
+                 FROM student_requirement sr
+                 INNER JOIN (
                     SELECT requirement_id, MAX(req_submission_id) AS max_submission_id
                     FROM student_requirement
                     WHERE student_id = :student_id_latest
-                      AND (:internship_id_latest = 0 OR internship_id = :internship_id_match)
+                      AND requirement_id IN (' . implode(', ', $submissionRequirementPlaceholders) . ')
+                                            ' . $submissionInternshipFilterSql . '
                     GROUP BY requirement_id
-                ) latest ON latest.max_submission_id = sr1.req_submission_id
-             ) sr ON sr.requirement_id = r.requirement_id
-             WHERE r.applicable_to IN ("Student", "Both")
-             ORDER BY FIELD(r.phase, "Pre-OJT", "During OJT", "Post-OJT"), r.sort_order ASC, r.requirement_id ASC'
-        );
+                 ) latest ON latest.max_submission_id = sr.req_submission_id'
+            );
+            $submissionStmt->execute($submissionParams);
 
-        $stmt->execute([
-            ':student_id_latest' => $studentId,
-            ':internship_id_latest' => $internshipFilterId,
-            ':internship_id_match' => $internshipFilterId,
-        ]);
+            foreach (($submissionStmt->fetchAll(PDO::FETCH_ASSOC) ?: []) as $submissionRow) {
+                $submissionRequirementId = (int)($submissionRow['requirement_id'] ?? 0);
+                if ($submissionRequirementId > 0) {
+                    $submissionByRequirementId[$submissionRequirementId] = $submissionRow;
+                }
+            }
+        }
 
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $draftByRequirementKey = adviser_students_get_requirement_draft_map($pdo, $studentId);
 
         $phases = [
             'Pre-OJT' => [],
@@ -94,13 +359,27 @@ if (!function_exists('adviser_students_get_requirements_modal_data')) {
         $submittedCount = 0;
         $totalCount = 0;
 
-        foreach ($rows as $row) {
-            $phase = trim((string)($row['phase'] ?? ''));
+        foreach ($localRequirements as $localRequirement) {
+            $name = trim((string)($localRequirement['name'] ?? 'Requirement'));
+            if ($name === '') {
+                continue;
+            }
+
+            $phase = trim((string)($localRequirement['phase'] ?? 'Pre-OJT'));
             if (!isset($phases[$phase])) {
                 $phase = 'Pre-OJT';
             }
 
-            $status = trim((string)($row['submission_status'] ?? ''));
+            $requirementKey = adviser_students_requirement_key($name);
+            $requirementId = (int)($localRequirement['requirement_id'] ?? 0);
+            $submissionRow = $requirementId > 0
+                ? ($submissionByRequirementId[$requirementId] ?? null)
+                : null;
+
+            $status = trim((string)($submissionRow['submission_status'] ?? ''));
+            if ($status === '' && $requirementKey !== '' && array_key_exists($requirementKey, $draftByRequirementKey)) {
+                $status = $draftByRequirementKey[$requirementKey] ? 'Submitted' : 'Pending';
+            }
             if ($status === '') {
                 $status = 'Pending';
             }
@@ -111,21 +390,23 @@ if (!function_exists('adviser_students_get_requirements_modal_data')) {
             }
             $totalCount++;
 
-            $dateLabel = adviser_students_format_modal_date((string)($row['submitted_at'] ?? ''));
+            $dateLabel = adviser_students_format_modal_date((string)($submissionRow['submitted_at'] ?? ''));
             if ($dateLabel === '') {
-                $dateLabel = adviser_students_format_modal_date((string)($row['reviewed_at'] ?? ''));
+                $dateLabel = adviser_students_format_modal_date((string)($submissionRow['reviewed_at'] ?? ''));
             }
             if ($dateLabel === '') {
-                $dateLabel = adviser_students_format_modal_date((string)($row['deadline'] ?? ''));
+                $dateLabel = adviser_students_format_modal_date((string)($submissionRow['deadline'] ?? ''));
             }
 
             $phases[$phase][] = [
-                'requirement_id' => (int)($row['requirement_id'] ?? 0),
-                'name' => (string)($row['name'] ?? 'Requirement'),
+                'requirement_id' => $requirementId,
+                'requirement_key' => $requirementKey,
+                'name' => $name,
                 'phase' => $phase,
                 'status' => $status,
                 'is_submitted' => $isSubmitted,
                 'date_label' => $dateLabel,
+                'can_toggle' => $requirementKey !== '',
             ];
         }
 
@@ -140,7 +421,7 @@ if (!function_exists('adviser_students_get_requirements_modal_data')) {
                 'total' => $totalCount,
             ],
             'phases' => $phases,
-            'can_edit' => $resolvedInternshipId > 0,
+            'can_edit' => true,
             'internship_id_context' => $resolvedInternshipId > 0 ? $resolvedInternshipId : null,
         ];
     }
@@ -178,7 +459,7 @@ if (!function_exists('adviser_students_resolve_internship_id')) {
 }
 
 if (!function_exists('adviser_students_toggle_requirement_submission')) {
-    function adviser_students_toggle_requirement_submission(PDO $pdo, int $adviserId, int $studentId, ?int $internshipId, int $requirementId, bool $isChecked): array
+    function adviser_students_toggle_requirement_submission(PDO $pdo, int $adviserId, int $studentId, ?int $internshipId, int $requirementId, string $requirementKey, bool $isChecked): array
     {
         $authStmt = $pdo->prepare(
             'SELECT 1
@@ -197,44 +478,89 @@ if (!function_exists('adviser_students_toggle_requirement_submission')) {
             throw new RuntimeException('Unauthorized assignment access.');
         }
 
-        $reqStmt = $pdo->prepare(
-            'SELECT requirement_id
-             FROM requirement
-             WHERE requirement_id = :requirement_id
-               AND applicable_to IN ("Student", "Both")
-             LIMIT 1'
-        );
-        $reqStmt->execute([':requirement_id' => $requirementId]);
-        if (!$reqStmt->fetchColumn()) {
+        adviser_students_ensure_requirement_storage_schema($pdo);
+
+        $normalizedRequirementKey = adviser_students_requirement_key($requirementKey);
+        $localRequirementKeySet = adviser_students_local_requirement_key_set($pdo);
+        if ($normalizedRequirementKey !== '' && !isset($localRequirementKeySet[$normalizedRequirementKey])) {
             throw new RuntimeException('Requirement not found.');
+        }
+
+        $effectiveRequirementId = $requirementId > 0 ? $requirementId : 0;
+        if ($effectiveRequirementId > 0) {
+            $reqStmt = $pdo->prepare(
+                'SELECT requirement_id, name
+                 FROM requirement
+                 WHERE requirement_id = :requirement_id
+                                     AND applicable_to = "Student"
+                 LIMIT 1'
+            );
+            $reqStmt->execute([':requirement_id' => $effectiveRequirementId]);
+            $requirementRow = $reqStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            if ($requirementRow === null) {
+                throw new RuntimeException('Requirement not found.');
+            }
+
+            $resolvedKeyFromDb = adviser_students_requirement_key((string)($requirementRow['name'] ?? ''));
+            if ($resolvedKeyFromDb === '' || !isset($localRequirementKeySet[$resolvedKeyFromDb])) {
+                throw new RuntimeException('Requirement not found.');
+            }
+
+            $normalizedRequirementKey = $resolvedKeyFromDb;
+            $effectiveRequirementId = (int)($requirementRow['requirement_id'] ?? 0);
+        } elseif ($normalizedRequirementKey !== '') {
+            $requirementIdByKey = adviser_students_requirement_ids_by_key($pdo);
+            $effectiveRequirementId = (int)($requirementIdByKey[$normalizedRequirementKey] ?? 0);
+        }
+
+        if ($normalizedRequirementKey === '') {
+            throw new RuntimeException('Requirement not found.');
+        }
+
+        if ($effectiveRequirementId <= 0) {
+            adviser_students_set_requirement_draft_status($pdo, $studentId, $normalizedRequirementKey, $isChecked, $adviserId);
+            return adviser_students_get_requirements_modal_data($pdo, $adviserId, $studentId, $internshipId);
         }
 
         $resolvedInternshipId = (int)($internshipId ?? 0);
         if ($resolvedInternshipId <= 0) {
             $resolvedInternshipId = (int)(adviser_students_resolve_internship_id($pdo, $studentId) ?? 0);
         }
-        if ($resolvedInternshipId <= 0) {
-            throw new InvalidArgumentException('No internship context found for this student.');
-        }
 
         $newStatus = $isChecked ? 'Submitted' : 'Pending';
 
         $pdo->beginTransaction();
         try {
-            $latestStmt = $pdo->prepare(
-                'SELECT req_submission_id
-                 FROM student_requirement
-                 WHERE student_id = :student_id
-                   AND internship_id = :internship_id
-                   AND requirement_id = :requirement_id
-                 ORDER BY req_submission_id DESC
-                 LIMIT 1'
-            );
-            $latestStmt->execute([
-                ':student_id' => $studentId,
-                ':internship_id' => $resolvedInternshipId,
-                ':requirement_id' => $requirementId,
-            ]);
+            if ($resolvedInternshipId > 0) {
+                $latestStmt = $pdo->prepare(
+                    'SELECT req_submission_id
+                     FROM student_requirement
+                     WHERE student_id = :student_id
+                       AND internship_id = :internship_id
+                       AND requirement_id = :requirement_id
+                     ORDER BY req_submission_id DESC
+                     LIMIT 1'
+                );
+                $latestStmt->execute([
+                    ':student_id' => $studentId,
+                    ':internship_id' => $resolvedInternshipId,
+                    ':requirement_id' => $effectiveRequirementId,
+                ]);
+            } else {
+                $latestStmt = $pdo->prepare(
+                    'SELECT req_submission_id
+                     FROM student_requirement
+                     WHERE student_id = :student_id
+                       AND requirement_id = :requirement_id
+                                             AND internship_id IS NULL
+                     ORDER BY req_submission_id DESC
+                     LIMIT 1'
+                );
+                $latestStmt->execute([
+                    ':student_id' => $studentId,
+                    ':requirement_id' => $effectiveRequirementId,
+                ]);
+            }
             $existingSubmissionId = (int)($latestStmt->fetchColumn() ?: 0);
 
             if ($existingSubmissionId > 0) {
@@ -284,21 +610,33 @@ if (!function_exists('adviser_students_toggle_requirement_submission')) {
                 );
                 $insertStmt->execute([
                     ':student_id' => $studentId,
-                    ':internship_id' => $resolvedInternshipId,
-                    ':requirement_id' => $requirementId,
+                    ':internship_id' => $resolvedInternshipId > 0 ? $resolvedInternshipId : null,
+                    ':requirement_id' => $effectiveRequirementId,
                     ':status' => $newStatus,
                     ':submitted_at' => $isChecked ? date('Y-m-d H:i:s') : null,
                 ]);
             }
 
             $pdo->commit();
+            adviser_students_clear_requirement_draft_status($pdo, $studentId, $normalizedRequirementKey);
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            throw $e;
+
+            if ($resolvedInternshipId > 0) {
+                throw $e;
+            }
+
+            adviser_students_set_requirement_draft_status($pdo, $studentId, $normalizedRequirementKey, $isChecked, $adviserId);
+            return adviser_students_get_requirements_modal_data($pdo, $adviserId, $studentId, null);
         }
 
-        return adviser_students_get_requirements_modal_data($pdo, $adviserId, $studentId, $resolvedInternshipId);
+        return adviser_students_get_requirements_modal_data(
+            $pdo,
+            $adviserId,
+            $studentId,
+            $resolvedInternshipId > 0 ? $resolvedInternshipId : null
+        );
     }
 }

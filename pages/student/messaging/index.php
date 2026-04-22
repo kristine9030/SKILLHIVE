@@ -76,13 +76,6 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
           </div>
         </div>
 
-        <!-- Group Chat Section -->
-        <div style="padding:12px;border-bottom:1px solid #e5e7eb;">
-          <button id="msgCreateGroupBtn" type="button" style="width:100%;padding:10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;margin-bottom:8px;">
-            <i class="fas fa-users"></i> Create Group Chat
-          </button>
-        </div>
-
         <!-- Contact Profile Section (visible when conversation selected) -->
         <div style="flex:1;overflow-y:auto;display:none;flex-direction:column;" id="msgContactProfileSection">
           <div style="padding:12px;flex:1;overflow-y:auto;background:linear-gradient(90deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%),url('../../assets/media/element 1.png');background-size:auto 150%;background-position:right center;background-attachment:fixed;background-repeat:no-repeat;">
@@ -248,20 +241,6 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     color: #9ca3af;
     padding: 20px 10px;
     font-size: .85rem;
-  }
-
-  #msgCreateGroupBtn {
-    transition: all 0.2s ease;
-  }
-
-  #msgCreateGroupBtn:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-  }
-
-  #msgCreateGroupBtn:active {
-    transform: translateY(0);
   }
 
   .msg-conv-item {
@@ -716,7 +695,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     var filtered = conversations;
     if (searchTerm) {
       filtered = conversations.filter(function(c) {
-        var name = c.type === 'group' ? c.group_name : c.other_user_name;
+        var name = c.other_user_name;
         return name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                (c.last_message || '').toLowerCase().includes(searchTerm.toLowerCase());
       });
@@ -731,39 +710,22 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     document.getElementById('msgCount').textContent = filtered.length;
 
     var html = filtered.map(function(conv) {
-      var isActive = false;
-      var convId = '';
-      var convName = '';
-      var convIcon = '';
-      var secondaryInfo = '';
+      var convId = conv.other_user_id + '_' + conv.other_user_role;
+      var convName = conv.other_user_name;
+      var secondaryInfo = conv.last_message_time;
+      var isActive = activeConv && activeConv.type === 'direct' && activeConv.other_user_id === conv.other_user_id && activeConv.other_user_role === conv.other_user_role;
 
-      if (conv.type === 'group') {
-        // Group chat
-        convId = 'gc_' + conv.group_chat_id;
-        convName = conv.group_name;
-        convIcon = '<i class="fas fa-users" style="color:#3b82f6;margin-right:4px;"></i>';
-        isActive = activeConv && activeConv.type === 'group' && activeConv.group_chat_id === conv.group_chat_id;
-        secondaryInfo = conv.last_message_time;
-      } else {
-        // Direct chat
-        convId = conv.other_user_id + '_' + conv.other_user_role;
-        convName = conv.other_user_name;
-        secondaryInfo = conv.last_message_time;
-      }
-
-      return '<div class="msg-conv-item' + (isActive ? ' active' : '') + '" data-id="' + convId + '" data-type="' + escapeHtml(conv.type) + '" data-gc-id="' + (conv.group_chat_id || '') + '" data-user-id="' + (conv.other_user_id || '') + '" data-user-role="' + escapeHtml(conv.other_user_role || '') + '">'
+      return '<div class="msg-conv-item' + (isActive ? ' active' : '') + '" data-id="' + convId + '" data-user-id="' + (conv.other_user_id || '') + '" data-user-role="' + escapeHtml(conv.other_user_role || '') + '">'
         + '<div style="display:flex;gap:10px;align-items:flex-start;">'
         + '<div style="width:40px;height:40px;flex-shrink:0;position:relative;">'
-        + (conv.type === 'group'
-          ? '<div style="width:40px;height:40px;background:#3b82f6;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;"><i class="fas fa-users"></i></div>'
-          : renderAvatar(convName, conv.other_user_profile_picture, '40px'))
+        + renderAvatar(convName, conv.other_user_profile_picture, '40px')
         + '</div>'
         + '<div style="flex:1;min-width:0;">'
         + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">'
         + '<div style="font-weight:600;color:#111827;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(convName) + '</div>'
         + '<div style="font-size:.75rem;color:#9ca3af;white-space:nowrap;">' + escapeHtml(secondaryInfo) + '</div>'
         + '</div>'
-        + '<div style="font-size:.8rem;color:#6b7280;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(conv.last_message || (conv.type === 'group' ? 'Group created' : '')) + '</div>'
+        + '<div style="font-size:.8rem;color:#6b7280;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(conv.last_message || '') + '</div>'
         + '</div>'
         + (conv.unread_count > 0 ? '<div style="width:20px;height:20px;background:#3b82f6;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;">' + conv.unread_count + '</div>' : '')
         + '</div>'
@@ -774,12 +736,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
 
     convList.querySelectorAll('.msg-conv-item').forEach(function(el) {
       el.addEventListener('click', function() {
-        var type = this.getAttribute('data-type');
-        if (type === 'group') {
-          showGroupChat(parseInt(this.getAttribute('data-gc-id')));
-        } else {
-          showConversation(parseInt(this.getAttribute('data-user-id')), this.getAttribute('data-user-role'));
-        }
+        showConversation(parseInt(this.getAttribute('data-user-id')), this.getAttribute('data-user-role'));
       });
     });
   }
@@ -902,149 +859,6 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
       contactTab.style.color = '#3b82f6';
       contactTab.style.borderBottomColor = '#3b82f6';
     }
-  }
-
-  function showGroupChat(groupChatId) {
-    // Load group chat and display it
-    var detailPane = document.getElementById('msgDetailPane');
-
-    activeConv = {
-      type: 'group',
-      group_chat_id: groupChatId
-    };
-
-    callApi('get_group_messages', { group_chat_id: groupChatId }).then(function(data) {
-      var groupName = data.group_name || 'Group Chat';
-      var messages = data.messages || [];
-      var members = data.members || [];
-
-      // Build messages HTML
-      var messagesHtml = messages.map(function(msg) {
-        var isOwn = msg.sender_id === currentUserId && msg.sender_role === currentUserRole;
-        var timestamp = messaging_format_time(msg.created_at);
-
-        return '<div class="msg-thread-item' + (isOwn ? ' own' : ' other') + '">'
-          + '<div>' + renderAvatar(msg.sender_name, msg.sender_profile_picture || '', '32px') + '</div>'
-          + '<div>'
-          + '<div class="msg-thread-bubble">' + escapeHtml(msg.message_text) + '</div>'
-          + '<span class="msg-thread-time">' + escapeHtml(msg.sender_name) + ' • ' + escapeHtml(timestamp) + '</span>'
-          + '</div>'
-          + '</div>';
-      }).join('');
-
-      if (messages.length === 0) {
-        messagesHtml = '<div style="text-align:center;color:#9ca3af;padding:20px;font-size:.85rem;"><i class="fas fa-comments" style="font-size:2rem;margin-bottom:8px;display:block;opacity:0.5;"></i>No messages yet. Be the first to send one!</div>';
-      }
-
-      var html = '<div style="display:flex;flex-direction:column;height:100%;">'
-        + '<div style="padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;gap:16px;">'
-        + '<div style="display:flex;align-items:center;gap:12px;">'
-        + '<div style="width:56px;height:56px;background:#3b82f6;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">'
-        + '<i class="fas fa-users"></i>'
-        + '</div>'
-        + '<div style="flex:1;min-width:0;">'
-        + '<div style="font-weight:700;color:#111827;font-size:.95rem;margin-bottom:2px;">' + escapeHtml(groupName) + '</div>'
-        + '<div style="font-size:.8rem;color:#6b7280;">' + members.length + ' member' + (members.length !== 1 ? 's' : '') + '</div>'
-        + '</div>'
-        + '</div>'
-        + '</div>'
-        + '<div style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:4px;">'
-        + messagesHtml
-        + '</div>'
-        + '<div style="padding:16px 20px;border-top:1px solid #e5e7eb;flex-shrink:0;">'
-        + '<div class="msg-composer">'
-        + '<input type="file" id="msgGroupFileInput" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" style="display:none;">'
-        + '<div class="msg-composer-input-row">'
-        + '<button id="msgGroupAttachBtn" type="button" style="flex:0 0 auto;width:44px;height:44px;border:1px solid #d1d5db;border-radius:10px;background:#fff;color:#3b82f6;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;"><i class="fas fa-paperclip"></i></button>'
-        + '<textarea placeholder="Send a message to the group..." id="msgGroupInput" class="msg-input" rows="1"></textarea>'
-        + '<button id="msgGroupSendBtn" class="msg-send-btn" type="button">Send</button>'
-        + '</div>'
-        + '<div id="msgGroupFilePreview" class="msg-file-preview"></div>'
-        + '</div>'
-        + '</div>'
-        + '</div>';
-
-      detailPane.innerHTML = html;
-
-      // Setup message composer
-      var sendBtn = document.getElementById('msgGroupSendBtn');
-      var input = document.getElementById('msgGroupInput');
-      var fileInput = document.getElementById('msgGroupFileInput');
-      var attachBtn = document.getElementById('msgGroupAttachBtn');
-      var filePreview = document.getElementById('msgGroupFilePreview');
-      var selectedFile = null;
-
-      function autoResizeComposer() {
-        if (!input) return;
-        input.style.height = 'auto';
-        var maxHeight = 220;
-        var nextHeight = Math.min(input.scrollHeight, maxHeight);
-        input.style.height = Math.max(nextHeight, 44) + 'px';
-      }
-
-      autoResizeComposer();
-      input.addEventListener('input', autoResizeComposer);
-
-      attachBtn.addEventListener('click', function() {
-        fileInput.click();
-      });
-
-      fileInput.addEventListener('change', function() {
-        selectedFile = this.files[0];
-        if (selectedFile) {
-          var maxSize = 10 * 1024 * 1024;
-          if (selectedFile.size > maxSize) {
-            alert('File size must be less than 10MB');
-            selectedFile = null;
-            return;
-          }
-          filePreview.innerHTML = '📎 ' + escapeHtml(selectedFile.name) + ' (' + (selectedFile.size / 1024 / 1024).toFixed(2) + 'MB)';
-          filePreview.classList.add('active');
-        }
-      });
-
-      sendBtn.addEventListener('click', function() {
-        var message = input.value.trim();
-        if (!message && !selectedFile) return;
-
-        callApi('send_group_message', {
-          group_chat_id: groupChatId,
-          message: message
-        }, { method: 'POST' }).then(function() {
-          input.value = '';
-          autoResizeComposer();
-          selectedFile = null;
-          filePreview.classList.remove('active');
-          loadConversations();
-          showGroupChat(groupChatId);
-        }).catch(function(err) {
-          alert(err || 'Failed to send message');
-        });
-      });
-
-      input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          sendBtn.click();
-        }
-      });
-
-      // Hide contact profile section for group chats
-      var contactSection = document.getElementById('msgContactProfileSection');
-      if (contactSection) {
-        contactSection.style.display = 'none';
-      }
-
-      // Hide attachments panel for group chats
-      var attachPanel = document.getElementById('msgAttachmentsPanel');
-      if (attachPanel) {
-        attachPanel.style.display = 'none';
-      }
-
-      renderConversationsList(allConversations);
-    }).catch(function(err) {
-      alert('Failed to load group chat: ' + (err || 'Unknown error'));
-    });
   }
 
   function showConversation(otherId, otherRole) {
@@ -1299,84 +1113,6 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     attachContent.innerHTML = html;
   }
 
-  function showGroupChatCreationModal() {
-    var modal = '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;" id="groupChatModal">'
-      + '<div style="background:white;border-radius:12px;padding:24px;max-width:400px;width:90%;">'
-      + '<div style="font-size:1.1rem;font-weight:700;color:#111827;margin-bottom:16px;">Create Group Chat</div>'
-      + '<input type="text" id="groupNameInput" placeholder="Group name (e.g., Project Team)" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem;margin-bottom:16px;box-sizing:border-box;outline:none;">'
-      + '<div style="margin-bottom:16px;">'
-      + '<div style="font-size:.85rem;font-weight:600;color:#6b7280;margin-bottom:8px;">Select members:</div>'
-      + '<div id="groupMembersContainer" style="max-height:250px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;"></div>'
-      + '</div>'
-      + '<div style="display:flex;gap:8px;">'
-      + '<button type="button" onclick="document.getElementById(\'groupChatModal\').remove();" style="flex:1;padding:10px;border:1px solid #d1d5db;background:white;border-radius:6px;cursor:pointer;font-weight:600;color:#6b7280;">Cancel</button>'
-      + '<button type="button" id="createGroupBtn" style="flex:1;padding:10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Create</button>'
-      + '</div>'
-      + '</div>'
-      + '</div>';
-
-    var modalEl = document.createElement('div');
-    modalEl.innerHTML = modal;
-    document.body.appendChild(modalEl.firstElementChild);
-
-    // Load contacts for member selection
-    if (allContacts.length > 0) {
-      var membersHtml = allContacts.map(function(contact) {
-        return '<div style="padding:10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.1s;" class="group-member-item" data-id="' + contact.user_id + '" data-role="' + escapeHtml(contact.user_role) + '">'
-          + '<input type="checkbox" value="' + contact.user_id + '" class="group-member-checkbox" style="cursor:pointer;">'
-          + '<div style="flex-shrink:0;width:32px;height:32px;">'
-          + renderAvatar(contact.name, contact.profile_picture, '32px')
-          + '</div>'
-          + '<div>'
-          + '<div style="font-size:.85rem;font-weight:600;color:#111827;">' + escapeHtml(contact.name) + '</div>'
-          + '<div style="font-size:.75rem;color:#9ca3af;">' + escapeHtml(contact.role_label) + '</div>'
-          + '</div>'
-          + '</div>';
-      }).join('');
-
-      document.getElementById('groupMembersContainer').innerHTML = membersHtml;
-
-      // Toggle checkboxes on item click
-      document.querySelectorAll('.group-member-item').forEach(function(item) {
-        item.addEventListener('click', function(e) {
-          if (e.target.tagName !== 'INPUT') {
-            var checkbox = this.querySelector('.group-member-checkbox');
-            checkbox.checked = !checkbox.checked;
-          }
-        });
-      });
-    }
-
-    // Handle create button
-    document.getElementById('createGroupBtn').addEventListener('click', function() {
-      var groupName = document.getElementById('groupNameInput').value.trim();
-      if (!groupName) {
-        alert('Please enter a group name');
-        return;
-      }
-
-      var selectedMembers = Array.from(document.querySelectorAll('.group-member-checkbox:checked')).map(function(cb) {
-        return parseInt(cb.value, 10);
-      });
-
-      if (selectedMembers.length === 0) {
-        alert('Please select at least one member');
-        return;
-      }
-
-      callApi('create_group_chat', {
-        group_name: groupName,
-        member_ids: selectedMembers
-      }, {method: 'POST'}).then(function(data) {
-        document.getElementById('groupChatModal').remove();
-        alert('Group chat created successfully!');
-        loadConversations();
-      }).catch(function(err) {
-        alert('Failed to create group chat: ' + (err || 'Unknown error'));
-      });
-    });
-  }
-
   function loadConversations() {
     callApi('list_conversations', {}).then(function(data) {
       allConversations = data.conversations || [];
@@ -1424,15 +1160,6 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
   var contactProfileSection = document.getElementById('msgContactProfileSection');
   if (contactProfileSection) {
     contactProfileSection.style.display = 'none';
-  }
-
-  // Create group chat button
-  var createGroupBtn = document.getElementById('msgCreateGroupBtn');
-  if (createGroupBtn) {
-    createGroupBtn.addEventListener('click', function() {
-      loadContacts(); // Refresh contacts before showing modal
-      showGroupChatCreationModal();
-    });
   }
 
   // Close profile button

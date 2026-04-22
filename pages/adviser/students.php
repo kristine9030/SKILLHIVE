@@ -288,18 +288,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
                       <i class="fas fa-clipboard-list"></i>
                       Requirements
                     </button>
-                    <?php if (!empty($row['email'])): ?>
-                      <button
-                        class="adv-row-btn is-icon js-send-student-email-btn"
-                        type="button"
-                        title="Send email"
-                        data-student-email="<?php echo adviser_students_escape((string)$row['email']); ?>"
-                        data-student-name="<?php echo adviser_students_escape($studentName !== '' ? $studentName : 'Student'); ?>"
-                        onclick="sendStudentEmail(this)"
-                      ><i class="fas fa-envelope"></i></button>
-                    <?php else: ?>
-                      <span class="adv-row-btn is-icon" aria-disabled="true" title="No email on file"><i class="fas fa-envelope"></i></span>
-                    <?php endif; ?>
                   </div>
                 </td>
               </tr>
@@ -457,7 +445,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
   <div style="background:#fff;width:720px;max-width:100%;border-radius:22px;box-shadow:0 20px 40px rgba(0,0,0,.2);padding:24px;max-height:90vh;overflow:auto;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:16px;">
       <div>
-        <h2 id="requirementsTitle" style="font-size:1.05rem;font-weight:700;margin:0;color:#111827;">Student - Requirements Checklist</h2>
+        <h2 id="requirementsTitle" style="font-size:1.05rem;font-weight:700;margin:0;color:#111827;">Student - Local OJT Requirements Checklist</h2>
         <p id="requirementsSubtitle" style="font-size:.82rem;color:#6b7280;margin:4px 0 0;">Program - Company</p>
       </div>
       <button type="button" onclick="closeRequirementsModal()" style="width:38px;height:38px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;color:#9ca3af;font-size:1.2rem;cursor:pointer;line-height:1;">&times;</button>
@@ -603,81 +591,6 @@ function bindBulkImportFormSubmission() {
     syncAutoStudentEmail();
   }
 
-  var sendEmailHost = (window.location && window.location.hostname) ? window.location.hostname : 'localhost';
-  var sendEmailEndpoint = (window.location && window.location.protocol ? window.location.protocol : 'http:') + '//' + sendEmailHost + ':3100/send-email';
-  var defaultStudentEmailMessage = 'nagugutom ako omaygad';
-  var defaultStudentEmailLogoUrl = '';
-  var emailSendCooldownMs = 15000;
-  var emailSendCooldownByRecipient = {};
-
-  function sendStudentEmail(button) {
-    if (!button || button.dataset.sending === '1') {
-      return;
-    }
-
-    var studentEmail = String(button.getAttribute('data-student-email') || '').trim();
-    var studentName = String(button.getAttribute('data-student-name') || 'Student').trim();
-    var now = Date.now();
-    var lastSentAt = Number(emailSendCooldownByRecipient[studentEmail] || 0);
-
-    if (!studentEmail) {
-      alert('No student email found for this row.');
-      return;
-    }
-
-    if (lastSentAt > 0 && now - lastSentAt < emailSendCooldownMs) {
-      var secondsLeft = Math.ceil((emailSendCooldownMs - (now - lastSentAt)) / 1000);
-      alert('Please wait ' + secondsLeft + 's before sending another email to ' + studentName + '.');
-      return;
-    }
-
-    var originalHtml = button.innerHTML;
-    button.dataset.sending = '1';
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-    fetch(sendEmailEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        studentEmail: studentEmail,
-        studentName: studentName,
-        message: defaultStudentEmailMessage,
-        logoUrl: defaultStudentEmailLogoUrl
-      })
-    })
-      .then(function (response) {
-        return response.json().catch(function () {
-          return { ok: false, error: 'Invalid API response.' };
-        }).then(function (payload) {
-          if (!response.ok || !payload || payload.ok !== true) {
-            var message = (payload && payload.error) ? payload.error : 'Unable to send email right now.';
-            throw new Error(message);
-          }
-          return payload;
-        });
-      })
-      .then(function () {
-        emailSendCooldownByRecipient[studentEmail] = Date.now();
-        alert('Email sent successfully to ' + studentName + '.');
-      })
-      .catch(function (error) {
-        var errorMessage = (error && error.message) ? error.message : 'Unknown error';
-        if (/Failed to fetch|NetworkError|Load failed/i.test(errorMessage)) {
-          alert('Email send failed: Unable to reach email service at ' + sendEmailEndpoint + '. Please make sure the email API is running (npm run email:api).');
-          return;
-        }
-        alert('Email send failed: ' + errorMessage);
-      })
-      .finally(function () {
-        button.dataset.sending = '0';
-        button.disabled = false;
-        button.innerHTML = originalHtml;
-      });
-  }
-
 var requirementsEndpoint = '<?php echo $baseUrl; ?>/pages/adviser/students/requirements_data.php';
 var requirementsContext = {
     studentId: 0,
@@ -701,32 +614,31 @@ function renderRequirementsChecklist(phases) {
 
     var orderedPhases = ['Pre-OJT', 'During OJT', 'Post-OJT'];
     var html = '';
-
-    if (!requirementsContext.canEdit) {
-        html += '<div style="border:1px solid #fde68a;background:#fffbeb;border-radius:14px;padding:12px 14px;color:#92400e;font-size:.8rem;">This student has no internship context yet. Checklist is view-only for now.</div>';
-    }
+  var hasAnyRows = false;
 
     orderedPhases.forEach(function (phaseName) {
         var phaseRows = (phases && phases[phaseName]) ? phases[phaseName] : [];
-        html += '<p style="font-size:.72rem;font-weight:700;color:#9ca3af;margin:10px 0 0;letter-spacing:.06em;">' + escapeHtml(phaseName.toUpperCase()) + ' PHASE</p>';
 
-        if (!phaseRows.length) {
-            html += '<div style="border:1px solid #e5e7eb;background:#fff;border-radius:14px;padding:12px 14px;color:#9ca3af;font-size:.8rem;">No requirements found.</div>';
-            return;
-        }
+      if (!phaseRows.length) {
+        return;
+      }
+
+      hasAnyRows = true;
 
         phaseRows.forEach(function (item) {
             var isSubmitted = !!item.is_submitted;
+            var canToggleItem = item.can_toggle !== false;
             var boxBorder = isSubmitted ? '#bbf7d0' : '#e5e7eb';
             var boxBg = isSubmitted ? '#f0fdf4' : '#fff';
             var statusColor = isSubmitted ? '#16a34a' : '#ef4444';
             var statusText = item.status || (isSubmitted ? 'Submitted' : 'Pending');
             var dateText = item.date_label ? item.date_label : statusText;
             var requirementId = Number(item.requirement_id || 0);
+            var requirementKey = String(item.requirement_key || '');
 
             html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid ' + boxBorder + ';background:' + boxBg + ';border-radius:14px;padding:12px 14px;">';
             html += '<div style="display:flex;align-items:center;gap:10px;">';
-            html += '<input type="checkbox" class="js-requirement-checkbox" data-requirement-id="' + requirementId + '" ' + (isSubmitted ? 'checked ' : '') + (requirementsContext.canEdit ? '' : 'disabled ') + 'style="width:18px;height:18px;' + (requirementsContext.canEdit ? 'cursor:pointer;' : 'cursor:default;') + (isSubmitted ? 'accent-color:#22c55e;' : '') + '">';
+            html += '<input type="checkbox" class="js-requirement-checkbox" data-requirement-id="' + requirementId + '" data-requirement-key="' + escapeHtml(requirementKey) + '" ' + (isSubmitted ? 'checked ' : '') + (canToggleItem ? '' : 'disabled ') + 'style="width:18px;height:18px;' + (canToggleItem ? 'cursor:pointer;' : 'cursor:default;') + (isSubmitted ? 'accent-color:#22c55e;' : '') + '">';
             html += '<p style="font-size:.85rem;margin:0;color:#111827;">' + escapeHtml(item.name || 'Requirement') + '</p>';
             html += '</div>';
             html += '<div style="display:flex;align-items:center;gap:8px;font-size:.72rem;flex-wrap:wrap;justify-content:flex-end;">';
@@ -737,16 +649,18 @@ function renderRequirementsChecklist(phases) {
         });
     });
 
+    if (!hasAnyRows) {
+        html += '<div style="border:1px solid #e5e7eb;background:#fff;border-radius:14px;padding:12px 14px;color:#9ca3af;font-size:.8rem;">No requirements found.</div>';
+    }
+
     container.innerHTML = html;
 
-    if (requirementsContext.canEdit) {
-        var checkboxes = container.querySelectorAll('.js-requirement-checkbox');
-        checkboxes.forEach(function (checkbox) {
-            checkbox.addEventListener('change', function () {
-                toggleRequirementCheckbox(checkbox);
-            });
+    var checkboxes = container.querySelectorAll('.js-requirement-checkbox');
+    checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            toggleRequirementCheckbox(checkbox);
         });
-    }
+    });
 }
 
 function setRequirementsSummary(summary) {
@@ -809,9 +723,8 @@ function loadRequirementsData() {
         })
         .then(function (payload) {
             requirementsContext.canEdit = !!payload.can_edit;
-            if (!requirementsContext.internshipId && payload.internship_id_context) {
-                requirementsContext.internshipId = String(payload.internship_id_context);
-            }
+          var contextInternshipId = Number((payload && payload.internship_id_context) || 0);
+          requirementsContext.internshipId = contextInternshipId > 0 ? String(contextInternshipId) : '';
             setRequirementsSummary(payload.summary || {});
             renderRequirementsChecklist(payload.phases || {});
         })
@@ -822,7 +735,9 @@ function loadRequirementsData() {
 
 function toggleRequirementCheckbox(checkbox) {
     var requirementId = Number(checkbox.getAttribute('data-requirement-id') || '0');
-    if (requirementsContext.studentId <= 0 || requirementId <= 0) {
+  var requirementKey = String(checkbox.getAttribute('data-requirement-key') || '').trim();
+
+  if (requirementsContext.studentId <= 0 || (requirementId <= 0 && requirementKey === '')) {
         checkbox.checked = !checkbox.checked;
         return;
     }
@@ -834,6 +749,7 @@ function toggleRequirementCheckbox(checkbox) {
     formBody.append('student_id', String(requirementsContext.studentId));
     formBody.append('internship_id', requirementsContext.internshipId || '');
     formBody.append('requirement_id', String(requirementId));
+    formBody.append('requirement_key', requirementKey);
     formBody.append('is_checked', checkbox.checked ? '1' : '0');
 
     fetch(requirementsEndpoint, {
@@ -852,9 +768,8 @@ function toggleRequirementCheckbox(checkbox) {
         })
         .then(function (payload) {
             requirementsContext.canEdit = !!payload.can_edit;
-            if (!requirementsContext.internshipId && payload.internship_id_context) {
-                requirementsContext.internshipId = String(payload.internship_id_context);
-            }
+          var contextInternshipId = Number((payload && payload.internship_id_context) || 0);
+          requirementsContext.internshipId = contextInternshipId > 0 ? String(contextInternshipId) : '';
             setRequirementsSummary(payload.summary || {});
             renderRequirementsChecklist(payload.phases || {});
         })
@@ -899,7 +814,7 @@ function openRequirementsModal(button) {
 
     var titleEl = document.getElementById('requirementsTitle');
     var subtitleEl = document.getElementById('requirementsSubtitle');
-    if (titleEl) titleEl.textContent = name + ' - Requirements Checklist';
+    if (titleEl) titleEl.textContent = name + ' - Local OJT Requirements Checklist';
     if (subtitleEl) subtitleEl.textContent = subtitle;
 
     setRequirementsSummary({
