@@ -205,6 +205,27 @@ try {
     // Non-fatal: app should continue even if migration fails.
 }
 
+// Schema Migration: Ensure email_notifications_enabled exists on student table.
+// Used by student settings notification toggle persistence.
+try {
+    $stmt = $pdo->prepare(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'student'
+           AND COLUMN_NAME = 'email_notifications_enabled'"
+    );
+    $stmt->execute();
+    if ($stmt->rowCount() === 0) {
+        $pdo->exec(
+            "ALTER TABLE student
+             ADD COLUMN email_notifications_enabled TINYINT(1) NOT NULL DEFAULT 1
+             AFTER must_change_password"
+        );
+    }
+} catch (Throwable $e) {
+    // Non-fatal: app should continue even if migration fails.
+}
+
 // Schema Migration: Ensure academic_year exists on student table.
 // Adviser add-student form now captures academic year (e.g., 2025-2026).
 try {
@@ -273,7 +294,7 @@ try {
         if ($check_quality->rowCount() === 0) {
             $pdo->exec("ALTER TABLE ojt_journal_entries ADD COLUMN quality_score TINYINT UNSIGNED NOT NULL DEFAULT 0");
         }
-        
+
         $check_sentiment = $pdo->prepare(
             "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
              WHERE TABLE_SCHEMA = DATABASE() 
@@ -284,7 +305,7 @@ try {
         if ($check_sentiment->rowCount() === 0) {
             $pdo->exec("ALTER TABLE ojt_journal_entries ADD COLUMN sentiment_analysis VARCHAR(50) NOT NULL DEFAULT 'neutral'");
         }
-        
+
         $check_productivity = $pdo->prepare(
             "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
              WHERE TABLE_SCHEMA = DATABASE() 
@@ -360,4 +381,3 @@ try {
 } catch (Throwable $e) {
     // Non-fatal: app should continue even if migration fails.
 }
-?>

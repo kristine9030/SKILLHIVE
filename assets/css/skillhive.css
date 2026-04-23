@@ -4852,14 +4852,30 @@ td,
 
 .toggle-switch {
     position: relative;
+    display: inline-block;
     width: 44px;
     height: 24px;
-    background: #e5e7eb;
-    border-radius: 999px;
-    border: 1px solid #d1d5db;
+    cursor: pointer;
+}
+
+.toggle-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
 .toggle-slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: #e5e7eb;
+    border: 1px solid #d1d5db;
+    transition: background-color .2s ease, border-color .2s ease;
+}
+
+.toggle-slider::before {
+    content: '';
     position: absolute;
     top: 2px;
     left: 2px;
@@ -4868,6 +4884,21 @@ td,
     border-radius: 50%;
     background: #fff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+    transition: transform .2s ease;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: #06b6d4;
+    border-color: #0891b2;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.toggle-switch input:disabled + .toggle-slider {
+    opacity: .6;
+    cursor: not-allowed;
 }
 
 .status-badge,

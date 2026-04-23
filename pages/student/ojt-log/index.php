@@ -1,4 +1,3 @@
-
 <?php
 require_once __DIR__ . '/../../../backend/db_connect.php';
 require_once __DIR__ . '/ojt_log_helpers.php';
@@ -85,7 +84,6 @@ $hoursTarget = $summary['hoursTarget'];
 $progress = $summary['progress'];
 $daysPresent = $summary['daysPresent'];
 $tasksCompleted = $summary['tasksCompleted'];
-$logs = ojt_log_load_logs($pdo, $ojt);
 $calendarLogs = ojt_log_load_logs($pdo, $ojt, 500);
 
 $calendarEntriesByDate = [];
@@ -114,26 +112,40 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
 <div class="stat-cards">
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(6,182,212,.1)"><i class="fas fa-clock" style="color:#06B6D4"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num" id="ojtHoursLogged"><?php echo (float)$hoursLogged; ?></div><div class="stat-card-label">Hours Logged</div></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num" id="ojtHoursLogged"><?php echo (float)$hoursLogged; ?></div>
+      <div class="stat-card-label">Hours Logged</div>
+    </div>
     <div class="stat-card-trend neutral">of <span id="ojtHoursTarget"><?php echo (float)$hoursTarget; ?></span> target</div>
   </div>
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-calendar-day" style="color:#10B981"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num" id="ojtDaysPresent"><?php echo (int)$daysPresent; ?></div><div class="stat-card-label">Days Present</div></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num" id="ojtDaysPresent"><?php echo (int)$daysPresent; ?></div>
+      <div class="stat-card-label">Days Present</div>
+    </div>
   </div>
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-tasks" style="color:#F59E0B"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num" id="ojtTasksCompleted"><?php echo (int)$tasksCompleted; ?></div><div class="stat-card-label">Tasks Completed</div></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num" id="ojtTasksCompleted"><?php echo (int)$tasksCompleted; ?></div>
+      <div class="stat-card-label">Tasks Completed</div>
+    </div>
   </div>
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-percentage" style="color:#10B981"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num" id="ojtProgressPct"><?php echo $progress; ?>%</div><div class="stat-card-label">Progress</div></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num" id="ojtProgressPct"><?php echo $progress; ?>%</div>
+      <div class="stat-card-label">Progress</div>
+    </div>
   </div>
 </div>
 
 <!-- Progress Bar -->
 <div class="panel-card">
-  <div class="panel-card-header"><h3>Overall Progress</h3></div>
+  <div class="panel-card-header">
+    <h3>Overall Progress</h3>
+  </div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <span style="font-size:.85rem;color:#666"><span id="ojtProgressHours"><?php echo (float) $hoursLogged; ?> of <?php echo (float) $hoursTarget; ?></span> hours completed</span>
     <span id="ojtProgressPctTop" style="font-weight:700;color:#06B6D4"><?php echo $progress; ?>%</span>
@@ -144,85 +156,6 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
   <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:.75rem;color:#999">
     <span>Started: Nov 4, 2024</span>
     <span>Target: Mar 28, 2025</span>
-  </div>
-</div>
-
-<!-- Recent Logs -->
-<div class="panel-card">
-  <div class="panel-card-header"><h3>Activity Log</h3></div>
-  <div class="app-table-wrap">
-    <table class="app-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Task / Activity</th>
-          <th>Hours</th>
-          <th>Mood</th>
-          <th>File</th>
-        </tr>
-      </thead>
-      <tbody id="ojtLogTableBody">
-        <?php
-        if ($ojt) {
-          if ($logs) {
-            foreach ($logs as $log) {
-              echo '<tr>';
-              echo '<td>' . htmlspecialchars(date('M d, Y', strtotime((string) $log['log_date']))) . '</td>';
-              echo '<td>' . nl2br(htmlspecialchars((string) $log['accomplishment'])) . '</td>';
-              echo '<td>' . (float) ($log['hours_rendered'] ?? 0) . '</td>';
-              echo '<td>' . htmlspecialchars((string) ($log['mood_tag'] ?? '')) . '</td>';
-              if (!empty($log['task_file'])) {
-                $fileUrl = '/Skillhive/assets/backend/uploads/ojt_logs/' . rawurlencode((string) $log['task_file']);
-                echo '<td><a href="' . $fileUrl . '" target="_blank">View</a></td>';
-              } else {
-                echo '<td>-</td>';
-              }
-              echo '</tr>';
-            }
-          } else {
-            echo '<tr><td colspan="5" style="text-align:center;color:#999">No log entries yet.</td></tr>';
-          }
-        } else {
-          echo '<tr><td colspan="5" style="text-align:center;color:#999">No OJT record found.</td></tr>';
-        }
-        ?>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Weekly Chart Placeholder -->
-<div class="panel-card">
-  <div class="panel-card-header"><h3>Weekly Hours</h3></div>
-  <div style="display:flex;align-items:flex-end;gap:8px;height:140px;padding:10px 0">
-    <div style="flex:1;text-align:center">
-      <div style="background:linear-gradient(180deg,#06B6D4,#10B981);height:85%;border-radius:6px 6px 0 0"></div>
-      <div style="font-size:.7rem;color:#999;margin-top:4px">Mon</div>
-    </div>
-    <div style="flex:1;text-align:center">
-      <div style="background:linear-gradient(180deg,#06B6D4,#10B981);height:100%;border-radius:6px 6px 0 0"></div>
-      <div style="font-size:.7rem;color:#999;margin-top:4px">Tue</div>
-    </div>
-    <div style="flex:1;text-align:center">
-      <div style="background:linear-gradient(180deg,#06B6D4,#10B981);height:75%;border-radius:6px 6px 0 0"></div>
-      <div style="font-size:.7rem;color:#999;margin-top:4px">Wed</div>
-    </div>
-    <div style="flex:1;text-align:center">
-      <div style="background:linear-gradient(180deg,#06B6D4,#10B981);height:100%;border-radius:6px 6px 0 0"></div>
-      <div style="font-size:.7rem;color:#999;margin-top:4px">Thu</div>
-    </div>
-    <div style="flex:1;text-align:center">
-      <div style="background:linear-gradient(180deg,#06B6D4,#10B981);height:50%;border-radius:6px 6px 0 0"></div>
-      <div style="font-size:.7rem;color:#999;margin-top:4px">Fri</div>
-    </div>
-    <div style="flex:1;text-align:center">
-      <div style="background:#e5e5e5;height:0%;border-radius:6px 6px 0 0"></div>
-      <div style="font-size:.7rem;color:#999;margin-top:4px">Sat</div>
-    </div>
-    <div style="flex:1;text-align:center">
-      <div style="background:#e5e5e5;height:0%;border-radius:6px 6px 0 0"></div>
-      <div style="font-size:.7rem;color:#999;margin-top:4px">Sun</div>
-    </div>
   </div>
 </div>
 
@@ -332,7 +265,7 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
     height: 20px;
     padding: 0 6px;
     border-radius: 999px;
-    background: linear-gradient(135deg,#06B6D4,#10B981);
+    background: linear-gradient(135deg, #06B6D4, #10B981);
     color: #fff;
     font-size: .7rem;
     font-weight: 700;
@@ -421,366 +354,359 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
 </div>
 
 <script>
-var ojtCalendarEntries = <?php echo $calendarEntriesJson; ?>;
-var ojtCalendarState = {
-  year: (new Date()).getFullYear(),
-  month: (new Date()).getMonth(),
-  selectedDate: null
-};
-
-function openOjtModal() {
-  var modal = document.getElementById('logModal');
-  if (!modal) return;
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden', 'false');
-}
-
-function closeOjtModal() {
-  var modal = document.getElementById('logModal');
-  if (!modal) return;
-  modal.classList.remove('open');
-  modal.setAttribute('aria-hidden', 'true');
-}
-
-(function bindFileInputLabel() {
-  var input = document.getElementById('task_file');
-  var fileName = document.getElementById('taskFileName');
-  var wrapper = input ? input.closest('.ojt-file-input') : null;
-  if (!input || !fileName) return;
-  input.addEventListener('change', function () {
-    var hasFile = !!(input.files && input.files.length > 0);
-    fileName.textContent = hasFile ? input.files[0].name : 'No file chosen';
-    if (wrapper) {
-      wrapper.classList.toggle('has-file', hasFile);
-    }
-  });
-})();
-
-(function bindAjaxLogSubmit() {
-  var form = document.querySelector('.ojt-log-form');
-  if (!form) return;
-
-  form.addEventListener('submit', function (event) {
-    event.preventDefault();
-
-    var submitBtn = form.querySelector('.ojt-submit-btn');
-    var originalBtnText = submitBtn ? submitBtn.textContent : '';
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Saving...';
-    }
-
-    var endpoint = form.getAttribute('data-ajax-url') || window.location.href;
-
-    fetch(endpoint, {
-      method: 'POST',
-      body: new FormData(form),
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'Accept': 'application/json'
-      }
-    })
-      .then(function (response) {
-        var contentType = response.headers.get('content-type') || '';
-        if (contentType.indexOf('application/json') !== -1) {
-          return response.json().then(function (data) {
-            return { ok: response.ok, data: data };
-          });
-        }
-        return response.text().then(function (text) {
-          return {
-            ok: false,
-            data: {
-              ok: false,
-              message: 'Server returned non-JSON response. Please refresh and try again.',
-              raw: text
-            }
-          };
-        });
-      })
-      .then(function (result) {
-        if (!result.ok || !result.data || !result.data.ok) {
-          throw new Error((result.data && result.data.message) ? result.data.message : 'Failed to save log entry.');
-        }
-
-        updateOjtStats(result.data.stats || {});
-        prependOjtLogRow(result.data.entry || {});
-        updateOjtCalendarFromEntry(result.data.entry || {});
-        resetOjtFormUi(form);
-        closeOjtModal();
-      })
-      .catch(function (error) {
-        alert(error.message || 'Failed to save log entry.');
-      })
-      .finally(function () {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = originalBtnText || 'Submit Log';
-        }
-      });
-  });
-})();
-
-function padOjtCalendarPart(value) {
-  return String(value).padStart(2, '0');
-}
-
-function formatOjtCalendarDateKey(year, monthZeroBased, day) {
-  return year + '-' + padOjtCalendarPart(monthZeroBased + 1) + '-' + padOjtCalendarPart(day);
-}
-
-function parseOjtCalendarDateKey(dateKey) {
-  var parts = String(dateKey || '').split('-');
-  if (parts.length !== 3) return null;
-  var y = Number(parts[0]);
-  var m = Number(parts[1]);
-  var d = Number(parts[2]);
-  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null;
-  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
-  return { year: y, month: m - 1, day: d };
-}
-
-function ojtCalendarSelectDate(dateKey) {
-  var parsed = parseOjtCalendarDateKey(dateKey);
-  if (!parsed) return;
-
-  ojtCalendarState.selectedDate = dateKey;
-  ojtCalendarState.year = parsed.year;
-  ojtCalendarState.month = parsed.month;
-
-  var dateInput = document.querySelector('.ojt-log-form input[name="log_date"]');
-  if (dateInput) {
-    dateInput.value = dateKey;
-  }
-
-  renderOjtCalendar();
-  updateOjtCalendarSelectedInfo();
-}
-
-function updateOjtCalendarSelectedInfo() {
-  var metaEl = document.getElementById('ojtCalendarSelectedMeta');
-  if (!metaEl) return;
-
-  var selected = ojtCalendarState.selectedDate;
-  if (!selected) {
-    metaEl.innerHTML = 'Select a date to prepare your log entry.';
-    return;
-  }
-
-  var parsed = parseOjtCalendarDateKey(selected);
-  if (!parsed) {
-    metaEl.innerHTML = 'Select a date to prepare your log entry.';
-    return;
-  }
-
-  var dateObj = new Date(parsed.year, parsed.month, parsed.day);
-  var label = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-  var details = ojtCalendarEntries[selected] || { count: 0, hours: 0 };
-  var count = Number(details.count || 0);
-  var hours = Number(details.hours || 0);
-
-  if (count > 0) {
-    metaEl.innerHTML = '<strong>' + label + '</strong> - ' + count + ' log entr' + (count === 1 ? 'y' : 'ies') + ', ' + hours.toFixed(2).replace(/\.00$/, '') + ' hour' + (hours === 1 ? '' : 's') + ' recorded.';
-  } else {
-    metaEl.innerHTML = '<strong>' + label + '</strong> - No logs yet. You can add one for this date.';
-  }
-}
-
-function renderOjtCalendar() {
-  var grid = document.getElementById('ojtCalendarGrid');
-  var monthLabel = document.getElementById('ojtCalendarMonthLabel');
-  if (!grid || !monthLabel) return;
-
-  var year = ojtCalendarState.year;
-  var month = ojtCalendarState.month;
-  var firstDayWeekIndex = new Date(year, month, 1).getDay();
-  var daysInMonth = new Date(year, month + 1, 0).getDate();
-  var daysInPrevMonth = new Date(year, month, 0).getDate();
-  var today = new Date();
-  var todayKey = formatOjtCalendarDateKey(today.getFullYear(), today.getMonth(), today.getDate());
-
-  monthLabel.textContent = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  grid.innerHTML = '';
-
-  for (var i = 0; i < firstDayWeekIndex; i++) {
-    var prevDay = daysInPrevMonth - firstDayWeekIndex + i + 1;
-    var prevCell = document.createElement('div');
-    prevCell.className = 'ojt-calendar-cell is-other-month';
-    prevCell.innerHTML = '<div class="ojt-calendar-day-number">' + prevDay + '</div>';
-    grid.appendChild(prevCell);
-  }
-
-  for (var day = 1; day <= daysInMonth; day++) {
-    var dateKey = formatOjtCalendarDateKey(year, month, day);
-    var dayEntry = ojtCalendarEntries[dateKey] || null;
-    var hasEntry = !!dayEntry;
-
-    var cell = document.createElement('div');
-    var classNames = ['ojt-calendar-cell'];
-    if (hasEntry) classNames.push('has-entry');
-    if (dateKey === todayKey) classNames.push('is-today');
-    if (dateKey === ojtCalendarState.selectedDate) classNames.push('is-selected');
-    cell.className = classNames.join(' ');
-
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'ojt-calendar-cell-btn';
-    btn.setAttribute('data-date', dateKey);
-    btn.innerHTML = '<div class="ojt-calendar-day-number">' + day + '</div>';
-    btn.addEventListener('click', function (event) {
-      var targetDate = event.currentTarget.getAttribute('data-date');
-      if (targetDate) {
-        ojtCalendarSelectDate(targetDate);
-      }
-    });
-
-    cell.appendChild(btn);
-
-    if (hasEntry) {
-      var dot = document.createElement('span');
-      dot.className = 'ojt-calendar-entry-dot';
-      dot.textContent = String(dayEntry.count || 0);
-      cell.appendChild(dot);
-    }
-
-    grid.appendChild(cell);
-  }
-
-  var totalCells = firstDayWeekIndex + daysInMonth;
-  var nextCellCount = (7 - (totalCells % 7)) % 7;
-
-  for (var n = 1; n <= nextCellCount; n++) {
-    var nextCell = document.createElement('div');
-    nextCell.className = 'ojt-calendar-cell is-other-month';
-    nextCell.innerHTML = '<div class="ojt-calendar-day-number">' + n + '</div>';
-    grid.appendChild(nextCell);
-  }
-}
-
-function updateOjtCalendarFromEntry(entry) {
-  var rawDate = String((entry && entry.date_iso) || '').trim();
-  if (!rawDate) {
-    return;
-  }
-
-  if (!ojtCalendarEntries[rawDate]) {
-    ojtCalendarEntries[rawDate] = { count: 0, hours: 0 };
-  }
-
-  ojtCalendarEntries[rawDate].count = Number(ojtCalendarEntries[rawDate].count || 0) + 1;
-  ojtCalendarEntries[rawDate].hours = Number(ojtCalendarEntries[rawDate].hours || 0) + Number((entry && entry.hours) || 0);
-
-  ojtCalendarSelectDate(rawDate);
-}
-
-(function initOjtCalendar() {
-  var prevBtn = document.getElementById('ojtCalendarPrevBtn');
-  var nextBtn = document.getElementById('ojtCalendarNextBtn');
-  var logBtn = document.getElementById('ojtCalendarLogBtn');
-
-  if (prevBtn) {
-    prevBtn.addEventListener('click', function () {
-      ojtCalendarState.month -= 1;
-      if (ojtCalendarState.month < 0) {
-        ojtCalendarState.month = 11;
-        ojtCalendarState.year -= 1;
-      }
-      renderOjtCalendar();
-    });
-  }
-
-  if (nextBtn) {
-    nextBtn.addEventListener('click', function () {
-      ojtCalendarState.month += 1;
-      if (ojtCalendarState.month > 11) {
-        ojtCalendarState.month = 0;
-        ojtCalendarState.year += 1;
-      }
-      renderOjtCalendar();
-    });
-  }
-
-  if (logBtn) {
-    logBtn.addEventListener('click', function () {
-      if (!ojtCalendarState.selectedDate) {
-        var today = new Date();
-        ojtCalendarSelectDate(formatOjtCalendarDateKey(today.getFullYear(), today.getMonth(), today.getDate()));
-      }
-      openOjtModal();
-    });
-  }
-
-  var defaultDateInput = document.querySelector('.ojt-log-form input[name="log_date"]');
-  var defaultDate = (defaultDateInput && defaultDateInput.value) ? defaultDateInput.value : '';
-  var parsedDefault = parseOjtCalendarDateKey(defaultDate);
-
-  if (parsedDefault) {
-    ojtCalendarState.year = parsedDefault.year;
-    ojtCalendarState.month = parsedDefault.month;
-    ojtCalendarState.selectedDate = defaultDate;
-  }
-
-  renderOjtCalendar();
-  updateOjtCalendarSelectedInfo();
-})();
-
-function updateOjtStats(stats) {
-  var hoursLogged = document.getElementById('ojtHoursLogged');
-  var hoursTarget = document.getElementById('ojtHoursTarget');
-  var daysPresent = document.getElementById('ojtDaysPresent');
-  var tasksCompleted = document.getElementById('ojtTasksCompleted');
-  var progressPct = document.getElementById('ojtProgressPct');
-  var progressPctTop = document.getElementById('ojtProgressPctTop');
-  var progressHours = document.getElementById('ojtProgressHours');
-  var progressFill = document.getElementById('ojtProgressFill');
-
-  if (hoursLogged) hoursLogged.textContent = Number(stats.hours_logged || 0).toFixed(2).replace(/\.00$/, '');
-  if (hoursTarget) hoursTarget.textContent = Number(stats.hours_target || 0).toFixed(2).replace(/\.00$/, '');
-  if (daysPresent) daysPresent.textContent = String(stats.days_present || 0);
-  if (tasksCompleted) tasksCompleted.textContent = String(stats.tasks_completed || 0);
-  if (progressPct) progressPct.textContent = String(stats.progress || 0) + '%';
-  if (progressPctTop) progressPctTop.textContent = String(stats.progress || 0) + '%';
-  if (progressHours) {
-    var hLogged = Number(stats.hours_logged || 0).toFixed(2).replace(/\.00$/, '');
-    var hTarget = Number(stats.hours_target || 0).toFixed(2).replace(/\.00$/, '');
-    progressHours.textContent = hLogged + ' of ' + hTarget;
-  }
-  if (progressFill) progressFill.style.width = String(stats.progress || 0) + '%';
-}
-
-function prependOjtLogRow(entry) {
-  var tbody = document.getElementById('ojtLogTableBody');
-  if (!tbody) return;
-
-  var placeholder = tbody.querySelector('td[colspan="5"]');
-  if (placeholder) {
-    var row = placeholder.closest('tr');
-    if (row) row.remove();
-  }
-
-  var tr = document.createElement('tr');
-  var safeText = function (value) {
-    return String(value || '').replace(/[&<>"']/g, function (char) {
-      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] || char;
-    });
+  var ojtCalendarEntries = <?php echo $calendarEntriesJson; ?>;
+  var ojtCalendarState = {
+    year: (new Date()).getFullYear(),
+    month: (new Date()).getMonth(),
+    selectedDate: null
   };
 
-  tr.innerHTML = ''
-    + '<td>' + safeText(entry.date_display || '') + '</td>'
-    + '<td>' + safeText(entry.accomplishment || '') + '</td>'
-    + '<td>' + safeText(entry.hours || '') + '</td>'
-    + '<td>' + safeText(entry.mood || '') + '</td>'
-    + '<td>' + (entry.file_url ? ('<a href="' + safeText(entry.file_url) + '" target="_blank">View</a>') : '-') + '</td>';
+  function openOjtModal() {
+    var modal = document.getElementById('logModal');
+    if (!modal) return;
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
 
-  tbody.insertBefore(tr, tbody.firstChild);
-}
+  function closeOjtModal() {
+    var modal = document.getElementById('logModal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
 
-function resetOjtFormUi(form) {
-  form.reset();
-  var fileName = document.getElementById('taskFileName');
-  var input = document.getElementById('task_file');
-  var wrapper = input ? input.closest('.ojt-file-input') : null;
-  if (fileName) fileName.textContent = 'No file chosen';
-  if (wrapper) wrapper.classList.remove('has-file');
-}
+  (function bindFileInputLabel() {
+    var input = document.getElementById('task_file');
+    var fileName = document.getElementById('taskFileName');
+    var wrapper = input ? input.closest('.ojt-file-input') : null;
+    if (!input || !fileName) return;
+    input.addEventListener('change', function() {
+      var hasFile = !!(input.files && input.files.length > 0);
+      fileName.textContent = hasFile ? input.files[0].name : 'No file chosen';
+      if (wrapper) {
+        wrapper.classList.toggle('has-file', hasFile);
+      }
+    });
+  })();
+
+  (function bindAjaxLogSubmit() {
+    var form = document.querySelector('.ojt-log-form');
+    if (!form) return;
+
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      var submitBtn = form.querySelector('.ojt-submit-btn');
+      var originalBtnText = submitBtn ? submitBtn.textContent : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+      }
+
+      var endpoint = form.getAttribute('data-ajax-url') || window.location.href;
+
+      fetch(endpoint, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        })
+        .then(function(response) {
+          var contentType = response.headers.get('content-type') || '';
+          if (contentType.indexOf('application/json') !== -1) {
+            return response.json().then(function(data) {
+              return {
+                ok: response.ok,
+                data: data
+              };
+            });
+          }
+          return response.text().then(function(text) {
+            return {
+              ok: false,
+              data: {
+                ok: false,
+                message: 'Server returned non-JSON response. Please refresh and try again.',
+                raw: text
+              }
+            };
+          });
+        })
+        .then(function(result) {
+          if (!result.ok || !result.data || !result.data.ok) {
+            throw new Error((result.data && result.data.message) ? result.data.message : 'Failed to save log entry.');
+          }
+
+          updateOjtStats(result.data.stats || {});
+          updateOjtCalendarFromEntry(result.data.entry || {});
+          resetOjtFormUi(form);
+          closeOjtModal();
+        })
+        .catch(function(error) {
+          alert(error.message || 'Failed to save log entry.');
+        })
+        .finally(function() {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText || 'Submit Log';
+          }
+        });
+    });
+  })();
+
+  function padOjtCalendarPart(value) {
+    return String(value).padStart(2, '0');
+  }
+
+  function formatOjtCalendarDateKey(year, monthZeroBased, day) {
+    return year + '-' + padOjtCalendarPart(monthZeroBased + 1) + '-' + padOjtCalendarPart(day);
+  }
+
+  function parseOjtCalendarDateKey(dateKey) {
+    var parts = String(dateKey || '').split('-');
+    if (parts.length !== 3) return null;
+    var y = Number(parts[0]);
+    var m = Number(parts[1]);
+    var d = Number(parts[2]);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null;
+    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    return {
+      year: y,
+      month: m - 1,
+      day: d
+    };
+  }
+
+  function ojtCalendarSelectDate(dateKey) {
+    var parsed = parseOjtCalendarDateKey(dateKey);
+    if (!parsed) return;
+
+    ojtCalendarState.selectedDate = dateKey;
+    ojtCalendarState.year = parsed.year;
+    ojtCalendarState.month = parsed.month;
+
+    var dateInput = document.querySelector('.ojt-log-form input[name="log_date"]');
+    if (dateInput) {
+      dateInput.value = dateKey;
+    }
+
+    renderOjtCalendar();
+    updateOjtCalendarSelectedInfo();
+  }
+
+  function updateOjtCalendarSelectedInfo() {
+    var metaEl = document.getElementById('ojtCalendarSelectedMeta');
+    if (!metaEl) return;
+
+    var selected = ojtCalendarState.selectedDate;
+    if (!selected) {
+      metaEl.innerHTML = 'Select a date to prepare your log entry.';
+      return;
+    }
+
+    var parsed = parseOjtCalendarDateKey(selected);
+    if (!parsed) {
+      metaEl.innerHTML = 'Select a date to prepare your log entry.';
+      return;
+    }
+
+    var dateObj = new Date(parsed.year, parsed.month, parsed.day);
+    var label = dateObj.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+    var details = ojtCalendarEntries[selected] || {
+      count: 0,
+      hours: 0
+    };
+    var count = Number(details.count || 0);
+    var hours = Number(details.hours || 0);
+
+    if (count > 0) {
+      metaEl.innerHTML = '<strong>' + label + '</strong> - ' + count + ' log entr' + (count === 1 ? 'y' : 'ies') + ', ' + hours.toFixed(2).replace(/\.00$/, '') + ' hour' + (hours === 1 ? '' : 's') + ' recorded.';
+    } else {
+      metaEl.innerHTML = '<strong>' + label + '</strong> - No logs yet. You can add one for this date.';
+    }
+  }
+
+  function renderOjtCalendar() {
+    var grid = document.getElementById('ojtCalendarGrid');
+    var monthLabel = document.getElementById('ojtCalendarMonthLabel');
+    if (!grid || !monthLabel) return;
+
+    var year = ojtCalendarState.year;
+    var month = ojtCalendarState.month;
+    var firstDayWeekIndex = new Date(year, month, 1).getDay();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var daysInPrevMonth = new Date(year, month, 0).getDate();
+    var today = new Date();
+    var todayKey = formatOjtCalendarDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+    monthLabel.textContent = new Date(year, month, 1).toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric'
+    });
+    grid.innerHTML = '';
+
+    for (var i = 0; i < firstDayWeekIndex; i++) {
+      var prevDay = daysInPrevMonth - firstDayWeekIndex + i + 1;
+      var prevCell = document.createElement('div');
+      prevCell.className = 'ojt-calendar-cell is-other-month';
+      prevCell.innerHTML = '<div class="ojt-calendar-day-number">' + prevDay + '</div>';
+      grid.appendChild(prevCell);
+    }
+
+    for (var day = 1; day <= daysInMonth; day++) {
+      var dateKey = formatOjtCalendarDateKey(year, month, day);
+      var dayEntry = ojtCalendarEntries[dateKey] || null;
+      var hasEntry = !!dayEntry;
+
+      var cell = document.createElement('div');
+      var classNames = ['ojt-calendar-cell'];
+      if (hasEntry) classNames.push('has-entry');
+      if (dateKey === todayKey) classNames.push('is-today');
+      if (dateKey === ojtCalendarState.selectedDate) classNames.push('is-selected');
+      cell.className = classNames.join(' ');
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ojt-calendar-cell-btn';
+      btn.setAttribute('data-date', dateKey);
+      btn.innerHTML = '<div class="ojt-calendar-day-number">' + day + '</div>';
+      btn.addEventListener('click', function(event) {
+        var targetDate = event.currentTarget.getAttribute('data-date');
+        if (targetDate) {
+          ojtCalendarSelectDate(targetDate);
+        }
+      });
+
+      cell.appendChild(btn);
+
+      if (hasEntry) {
+        var dot = document.createElement('span');
+        dot.className = 'ojt-calendar-entry-dot';
+        dot.textContent = String(dayEntry.count || 0);
+        cell.appendChild(dot);
+      }
+
+      grid.appendChild(cell);
+    }
+
+    var totalCells = firstDayWeekIndex + daysInMonth;
+    var nextCellCount = (7 - (totalCells % 7)) % 7;
+
+    for (var n = 1; n <= nextCellCount; n++) {
+      var nextCell = document.createElement('div');
+      nextCell.className = 'ojt-calendar-cell is-other-month';
+      nextCell.innerHTML = '<div class="ojt-calendar-day-number">' + n + '</div>';
+      grid.appendChild(nextCell);
+    }
+  }
+
+  function updateOjtCalendarFromEntry(entry) {
+    var rawDate = String((entry && entry.date_iso) || '').trim();
+    if (!rawDate) {
+      return;
+    }
+
+    if (!ojtCalendarEntries[rawDate]) {
+      ojtCalendarEntries[rawDate] = {
+        count: 0,
+        hours: 0
+      };
+    }
+
+    ojtCalendarEntries[rawDate].count = Number(ojtCalendarEntries[rawDate].count || 0) + 1;
+    ojtCalendarEntries[rawDate].hours = Number(ojtCalendarEntries[rawDate].hours || 0) + Number((entry && entry.hours) || 0);
+
+    ojtCalendarSelectDate(rawDate);
+  }
+
+  (function initOjtCalendar() {
+    var prevBtn = document.getElementById('ojtCalendarPrevBtn');
+    var nextBtn = document.getElementById('ojtCalendarNextBtn');
+    var logBtn = document.getElementById('ojtCalendarLogBtn');
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', function() {
+        ojtCalendarState.month -= 1;
+        if (ojtCalendarState.month < 0) {
+          ojtCalendarState.month = 11;
+          ojtCalendarState.year -= 1;
+        }
+        renderOjtCalendar();
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function() {
+        ojtCalendarState.month += 1;
+        if (ojtCalendarState.month > 11) {
+          ojtCalendarState.month = 0;
+          ojtCalendarState.year += 1;
+        }
+        renderOjtCalendar();
+      });
+    }
+
+    if (logBtn) {
+      logBtn.addEventListener('click', function() {
+        if (!ojtCalendarState.selectedDate) {
+          var today = new Date();
+          ojtCalendarSelectDate(formatOjtCalendarDateKey(today.getFullYear(), today.getMonth(), today.getDate()));
+        }
+        openOjtModal();
+      });
+    }
+
+    var defaultDateInput = document.querySelector('.ojt-log-form input[name="log_date"]');
+    var defaultDate = (defaultDateInput && defaultDateInput.value) ? defaultDateInput.value : '';
+    var parsedDefault = parseOjtCalendarDateKey(defaultDate);
+
+    if (parsedDefault) {
+      ojtCalendarState.year = parsedDefault.year;
+      ojtCalendarState.month = parsedDefault.month;
+      ojtCalendarState.selectedDate = defaultDate;
+    }
+
+    renderOjtCalendar();
+    updateOjtCalendarSelectedInfo();
+  })();
+
+  function updateOjtStats(stats) {
+    var hoursLogged = document.getElementById('ojtHoursLogged');
+    var hoursTarget = document.getElementById('ojtHoursTarget');
+    var daysPresent = document.getElementById('ojtDaysPresent');
+    var tasksCompleted = document.getElementById('ojtTasksCompleted');
+    var progressPct = document.getElementById('ojtProgressPct');
+    var progressPctTop = document.getElementById('ojtProgressPctTop');
+    var progressHours = document.getElementById('ojtProgressHours');
+    var progressFill = document.getElementById('ojtProgressFill');
+
+    if (hoursLogged) hoursLogged.textContent = Number(stats.hours_logged || 0).toFixed(2).replace(/\.00$/, '');
+    if (hoursTarget) hoursTarget.textContent = Number(stats.hours_target || 0).toFixed(2).replace(/\.00$/, '');
+    if (daysPresent) daysPresent.textContent = String(stats.days_present || 0);
+    if (tasksCompleted) tasksCompleted.textContent = String(stats.tasks_completed || 0);
+    if (progressPct) progressPct.textContent = String(stats.progress || 0) + '%';
+    if (progressPctTop) progressPctTop.textContent = String(stats.progress || 0) + '%';
+    if (progressHours) {
+      var hLogged = Number(stats.hours_logged || 0).toFixed(2).replace(/\.00$/, '');
+      var hTarget = Number(stats.hours_target || 0).toFixed(2).replace(/\.00$/, '');
+      progressHours.textContent = hLogged + ' of ' + hTarget;
+    }
+    if (progressFill) progressFill.style.width = String(stats.progress || 0) + '%';
+  }
+
+  function resetOjtFormUi(form) {
+    form.reset();
+    var fileName = document.getElementById('taskFileName');
+    var input = document.getElementById('task_file');
+    var wrapper = input ? input.closest('.ojt-file-input') : null;
+    if (fileName) fileName.textContent = 'No file chosen';
+    if (wrapper) wrapper.classList.remove('has-file');
+  }
 </script>
