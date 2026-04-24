@@ -216,7 +216,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 ?>
 
 <!-- Welcome Banner -->
-<div style="background:linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);border-radius:16px;padding:32px;margin-bottom:24px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(59, 130, 246, 0.2);">
+<div style="background:linear-gradient(135deg, #0a0e27 0%, #162550 40%, #1a3a5c 70%, #0f2a45 100%);border-radius:16px;padding:32px;margin-bottom:24px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(10, 14, 39, 0.4), 0 0 1px rgba(255, 255, 255, 0.1) inset;">
   <div style="z-index:2;flex:1;">
     <h2 style="font-size:1.8rem;font-weight:800;margin:0 0 12px 0;line-height:1.2;">Welcome back, <?php echo htmlspecialchars($firstName); ?>! 👋</h2>
     <p style="font-size:1rem;margin:0 0 16px 0;opacity:0.95;line-height:1.4;">You're <?php echo number_format((float)($student['internship_readiness_score'] ?? 0), 0); ?>% ready for internship opportunities. Keep improving your profile!</p>
@@ -224,7 +224,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
       <a href="<?php echo $baseUrl; ?>/layout.php?page=student/profile" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.2);color:white;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600;border:1px solid rgba(255,255,255,0.3);transition:all 0.2s;cursor:pointer;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
         <i class="fas fa-user"></i> Complete Profile
       </a>
-      <a href="<?php echo $baseUrl; ?>/layout.php?page=student/marketplace" style="display:inline-flex;align-items:center;gap:8px;background:white;color:#3b82f6;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600;transition:all 0.2s;cursor:pointer;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(59,130,246,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+      <a href="<?php echo $baseUrl; ?>/layout.php?page=student/marketplace" style="display:inline-flex;align-items:center;gap:8px;background:white;color:#0f2a45;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600;transition:all 0.2s;cursor:pointer;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(59,130,246,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
         <i class="fas fa-briefcase"></i> Browse Internships
       </a>
     </div>
@@ -244,7 +244,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 <!-- Stat Cards -->
 <div class="stat-cards">
   <div class="stat-card stat-card-applications">
-    <div class="stat-card-icon" style="background:rgba(6,182,212,.1)"><i class="fas fa-paper-plane" style="color:#06B6D4"></i></div>
+    <div class="stat-card-icon"><img src="/SkillHive/assets/media/Applications.png" alt="Applications" style="width:100%;height:100%;object-fit:contain;"></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
         <div class="stat-card-trend <?php echo htmlspecialchars($applicationsTrendClass); ?>"><i class="fas <?php echo htmlspecialchars($applicationsTrendIcon); ?>"></i> <?php echo htmlspecialchars($applicationsTrendText); ?></div>
@@ -254,7 +254,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     </div>
   </div>
   <div class="stat-card stat-card-shortlisted">
-    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-circle" style="color:#10B981"></i></div>
+    <div class="stat-card-icon"><img src="/SkillHive/assets/media/Shortlisted.png" alt="Shortlisted" style="width:100%;height:100%;object-fit:contain;"></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
         <div class="stat-card-trend <?php echo htmlspecialchars($shortlistedTrendClass); ?>"><i class="fas <?php echo htmlspecialchars($shortlistedTrendIcon); ?>"></i> <?php echo htmlspecialchars($shortlistedTrendText); ?></div>
@@ -264,7 +264,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     </div>
   </div>
   <div class="stat-card stat-card-ojt">
-    <div class="stat-card-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-clock" style="color:#F59E0B"></i></div>
+    <div class="stat-card-icon"><img src="/SkillHive/assets/media/OJT%20Hours.png" alt="OJT Hours" style="width:100%;height:100%;object-fit:contain;"></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
         <div class="stat-card-trend neutral"><?php echo htmlspecialchars($ojtTargetText); ?></div>
@@ -274,7 +274,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     </div>
   </div>
   <div class="stat-card stat-card-readiness">
-    <div class="stat-card-icon" style="background:rgba(111,66,193,.1)"><i class="fas fa-star" style="color:#6F42C1"></i></div>
+    <div class="stat-card-icon"><img src="/SkillHive/assets/media/Readiness%20Score.png" alt="Readiness Score" style="width:100%;height:100%;object-fit:contain;"></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
         <div class="stat-card-trend <?php echo htmlspecialchars($readinessTrendClass); ?>"><i class="fas <?php echo htmlspecialchars($readinessTrendIcon); ?>"></i> <?php echo htmlspecialchars($readinessTrendText); ?></div>
@@ -371,8 +371,8 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
       <div class="panel-card-header"><h3>Profile Completeness</h3></div>
       <div style="display:flex;align-items:center;justify-content:center;margin-bottom:20px">
         <div style="position:relative;width:90px;height:90px">
-          <svg width="90" height="90"><circle cx="45" cy="45" r="35" stroke="#F0F0F0" stroke-width="6" fill="none"/><circle cx="45" cy="45" r="35" fill="none" stroke="#06B6D4" stroke-width="6" stroke-linecap="round" stroke-dasharray="<?php echo (int) $profileDashArray; ?>" stroke-dashoffset="<?php echo (int) $profileDashOffset; ?>" transform="rotate(-90,45,45)"/></svg>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:800;font-size:1.1rem;color:<?php echo htmlspecialchars($profileScoreColor); ?>"><?php echo (int) $profileCompleteness; ?>%</div>
+          <svg width="90" height="90"><circle cx="45" cy="45" r="35" stroke="#F0F0F0" stroke-width="6" fill="none"/><circle cx="45" cy="45" r="35" fill="none" stroke="#2C5AA0" stroke-width="6" stroke-linecap="round" stroke-dasharray="<?php echo (int) $profileDashArray; ?>" stroke-dashoffset="<?php echo (int) $profileDashOffset; ?>" transform="rotate(-90,45,45)"/></svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:800;font-size:1.1rem;background:linear-gradient(135deg, #0a0e27 0%, #162550 40%, #1a3a5c 70%, #0f2a45 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><?php echo (int) $profileCompleteness; ?>%</div>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">

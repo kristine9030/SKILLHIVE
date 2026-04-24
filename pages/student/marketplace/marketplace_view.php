@@ -216,17 +216,17 @@ function marketplace_render(array $data): void
 .market-shell { background:var(--mk-bg); border:1px solid #ebedf2; border-radius:22px; padding:16px; margin-bottom:16px; }
 .market-layout { display:grid; grid-template-columns:280px 1fr; gap:16px; align-items:start; }
 .market-filter-panel { background:#fff; border:1px solid var(--mk-border); border-radius:16px; padding:16px; position:sticky; top:14px; }
-.market-filter-head { font-size:1.18rem; font-weight:800; color:var(--mk-title); margin-bottom:12px; }
-.market-filter-group { border-top:1px solid #f1f2f6; padding-top:12px; margin-top:12px; }
-.market-filter-title { font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; color:#858aa1; margin-bottom:8px; font-weight:800; }
-.market-input, .market-select { width:100%; border:1px solid var(--mk-border); border-radius:10px; padding:10px 12px; font-size:.85rem; background:#fff; color:#1f2937; }
+.market-filter-head { font-size:1.2rem; font-weight:800; color:#0a0e27; margin-bottom:12px; }
+.market-filter-group { border-top:1px solid #e5e7ee; padding-top:12px; margin-top:12px; }
+.market-filter-title { font-size:.82rem; text-transform:uppercase; letter-spacing:.08em; color:#6b7280; margin-bottom:8px; font-weight:800; }
+.market-input, .market-select { width:100%; border:1px solid var(--mk-border); border-radius:10px; padding:10px 12px; font-size:.87rem; background:#fff; color:#0a0e27; font-weight:500; }
 .market-radio-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.market-radio-tile { border:1px solid var(--mk-border); background:#f8f9fc; color:#555d73; border-radius:10px; padding:9px 10px; font-size:.78rem; font-weight:700; text-align:center; cursor:pointer; transition:all .18s ease; }
-.market-radio-tile.active { border-color:#111111; background:#111111; color:#ffffff; }
+.market-radio-tile { border:1px solid var(--mk-border); background:#f9fafb; color:#6b7280; border-radius:10px; padding:10px 10px; font-size:.8rem; font-weight:700; text-align:center; cursor:pointer; transition:all .18s ease; }
+.market-radio-tile.active { border-color:#162550; background:#162550; color:#ffffff; }
 .market-main-panel { min-width:0; }
 .market-hero {
-  background:linear-gradient(115deg,#f8fcff 0%, #dff0ff 48%, #9fd1ff 100%);
-  border:1px solid #c8def5;
+  background:linear-gradient(135deg, #0a0e27 0%, #162550 40%, #1a3a5c 70%, #0f2a45 100%);
+  border:1px solid rgba(255, 255, 255, 0.1);
   border-radius:16px;
   padding:20px;
   margin-bottom:12px;
@@ -248,16 +248,18 @@ function marketplace_render(array $data): void
   font-family:'Poppins',sans-serif;
   font-size:2rem;
   line-height:1.2;
-  color:#111111;
+  color:#ffffff;
   font-weight:600;
   letter-spacing:-0.01em;
+  word-break: break-word;
 }
 .market-hero p {
   margin:6px 0 0;
-  max-width:760px;
-  color:#555555;
+  max-width:100%;
+  color:#ffffff;
   font-size:.95rem;
   font-weight:500;
+  opacity:0.95;
 }
 .market-search-row { display:grid; grid-template-columns:1fr 110px; gap:10px; margin-bottom:10px; }
 .market-search-wrap { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--mk-border); border-radius:12px; padding:0 12px; }
@@ -266,53 +268,53 @@ function marketplace_render(array $data): void
 .market-action-btn { border:none; border-radius:12px; background:#111111; color:#ffffff; font-weight:700; font-size:.86rem; cursor:pointer; }
 .market-top-picks { border:1px solid #e4e6ef; border-radius:16px; background:linear-gradient(120deg,#ffffff 0%,#f2f8ff 45%,#e8f3ff 100%); padding:14px; margin:8px 0 12px; }
 .market-top-picks-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
-.market-top-picks-title { font-size:1.05rem; color:#1f2937; font-weight:700; line-height:1.25; letter-spacing:.01em; }
-.market-top-picks-sub { font-size:.8rem; color:#6b7280; margin-top:3px; font-weight:500; }
+.market-top-picks-title { font-size:1.2rem; color:#0a0e27; font-weight:700; line-height:1.25; letter-spacing:.01em; }
+.market-top-picks-sub { font-size:.85rem; color:#4b5563; margin-top:3px; font-weight:500; }
 .market-top-picks-refresh { width:34px; height:34px; border-radius:999px; border:1px solid #d4dae7; background:#fff; color:#111827; cursor:pointer; }
 .market-picks-list { display:flex; flex-direction:column; gap:0; }
-.market-pick-item { display:grid; grid-template-columns:42px 1fr auto; gap:10px; align-items:center; padding:10px 10px; border:1px solid #e5e7ee; border-left:4px solid var(--pick-accent, #94a3b8); border-radius:12px; margin-bottom:8px; background:#ffffff; }
-.market-pick-item:first-child { border-top:none; }
+.market-pick-item { display:grid; grid-template-columns:42px 1fr auto; gap:10px; align-items:center; padding:10px 10px; border:1px solid #e5e7ee; border-top: none; border-radius:12px; margin-bottom:8px; background:#ffffff; }
+.market-pick-item:first-child { border-top: none; }
 .market-pick-logo { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:.95rem; }
 .market-pick-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.market-pick-title { font-size:.88rem; font-weight:700; color:#111827; line-height:1.2; }
+.market-pick-title { font-size:.92rem; font-weight:700; color:#0a0e27; line-height:1.2; }
 .market-pick-fit { font-size:.74rem; border-radius:999px; padding:3px 8px; background:#10b981; color:#fff; font-weight:700; white-space:nowrap; }
-.market-pick-meta { color:#4b5563; font-size:.8rem; margin-top:2px; }
-.market-pick-hint { color:#0f766e; font-size:.76rem; margin-top:4px; font-weight:600; }
+.market-pick-meta { color:#6b7280; font-size:.82rem; margin-top:2px; }
+.market-pick-hint { color:#162550; font-size:.78rem; margin-top:4px; font-weight:600; }
 .market-pick-reasons { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
-.market-pick-reason { font-size:.68rem; border:1px solid #dce1ea; background:#ffffff; color:#4b5563; border-radius:999px; padding:2px 8px; font-weight:600; }
+.market-pick-reason { font-size:.7rem; border:1px solid #d8dceb; background:#f9fafb; color:#6b7280; border-radius:999px; padding:3px 10px; font-weight:600; }
 .market-pick-actions { display:flex; align-items:center; gap:8px; }
-.market-pick-link { font-size:.72rem; text-decoration:none; color:#111827; border:1px solid #d1d5db; border-radius:999px; padding:4px 10px; background:#fff; font-weight:700; }
+.market-pick-link { font-size:.75rem; text-decoration:none; color:#0a0e27; border:1px solid #d1d5db; border-radius:999px; padding:5px 12px; background:#fff; font-weight:700; }
 .market-pick-dismiss { width:26px; height:26px; border-radius:999px; border:1px solid #d5d9e2; background:#fff; color:#111; cursor:pointer; }
 .market-pick-item.hidden { display:none; }
 .market-top-picks-empty { display:none; font-size:.8rem; color:#6b7280; padding:8px 0 2px; }
 .market-top-picks-empty.show { display:block; }
 .market-subhead { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin:6px 0 12px; }
-.market-subhead-copy { color:#72788c; font-size:.83rem; }
+.market-subhead-copy { color:#6b7280; font-size:.85rem; font-weight:500; }
 .market-section { margin-top:14px; }
 .market-section-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
-.market-section-title { font-size:1rem; font-weight:800; color:#1d2437; }
-.market-section-pill { font-size:.72rem; border-radius:999px; padding:3px 10px; border:1px solid #d8deef; color:#55607d; background:#fff; }
-.market-toggle-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:10px 14px; border-radius:10px; border:1px solid #111111; background:#111111; color:#ffffff; font-size:.82rem; font-weight:800; text-decoration:none; box-shadow:none; }
+.market-section-title { font-size:1.1rem; font-weight:800; color:#0a0e27; }
+.market-section-pill { font-size:.74rem; border-radius:999px; padding:4px 12px; border:1px solid #d1d5db; color:#6b7280; background:#f9fafb; font-weight:600; }
+.market-toggle-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:10px 14px; border-radius:10px; border:1px solid #162550; background:#162550; color:#ffffff; font-size:.84rem; font-weight:800; text-decoration:none; box-shadow:none; }
 .market-toggle-btn:hover { filter:brightness(1.05); }
 .market-toggle-btn.off { background:#ffffff; border-color:#cfd4dc; color:#111111; box-shadow:none; }
-.market-external-hint { margin-top:8px; font-size:.74rem; color:#5f6a84; }
+.market-external-hint { margin-top:8px; font-size:.76rem; color:#6b7280; font-weight:500; }
 .market-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
 .market-card { background:#fff; border:1px solid var(--mk-border); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:9px; }
 .market-card-head { display:flex; justify-content:space-between; gap:10px; }
 .market-card-row { display:flex; gap:10px; min-width:0; }
 .market-logo { width:42px; height:42px; border-radius:10px; color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.market-card-title { font-size:1.05rem; font-weight:800; color:#1d2437; line-height:1.25; }
-.market-card-company { font-size:.84rem; color:#70788e; margin-top:2px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.market-card-meta { display:flex; flex-wrap:wrap; gap:8px; font-size:.74rem; color:#6a738b; }
-.market-card-meta span { background:#f6f7fb; border:1px solid #eceff6; border-radius:999px; padding:4px 8px; }
-.market-card-desc { color:#4f596f; font-size:.82rem; line-height:1.5; margin:0; }
+.market-card-title { font-size:1.1rem; font-weight:800; color:#0a0e27; line-height:1.25; }
+.market-card-company { font-size:.86rem; color:#6b7280; margin-top:2px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.market-card-meta { display:flex; flex-wrap:wrap; gap:8px; font-size:.76rem; color:#6b7280; font-weight:500; }
+.market-card-meta span { background:#f0f4f9; border:1px solid #d8dceb; border-radius:999px; padding:5px 10px; font-weight:600; }
+.market-card-desc { color:#6b7280; font-size:.84rem; line-height:1.5; margin:0; }
 .market-card-desc.clamped { display:-webkit-box; line-clamp:2; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.market-link-btn { border:none; background:none; color:#111111; font-size:.78rem; font-weight:700; padding:0; cursor:pointer; }
+.market-link-btn { border:none; background:none; color:#162550; font-size:.8rem; font-weight:700; padding:0; cursor:pointer; }
 .market-skill-row { display:flex; flex-wrap:wrap; gap:6px; }
-.market-skill-chip { font-size:.69rem; border-radius:999px; padding:4px 8px; background:#f6f8fd; border:1px solid #e4e9f4; color:#526080; }
+.market-skill-chip { font-size:.7rem; border-radius:999px; padding:4px 10px; background:#f0f4f9; border:1px solid #d8dceb; color:#4b5563; font-weight:600; }
 .market-skill-chip.match { background:#ecfdf5; border-color:#bbf7d0; color:#15803d; }
 .market-card-foot { margin-top:auto; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
-.market-allowance { font-size:.92rem; font-weight:800; color:#1d2437; }
+.market-allowance { font-size:.95rem; font-weight:800; color:#0a0e27; }
 .market-allowance small { font-size:.72rem; color:#8890a5; font-weight:600; }
 .market-empty { background:#fff; border:1px dashed #dbe2ea; border-radius:16px; padding:28px; text-align:center; color:#6b7280; }
 .market-empty i { font-size:1.8rem; color:#9ca3af; margin-bottom:10px; display:block; }
@@ -392,8 +394,15 @@ function marketplace_render(array $data): void
     <input type="hidden" name="page" value="student/marketplace">
 
     <div class="market-hero">
-      <h2>Find your dream internship here</h2>
-      <p>Explore opportunities from SkillHive partner employers and verified external API listings in one place.</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;position:relative;z-index:2;">
+        <div style="flex:1;">
+          <h2>Find your dream internship here</h2>
+          <p>Explore opportunities from SkillHive partner employers and verified external API listings in one place.</p>
+        </div>
+      </div>
+      <div style="position:absolute;top:50%;right:20px;transform:translateY(-50%);z-index:1;width:180px;height:180px;">
+        <img src="/SkillHive/assets/media/Marketplace.png" alt="Marketplace" style="width:100%;height:100%;object-fit:contain;">
+      </div>
     </div>
 
     <div class="market-layout">

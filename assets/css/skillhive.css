@@ -2185,7 +2185,7 @@ td,
     border-radius: 50%;
     pointer-events: none;
     opacity: 0.08;
-    background: #06B6D4;
+    background: #162550;
 }
 
 .stat-card::after {
@@ -2198,7 +2198,7 @@ td,
     border-radius: 50%;
     pointer-events: none;
     opacity: 0.06;
-    background: #06B6D4;
+    background: #162550;
 }
 
 .stat-card-info {
@@ -2208,17 +2208,17 @@ td,
     position: relative;
     z-index: 2;
     flex: 1;
-    align-items: flex-end;
-    text-align: right;
+    align-items: flex-start;
+    text-align: left;
 }
 
 .stat-card-icon {
-    width: 70px;
-    height: 70px;
+    width: 100px;
+    height: 100px;
     border-radius: 16px;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: centeend;
+    text-align: righ: center;
     margin-bottom: 0;
     position: relative;
     z-index: 2;
@@ -2231,9 +2231,20 @@ td,
 }
 
 .stat-card:nth-child(1) .stat-card-icon {
-    background: rgba(139, 92, 246, 0.12);
-    color: #8B5CF6;
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+    width: 130px !important;
+    height: 130px !important;
+    background: transparent !important;
+    color: transparent !important;
+    box-shadow: none !important;
+    margin: -15px 0 -15px -15px;
+}
+
+.stat-card:nth-child(1)::before {
+    background: #3B82F6 !important;
+}
+
+.stat-card:nth-child(1)::after {
+    background: #3B82F6 !important;
 }
 
 .stat-card:nth-child(2) .stat-card-icon {
@@ -2242,10 +2253,44 @@ td,
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
 }
 
+.stat-card:nth-child(2) .stat-card-icon {
+    width: 130px !important;
+    height: 130px !important;
+    background: transparent !important;
+    color: transparent !important;
+    box-shadow: none !important;
+    margin: -15px 0 -15px -15px;
+}
+
+.stat-card:nth-child(2)::before {
+    background: #2C5AA0 !important;
+}
+
+.stat-card:nth-child(2)::after {
+    background: #2C5AA0 !important;
+}
+
 .stat-card:nth-child(3) .stat-card-icon {
     background: rgba(245, 158, 11, 0.12);
     color: #F59E0B;
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+.stat-card:nth-child(3) .stat-card-icon {
+    width: 130px !important;
+    height: 130px !important;
+    background: transparent !important;
+    color: transparent !important;
+    box-shadow: none !important;
+    margin: -15px 0 -15px -15px;
+}
+
+.stat-card:nth-child(3)::before {
+    background: #2C5AA0 !important;
+}
+
+.stat-card:nth-child(3)::after {
+    background: #2C5AA0 !important;
 }
 
 .stat-card:nth-child(4) .stat-card-icon {
@@ -2254,12 +2299,30 @@ td,
     box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
 }
 
+.stat-card:nth-child(4) .stat-card-icon {
+    width: 130px !important;
+    height: 130px !important;
+    background: transparent !important;
+    color: transparent !important;
+    box-shadow: none !important;
+    margin: -15px 0 -15px -15px;
+}
+
+.stat-card:nth-child(4)::before {
+    background: #6F42C1 !important;
+}
+
+.stat-card:nth-child(4)::after {
+    background: #6F42C1 !important;
+}
+
 .stat-card-num-row {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 2px;
     justify-content: flex-end;
+    width: 100%;
 }
 
 .stat-card-num {
@@ -2270,6 +2333,10 @@ td,
     position: relative;
     z-index: 2;
     flex-shrink: 0;
+    max-width: 180px;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    text-align: right;
 }
 
 .stat-card-label {
@@ -2279,6 +2346,7 @@ td,
     position: relative;
     z-index: 2;
     text-align: right;
+    align-self: flex-end;
 }
 
 .stat-card-trend {
@@ -2292,6 +2360,9 @@ td,
     flex-shrink: 0;
     white-space: nowrap;
     color: var(--accent2);
+    justify-content: flex-end;
+    align-self: flex-end;
+    text-align: right;
 }
 
 .stat-card-trend.up {

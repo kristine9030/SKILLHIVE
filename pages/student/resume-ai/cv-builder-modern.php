@@ -1,3 +1,10 @@
+
+<div class="cv-hero" style="background:linear-gradient(135deg,#0a0e27 0%,#162550 40%,#1a3a5c 70%,#0f2a45 100%);border-radius:16px;padding:18px 20px 18px 20px;margin-bottom:16px;display:flex;align-items:center;gap:18px;position:relative;overflow:hidden;">
+  <div style="flex:1;z-index:2;">
+    <h2 style="margin:0;font-size:1.5rem;line-height:1.2;color:#fff;font-weight:600;letter-spacing:-0.01em;">Build your professional CV</h2>
+    <p style="margin:6px 0 0;color:#fff;font-size:.97rem;font-weight:500;opacity:0.95;">Create a standout CV with SkillHive's easy-to-use builder. Preview, save, and download your resume instantly.</p>
+  </div>
+</div>
 <?php
 if (!isset($pdo) || !($pdo instanceof PDO)) {
     require_once __DIR__ . '/../../../backend/db_connect.php';
@@ -153,12 +160,10 @@ if (is_array($savedCv) && !empty($savedCv)) {
 $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl) !== '' ? rtrim($baseUrl, '/') : '/SkillHive') . '/pages/student/resume_ai_endpoint.php';
 ?>
 
-<div class="page-header">
-  <div>
-    <h2 class="page-title">CV Builder</h2>
-    <p class="page-subtitle" id="cvPageSubtitle">Create a professional CV with live preview</p>
-  </div>
-</div>
+<?php
+// Banner variables for CV Builder
+?>
+
 
 <div class="cv-builder-container">
   <div class="cv-form-section">
@@ -718,22 +723,22 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
 }
 
 .cv-btn-primary {
-  background: #3b82f6;
-  color: white;
+  background: #111111;
+  color: #fff;
 }
 
 .cv-btn-primary:hover {
-  background: #2563eb;
+  background: #000;
 }
 
 .cv-btn-secondary {
-  background: white;
-  color: #3b82f6;
-  border: 1px solid #3b82f6;
+  background: #fff;
+  color: #111111;
+  border: 1.5px solid #111111;
 }
 
 .cv-btn-secondary:hover {
-  background: #eff6ff;
+  background: #f3f4f6;
 }
 
 .cv-save-status {
