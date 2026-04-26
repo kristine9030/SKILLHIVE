@@ -71,10 +71,10 @@ if (!function_exists('adviser_dashboard_bar_gradient')) {
     function adviser_dashboard_bar_gradient(int $index): string
     {
         $gradients = [
-            'linear-gradient(90deg,#06B6D4,#10B981)',
-            'linear-gradient(90deg,#F59E0B,#10B981)',
-            'linear-gradient(90deg,#EF4444,#F59E0B)',
-            'linear-gradient(90deg,#6F42C1,#06B6D4)',
+            'linear-gradient(90deg,#12b3ac,#12b3ac)',
+            'linear-gradient(90deg,#12b3ac,#12b3ac)',
+            'linear-gradient(90deg,#12b3ac,#12b3ac)',
+            'linear-gradient(90deg,#12b3ac,#12b3ac)',
         ];
 
         return $gradients[$index % count($gradients)];

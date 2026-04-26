@@ -405,7 +405,7 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
 }
 
 .cv-form-card {
-  background: #f9fafb;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 20px;
@@ -418,7 +418,7 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
-  color: #111827;
+  color: #050505;
 }
 
 .cv-form-header {
@@ -469,14 +469,14 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
   border-radius: 8px;
   font-size: 0.875rem;
   font-family: inherit;
-  color: #111827;
+  color: #050505;
   background: white;
 }
 
 .cv-form-input:focus,
 .cv-form-textarea:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #12b3ac;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -602,7 +602,7 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
   border: 1px dashed #d1d5db;
   border-radius: 6px;
   padding: 10px;
-  color: #3b82f6;
+  color: #12b3ac;
   font-weight: 600;
   cursor: pointer;
   font-size: 0.875rem;
@@ -611,7 +611,7 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
 
 .cv-btn-add-skill:hover,
 .cv-btn-add-section:hover {
-  border-color: #3b82f6;
+  border-color: #12b3ac;
   background: #eff6ff;
 }
 
@@ -627,7 +627,7 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
   align-items: center;
   gap: 6px;
   background: #eff6ff;
-  color: #1d4ed8;
+  color: #12b3ac;
   border: 1px solid #bfdbfe;
   border-radius: 999px;
   padding: 5px 10px;
@@ -638,7 +638,7 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
 .cv-skill-remove {
   background: transparent;
   border: none;
-  color: #1e40af;
+  color: #12b3ac;
   cursor: pointer;
   font-size: 0.85rem;
   line-height: 1;
@@ -646,7 +646,7 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
 }
 
 .cv-skill-remove:hover {
-  color: #1e3a8a;
+  color: #12b3ac;
 }
 
 .cv-experience-list {
@@ -681,7 +681,7 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
 .cv-btn-remove {
   background: #fee2e2;
   border: 1px solid #fecaca;
-  color: #b91c1c;
+  color: #12b3ac;
   border-radius: 6px;
   padding: 4px 8px;
   cursor: pointer;
@@ -748,7 +748,7 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
 }
 
 .cv-save-status.is-saving {
-  color: #2563eb;
+  color: #12b3ac;
 }
 
 .cv-save-status.is-success {
@@ -756,7 +756,7 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
 }
 
 .cv-save-status.is-error {
-  color: #b91c1c;
+  color: #12b3ac;
 }
 
 /* Preview Styles */

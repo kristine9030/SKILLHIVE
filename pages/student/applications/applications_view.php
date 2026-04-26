@@ -108,7 +108,7 @@ function applications_render_view(array $ctx): void
   font-size: .73rem;
   border: 1px solid #dbe3ee;
   color: #475569;
-  background: #f8fafc;
+  background: #ffffff;
 }
 
 .app-steps {
@@ -182,7 +182,7 @@ function applications_render_view(array $ctx): void
   justify-content: center;
   font-size: .58rem;
   border: 1px solid #cbd5e1;
-  background: #f8fafc;
+  background: #ffffff;
   color: #475569;
   flex-shrink: 0;
 }
@@ -239,7 +239,7 @@ function applications_render_view(array $ctx): void
 }
 
 .app-progress-foot .btn.btn-ghost:hover {
-  background: #f8fafc;
+  background: #ffffff;
   border-color: #cbd5e1;
 }
 
@@ -270,19 +270,19 @@ function applications_render_view(array $ctx): void
 
 <div class="stat-cards">
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(6,182,212,.1)"><i class="fas fa-paper-plane" style="color:#06B6D4"></i></div>
+    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-paper-plane" style="color:#12b3ac"></i></div>
     <div class="stat-card-info"><div class="stat-card-num"><?php echo $totalApplied; ?></div><div class="stat-card-label">Total Applied</div></div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-hourglass-half" style="color:#F59E0B"></i></div>
+    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-hourglass-half" style="color:#12b3ac"></i></div>
     <div class="stat-card-info"><div class="stat-card-num"><?php echo (int) ($statusCounts['Pending'] ?? 0); ?></div><div class="stat-card-label">Pending</div></div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(6,182,212,.1)"><i class="fas fa-list-check" style="color:#0891B2"></i></div>
+    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-list-check" style="color:#12b3ac"></i></div>
     <div class="stat-card-info"><div class="stat-card-num"><?php echo (int) ($statusCounts['Waitlisted'] ?? 0); ?></div><div class="stat-card-label">Waitlisted</div></div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-double" style="color:#10B981"></i></div>
+    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-double" style="color:#12b3ac"></i></div>
     <div class="stat-card-info"><div class="stat-card-num"><?php echo (int) ($statusCounts['Accepted'] ?? 0); ?></div><div class="stat-card-label">Accepted</div></div>
   </div>
 </div>
@@ -402,12 +402,12 @@ function applications_render_view(array $ctx): void
         <?php
           $status = (string) $application['status'];
           $dotColor = match ($status) {
-              'Accepted' => '#10B981',
-              'Interview Scheduled' => '#4F46E5',
-              'Shortlisted' => '#06B6D4',
-              'Waitlisted' => '#0891B2',
-              'Rejected' => '#EF4444',
-              default => '#F59E0B',
+              'Accepted' => '#12b3ac',
+              'Interview Scheduled' => '#12b3ac',
+              'Shortlisted' => '#12b3ac',
+              'Waitlisted' => '#12b3ac',
+              'Rejected' => '#12b3ac',
+              default => '#12b3ac',
           };
           $activityTitle = match ($status) {
               'Accepted' => 'Accepted by ' . (string) $application['company_name'],
@@ -653,20 +653,20 @@ var applicationPolling = {
 
   showStatusNotification: function(app) {
     var message = '';
-    var bgColor = '#10B981';
+    var bgColor = '#12b3ac';
 
     if (app.status === 'Shortlisted') {
       message = '✓ Shortlisted! ' + app.company_name + ' wants to move forward.';
-      bgColor = '#06B6D4';
+      bgColor = '#12b3ac';
     } else if (app.status === 'Interview Scheduled') {
       message = '📅 Interview scheduled! ' + app.company_name + ' sent you details.';
-      bgColor = '#4F46E5';
+      bgColor = '#12b3ac';
     } else if (app.status === 'Accepted') {
       message = '🎉 Accepted! Congratulations on your internship!';
-      bgColor = '#10B981';
+      bgColor = '#12b3ac';
     } else if (app.status === 'Rejected') {
       message = '❌ Application not selected. Check other opportunities!';
-      bgColor = '#EF4444';
+      bgColor = '#12b3ac';
     }
 
     if (message) {

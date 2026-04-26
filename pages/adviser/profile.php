@@ -303,7 +303,7 @@ if ($adviserName === '') {
 
   .adviser-profile-cover {
     height: 200px;
-    background: linear-gradient(135deg, #0a0e27 0%, #162550 40%, #1a3a5c 70%, #0f2a45 100%);
+    background: linear-gradient(135deg, #050505 0%, #050505 40%, #12b3ac 72%, #12b3ac 100%);
     border-radius: 16px;
     position: relative;
     overflow: visible;
@@ -358,7 +358,7 @@ if ($adviserName === '') {
     width: 140px;
     height: 140px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #0d1b2e 0%, #111827 100%);
+    background: linear-gradient(135deg, #050505 0%, #050505 100%);
     color: #fff;
     display: flex;
     align-items: center;
@@ -387,7 +387,7 @@ if ($adviserName === '') {
     right: 0;
     width: 42px;
     height: 42px;
-    background: linear-gradient(135deg, #0d1b2e 0%, #111827 100%);
+    background: linear-gradient(135deg, #050505 0%, #050505 100%);
     border: 3px solid #fff;
     border-radius: 50%;
     display: flex;
@@ -402,7 +402,7 @@ if ($adviserName === '') {
   }
 
   .adviser-profile-avatar-upload:hover {
-    background: linear-gradient(135deg, #111827 0%, #0a0f1a 100%);
+    background: linear-gradient(135deg, #050505 0%, #0a0f1a 100%);
     transform: scale(1.1);
   }
 
@@ -454,7 +454,7 @@ if ($adviserName === '') {
   }
 
   .adviser-profile-bio-item i {
-    background: linear-gradient(135deg, #0d1b2e 0%, #111827 100%);
+    background: linear-gradient(135deg, #050505 0%, #050505 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -521,7 +521,7 @@ if ($adviserName === '') {
   }
 
   .adviser-profile-section-title i {
-    background: linear-gradient(135deg, #0d1b2e 0%, #111827 100%);
+    background: linear-gradient(135deg, #050505 0%, #050505 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -564,12 +564,12 @@ if ($adviserName === '') {
   }
 
   .adviser-profile-input:focus {
-    border-color: #0d1b2e;
+    border-color: #050505;
     box-shadow: 0 0 0 4px rgba(13, 27, 46, 0.1);
   }
 
   .adviser-profile-input[readonly] {
-    background: #f9fafb;
+    background: #ffffff;
     color: #6b7280;
     cursor: not-allowed;
   }
@@ -587,7 +587,7 @@ if ($adviserName === '') {
     text-decoration: none;
     font-size: .86rem;
     font-weight: 700;
-    background: #111827;
+    background: #050505;
     color: #fff;
     box-shadow: 0 4px 12px rgba(17, 24, 39, 0.3);
     transition: all .2s ease;
@@ -603,7 +603,7 @@ if ($adviserName === '') {
 
   .adviser-profile-btn-secondary {
     background: #f3f4f6;
-    color: #111827;
+    color: #050505;
     box-shadow: none;
     border: 1px solid #e5e7eb;
   }
@@ -616,7 +616,7 @@ if ($adviserName === '') {
   .adviser-profile-error {
     border: 1px solid #fecaca;
     background: #fff1f2;
-    color: #b91c1c;
+    color: #12b3ac;
     border-radius: 12px;
     padding: 12px 14px;
     font-size: .82rem;
@@ -659,7 +659,7 @@ if ($adviserName === '') {
     border: 1px solid #e5e7eb;
     border-radius: 14px;
     padding: 14px 12px;
-    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
     transition: all .2s ease;
     text-align: center;
   }
@@ -693,7 +693,7 @@ if ($adviserName === '') {
   .adviser-profile-stat-value {
     font-size: 1.6rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #0d1b2e 0%, #111827 100%);
+    background: linear-gradient(135deg, #050505 0%, #050505 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -733,7 +733,7 @@ if ($adviserName === '') {
   }
 
   .adviser-profile-password-section {
-    background: linear-gradient(135deg, #0d1b2e 0%, #111827 100%);
+    background: linear-gradient(135deg, #050505 0%, #050505 100%);
     border: 1px solid rgba(0, 128, 255, 0.1);
     border-radius: 14px;
     padding: 20px;
@@ -780,7 +780,7 @@ if ($adviserName === '') {
   }
 
   .adviser-profile-password-btn {
-    background: #111827;
+    background: #050505;
     color: #fff;
     box-shadow: 0 4px 12px rgba(17, 24, 39, 0.3);
   }
@@ -791,7 +791,7 @@ if ($adviserName === '') {
   }
 
   .adviser-profile-messaging-banner {
-    background: linear-gradient(135deg, #0d1b2e 0%, #111827 50%, #1a2a3a 100%);
+    background: linear-gradient(135deg, #050505 0%, #050505 50%, #12b3ac 100%);
     border-radius: 16px;
     padding: 24px;
     display: flex;
@@ -799,13 +799,13 @@ if ($adviserName === '') {
     gap: 20px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.26);
     transition: all .3s ease;
   }
 
   .adviser-profile-messaging-banner:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.36);
   }
 
   .adviser-profile-messaging-banner::before {
@@ -816,7 +816,7 @@ if ($adviserName === '') {
     width: 200px;
     height: 200px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(154, 228, 221, 0.14);
     pointer-events: none;
   }
 
@@ -828,7 +828,7 @@ if ($adviserName === '') {
     width: 160px;
     height: 160px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(75, 204, 190, 0.12);
     pointer-events: none;
   }
 

@@ -60,7 +60,7 @@ $settingsActionUrl = (isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '' 
     display: block;
     background: #fef2f2;
     border-color: #fecaca;
-    color: #b91c1c;
+    color: #12b3ac;
   }
 
   /* Fallback toggle visuals for this page to avoid stale-cache/override issues. */
@@ -105,8 +105,8 @@ $settingsActionUrl = (isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '' 
   }
 
   .feed-main .toggle-switch.is-on .toggle-slider {
-    background: #06b6d4;
-    border-color: #0891b2;
+    background: #12b3ac;
+    border-color: #12b3ac;
   }
 
   .feed-main .toggle-switch.is-on .toggle-slider::before {
@@ -207,12 +207,12 @@ $settingsActionUrl = (isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '' 
 
   <div class="feed-side">
     <!-- Danger Zone -->
-    <div class="panel-card" style="border:1px solid rgba(239,68,68,.2)">
+    <div class="panel-card" style="border:1px solid rgba(18,179,172,.3)">
       <div class="panel-card-header">
-        <h3 style="color:#EF4444">Danger Zone</h3>
+        <h3 style="color:#12b3ac">Danger Zone</h3>
       </div>
       <p style="font-size:.82rem;color:#999;margin-bottom:14px">Once you delete your account, there is no going back.</p>
-      <button class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#EF4444;border:1px solid rgba(239,68,68,.2);width:100%;justify-content:center"><i class="fas fa-trash"></i> Delete Account</button>
+      <button class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#12b3ac;border:1px solid rgba(18,179,172,.3);width:100%;justify-content:center"><i class="fas fa-trash"></i> Delete Account</button>
     </div>
   </div>
 </div>

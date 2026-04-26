@@ -118,7 +118,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 <!-- Stat Cards -->
 <div class="stat-cards">
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(6,182,212,.1)"><i class="fas fa-paper-plane" style="color:#06B6D4"></i></div>
+    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-paper-plane" style="color:#12b3ac"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num">12</div>
       <div class="stat-card-label">Applications</div>
@@ -126,7 +126,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +3 this week</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-circle" style="color:#10B981"></i></div>
+    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-circle" style="color:#12b3ac"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num">4</div>
       <div class="stat-card-label">Shortlisted</div>
@@ -134,7 +134,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +1 today</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-clock" style="color:#F59E0B"></i></div>
+    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-clock" style="color:#12b3ac"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num">248</div>
       <div class="stat-card-label">OJT Hours</div>
@@ -142,7 +142,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     <div class="stat-card-trend neutral">of 500 target</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(111,66,193,.1)"><i class="fas fa-star" style="color:#6F42C1"></i></div>
+    <div class="stat-card-icon" style="background:rgba(111,66,193,.1)"><i class="fas fa-star" style="color:#12b3ac"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num"><?php echo number_format((float) ($student['internship_readiness_score'] ?? 0), 2); ?></div>
       <div class="stat-card-label">Readiness Score</div>
@@ -163,9 +163,9 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
       <div class="job-feed">
       <?php
       $logoPalettes = [
-        'linear-gradient(135deg,#06B6D4,#10B981)',
-        'linear-gradient(135deg,#2563EB,#06B6D4)',
-        'linear-gradient(135deg,#22C55E,#06B6D4)',
+        'linear-gradient(135deg,#12b3ac,#12b3ac)',
+        'linear-gradient(135deg,#12b3ac,#12b3ac)',
+        'linear-gradient(135deg,#22C55E,#12b3ac)',
       ];
       ?>
       <?php foreach ($recommendedInternships as $idx => $internship): ?>
@@ -234,14 +234,14 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
       <div class="panel-card-header"><h3>Profile Completeness</h3></div>
       <div style="display:flex;align-items:center;justify-content:center;margin-bottom:20px">
         <div style="position:relative;width:90px;height:90px">
-          <svg width="90" height="90"><circle cx="45" cy="45" r="35" stroke="#F0F0F0" stroke-width="6" fill="none"/><circle cx="45" cy="45" r="35" fill="none" stroke="#06B6D4" stroke-width="6" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="33" transform="rotate(-90,45,45)"/></svg>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:800;font-size:1.1rem;color:#EF4444">85%</div>
+          <svg width="90" height="90"><circle cx="45" cy="45" r="35" stroke="#ffffff" stroke-width="6" fill="none"/><circle cx="45" cy="45" r="35" fill="none" stroke="#12b3ac" stroke-width="6" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="33" transform="rotate(-90,45,45)"/></svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:800;font-size:1.1rem;color:#12b3ac">85%</div>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <div class="mini-row"><span><i class="fas fa-check-circle" style="color:#10B981;margin-right:6px"></i>Basic information</span></div>
-        <div class="mini-row"><span><i class="fas fa-check-circle" style="color:#10B981;margin-right:6px"></i>Skills added</span></div>
-        <div class="mini-row"><span><i class="fas fa-check-circle" style="color:#10B981;margin-right:6px"></i>Resume uploaded</span></div>
+        <div class="mini-row"><span><i class="fas fa-check-circle" style="color:#12b3ac;margin-right:6px"></i>Basic information</span></div>
+        <div class="mini-row"><span><i class="fas fa-check-circle" style="color:#12b3ac;margin-right:6px"></i>Skills added</span></div>
+        <div class="mini-row"><span><i class="fas fa-check-circle" style="color:#12b3ac;margin-right:6px"></i>Resume uploaded</span></div>
         <div class="mini-row"><span><i class="fas fa-circle" style="color:#ddd;margin-right:6px;font-size:.7rem"></i><span style="color:#999">Add portfolio project</span></span></div>
         <div class="mini-row"><span><i class="fas fa-circle" style="color:#ddd;margin-right:6px;font-size:.7rem"></i><span style="color:#999">Add certification</span></span></div>
       </div>

@@ -144,7 +144,7 @@ $verificationLabel = dashboard_status_label((string)$form['verification_status']
 
   .employer-profile-cover {
     height: 180px;
-    background: linear-gradient(135deg, #f97316 0%, #ea580c 40%, #dc2626 70%, #b91c1c 100%);
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 40%, #dc2626 70%, #12b3ac 100%);
     border-radius: 16px;
     position: relative;
     overflow: hidden;
@@ -277,7 +277,7 @@ $verificationLabel = dashboard_status_label((string)$form['verification_status']
   }
 
   .employer-form-control[readonly] {
-    background: #f9fafb;
+    background: #ffffff;
     color: #6b7280;
     cursor: not-allowed;
   }
@@ -301,7 +301,7 @@ $verificationLabel = dashboard_status_label((string)$form['verification_status']
     text-decoration: none;
     font-size: .86rem;
     font-weight: 700;
-    background: #111827;
+    background: #050505;
     color: #fff;
     box-shadow: 0 4px 12px rgba(17, 24, 39, 0.3);
     transition: all .2s ease;
@@ -402,7 +402,7 @@ $verificationLabel = dashboard_status_label((string)$form['verification_status']
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 12px 14px;
-    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
     text-align: left;
     display: flex;
     justify-content: space-between;

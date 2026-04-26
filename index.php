@@ -53,9 +53,9 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
     </div>
     <div class="hero-trust">
       <div class="trust-avatars">
-        <span style="background:#06B6D4">JS</span>
-        <span style="background:#10B981">MR</span>
-        <span style="background:#F59E0B">AL</span>
+        <span style="background:#12b3ac">JS</span>
+        <span style="background:#12b3ac">MR</span>
+        <span style="background:#12b3ac">AL</span>
         <span style="background:#111">KP</span>
       </div>
       <div class="trust-text">Trusted by <strong>1.2k+</strong> students & companies</div>
@@ -64,7 +64,7 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
   <div class="hero-visual">
     <div class="hero-cards-wrap">
       <div class="hero-card-float hcf-1">
-        <div class="hcf-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-circle" style="color:#10B981"></i></div>
+        <div class="hcf-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-circle" style="color:#12b3ac"></i></div>
         <div><div class="hcf-label">Applications</div><div class="hcf-value">12 Active</div></div>
       </div>
       <div class="hero-card-main">
@@ -73,7 +73,7 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
           <div class="match-badge">87% fit</div>
         </div>
         <div class="hc-company">
-          <div class="co-logo" style="background:linear-gradient(135deg,#06B6D4,#10B981)">G</div>
+          <div class="co-logo" style="background:linear-gradient(135deg,#12b3ac,#12b3ac)">G</div>
           <div><div style="font-weight:700;font-size:.88rem">Google Philippines</div><small>UI/UX Design Internship</small></div>
         </div>
         <div class="hc-skills">
@@ -85,11 +85,11 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
         <div class="hc-score-label"><span>Compatibility</span><span>87%</span></div>
       </div>
       <div class="hero-card-float hcf-2">
-        <div class="hcf-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-clock" style="color:#F59E0B"></i></div>
+        <div class="hcf-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-clock" style="color:#12b3ac"></i></div>
         <div><div class="hcf-label">Hours Logged</div><div class="hcf-value">248 hrs</div></div>
       </div>
       <div class="hero-card-float hcf-3">
-        <div class="hcf-icon" style="background:rgba(6,182,212,.1)"><i class="fas fa-robot" style="color:#06B6D4"></i></div>
+        <div class="hcf-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-robot" style="color:#12b3ac"></i></div>
         <div><div class="hcf-label">AI Resume Score</div><div class="hcf-value">92 / 100</div></div>
       </div>
     </div>
@@ -114,32 +114,32 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
   </div>
   <div class="why-grid">
     <div class="why-card">
-      <div class="why-icon" style="background:rgba(6,182,212,.1)"><i class="fas fa-file-alt" style="color:#06B6D4"></i></div>
+      <div class="why-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-file-alt" style="color:#12b3ac"></i></div>
       <h3>Smart Resume Screening</h3>
       <p>AI-powered resume analysis that scores and ranks candidates instantly based on job requirements.</p>
     </div>
     <div class="why-card">
-      <div class="why-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-brain" style="color:#10B981"></i></div>
+      <div class="why-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-brain" style="color:#12b3ac"></i></div>
       <h3>AI Sentiment Analysis</h3>
       <p>Video interviews with AI sentiment analysis to detect candidate confidence and communication skills.</p>
     </div>
     <div class="why-card">
-      <div class="why-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-chart-line" style="color:#F59E0B"></i></div>
+      <div class="why-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-chart-line" style="color:#12b3ac"></i></div>
       <h3>Data-Driven Decisions</h3>
       <p>Bias-free matching powered by skills matrix and academic performance data.</p>
     </div>
     <div class="why-card">
-      <div class="why-icon" style="background:rgba(239,68,68,.1)"><i class="fas fa-clock" style="color:#EF4444"></i></div>
+      <div class="why-icon" style="background:rgba(239,68,68,.1)"><i class="fas fa-clock" style="color:#12b3ac"></i></div>
       <h3>Hiring AI Reports</h3>
       <p>Comprehensive analytics dashboards for placement rate, skill gaps, and hiring trends.</p>
     </div>
     <div class="why-card">
-      <div class="why-icon" style="background:rgba(6,182,212,.15)"><i class="fas fa-shield-alt" style="color:#06B6D4"></i></div>
+      <div class="why-icon" style="background:rgba(18,179,172,.18)"><i class="fas fa-shield-alt" style="color:#12b3ac"></i></div>
       <h3>Candidate Personality</h3>
       <p>Psychometric assessments and behavioral analysis for better cultural fit matching.</p>
     </div>
     <div class="why-card">
-      <div class="why-icon" style="background:rgba(16,185,129,.15)"><i class="fas fa-tasks" style="color:#10B981"></i></div>
+      <div class="why-icon" style="background:rgba(16,185,129,.15)"><i class="fas fa-tasks" style="color:#12b3ac"></i></div>
       <h3>AI Skill Assessments</h3>
       <p>Automated skill tests with real-world scenarios to validate candidate abilities objectively.</p>
     </div>
@@ -176,8 +176,8 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
         <div class="mini-label" style="margin-bottom:8px">Profile Completeness</div>
         <div style="display:flex;align-items:center;gap:12px">
           <div style="position:relative;width:60px;height:60px">
-            <svg width="60" height="60"><circle cx="30" cy="30" r="24" stroke="#F0F0F0" stroke-width="5" fill="none"/><circle cx="30" cy="30" r="24" fill="none" stroke="#06B6D4" stroke-width="5" stroke-linecap="round" stroke-dasharray="150" stroke-dashoffset="22" transform="rotate(-90,30,30)"/></svg>
-            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:800;font-size:.8rem;color:#06B6D4">85%</div>
+            <svg width="60" height="60"><circle cx="30" cy="30" r="24" stroke="#ffffff" stroke-width="5" fill="none"/><circle cx="30" cy="30" r="24" fill="none" stroke="#12b3ac" stroke-width="5" stroke-linecap="round" stroke-dasharray="150" stroke-dashoffset="22" transform="rotate(-90,30,30)"/></svg>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:800;font-size:.8rem;color:#12b3ac">85%</div>
           </div>
           <div style="flex:1">
             <div style="font-weight:700;font-size:.88rem;margin-bottom:6px">Juan dela Cruz</div>
@@ -187,9 +187,9 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
       </div>
       <div class="mini-card">
         <div class="mini-label" style="margin-bottom:10px">Skills Matrix</div>
-        <div class="skill-bar-item"><div class="skill-bar-header"><span>React.js</span><span>90%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:90%;background:linear-gradient(90deg,#06B6D4,#10B981)"></div></div></div>
-        <div class="skill-bar-item"><div class="skill-bar-header"><span>UI/UX Design</span><span>75%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:75%;background:linear-gradient(90deg,#F59E0B,#10B981)"></div></div></div>
-        <div class="skill-bar-item"><div class="skill-bar-header"><span>Python</span><span>60%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:60%;background:linear-gradient(90deg,#10B981,#06B6D4)"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-header"><span>React.js</span><span>90%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:90%;background:linear-gradient(90deg,#12b3ac,#12b3ac)"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-header"><span>UI/UX Design</span><span>75%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:75%;background:linear-gradient(90deg,#12b3ac,#12b3ac)"></div></div></div>
+        <div class="skill-bar-item"><div class="skill-bar-header"><span>Python</span><span>60%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" style="width:60%;background:linear-gradient(90deg,#12b3ac,#12b3ac)"></div></div></div>
       </div>
     </div>
   </div>
@@ -210,14 +210,14 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
       <div class="mini-card">
         <div class="mini-card-header"><div class="mini-label">AI Match Score</div><div class="match-badge">87% fit</div></div>
         <div style="font-weight:700;margin-bottom:6px;font-size:.88rem">Google – UI/UX Intern</div>
-        <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:87%;background:linear-gradient(90deg,#10B981,#06B6D4);height:8px;border-radius:50px"></div></div>
+        <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:87%;background:linear-gradient(90deg,#12b3ac,#12b3ac);height:8px;border-radius:50px"></div></div>
       </div>
       <div class="mini-card">
         <div class="mini-label" style="margin-bottom:10px">Why This Matches You</div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          <div class="mini-row"><span>Figma proficiency</span><span style="color:#10B981">✓ Match</span></div>
-          <div class="mini-row"><span>React experience</span><span style="color:#10B981">✓ Match</span></div>
-          <div class="mini-row"><span>Flutter skills</span><span style="color:#06B6D4">↑ Improve</span></div>
+          <div class="mini-row"><span>Figma proficiency</span><span style="color:#12b3ac">✓ Match</span></div>
+          <div class="mini-row"><span>React experience</span><span style="color:#12b3ac">✓ Match</span></div>
+          <div class="mini-row"><span>Flutter skills</span><span style="color:#12b3ac">↑ Improve</span></div>
         </div>
       </div>
     </div>
@@ -238,9 +238,9 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
     <div class="feat-visual">
       <div class="mini-card">
         <div class="mini-label" style="margin-bottom:10px">Live Listings</div>
-        <div class="mini-row"><span style="font-weight:600">Meta – Product Design</span><span style="background:rgba(16,185,129,.1);color:#10B981;padding:2px 8px;border-radius:50px;font-size:.7rem">Remote</span></div>
-        <div class="mini-row"><span style="font-weight:600">Shopify – Frontend Dev</span><span style="background:rgba(6,182,212,.1);color:#06B6D4;padding:2px 8px;border-radius:50px;font-size:.7rem">On-site</span></div>
-        <div class="mini-row"><span style="font-weight:600">Grab – Data Science</span><span style="background:rgba(245,158,11,.1);color:#F59E0B;padding:2px 8px;border-radius:50px;font-size:.7rem">Hybrid</span></div>
+        <div class="mini-row"><span style="font-weight:600">Meta – Product Design</span><span style="background:rgba(16,185,129,.1);color:#12b3ac;padding:2px 8px;border-radius:50px;font-size:.7rem">Remote</span></div>
+        <div class="mini-row"><span style="font-weight:600">Shopify – Frontend Dev</span><span style="background:rgba(18,179,172,.12);color:#12b3ac;padding:2px 8px;border-radius:50px;font-size:.7rem">On-site</span></div>
+        <div class="mini-row"><span style="font-weight:600">Grab – Data Science</span><span style="background:rgba(18,179,172,.12);color:#12b3ac;padding:2px 8px;border-radius:50px;font-size:.7rem">Hybrid</span></div>
       </div>
     </div>
   </div>
@@ -262,7 +262,7 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
         <div class="mini-label" style="margin-bottom:8px">Resume Score</div>
         <div style="font-family:'Poppins', sans-serif;font-size:2.5rem;font-weight:600;color:#111">92</div>
         <div style="font-size:.75rem;color:#999">/100 · Excellent</div>
-        <div style="margin-top:10px;font-size:.78rem;color:#10B981"><i class="fas fa-arrow-up"></i> +8 pts from last version</div>
+        <div style="margin-top:10px;font-size:.78rem;color:#12b3ac"><i class="fas fa-arrow-up"></i> +8 pts from last version</div>
       </div>
     </div>
   </div>
@@ -307,16 +307,16 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
         <div class="mini-label" style="margin-bottom:10px">OJT Progress</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div><div style="font-family:'Poppins', sans-serif;font-weight:600;font-size:1.4rem;color:#111">248</div><div style="font-size:.72rem;color:#999">of 500 hours</div></div>
-          <div style="font-size:.78rem;color:#10B981">50% complete</div>
+          <div style="font-size:.78rem;color:#12b3ac">50% complete</div>
         </div>
-        <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:50%;background:linear-gradient(90deg,#06B6D4,#10B981);height:10px;border-radius:50px"></div></div>
+        <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:50%;background:linear-gradient(90deg,#12b3ac,#12b3ac);height:10px;border-radius:50px"></div></div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- PRICING -->
-<section class="land-section" id="pricing" style="background:#F7F7F7">
+<section class="land-section" id="pricing" style="background:#ffffff">
   <div style="text-align:center">
     <div class="section-tag">Pricing</div>
     <h2 class="section-title" style="text-align:center">Flexible Pricing Plans<br>for Every Team</h2>
@@ -378,17 +378,17 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
     <div class="testi-card">
       <div class="testi-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
       <p class="testi-text">"A game-changer for our recruitment team. The automated scheduling feature saves us countless hours every week."</p>
-      <div class="testi-author"><div class="testi-avatar" style="background:linear-gradient(135deg,#06B6D4,#10B981)">DP</div><div><div class="testi-name">David Park</div><div class="testi-role">Talent Acquisition, NovaCare</div></div></div>
+      <div class="testi-author"><div class="testi-avatar" style="background:linear-gradient(135deg,#12b3ac,#12b3ac)">DP</div><div><div class="testi-name">David Park</div><div class="testi-role">Talent Acquisition, NovaCare</div></div></div>
     </div>
     <div class="testi-card">
       <div class="testi-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
       <p class="testi-text">"SkillHive helped us cut our hiring time in half while improving candidate quality. The AI assessments are remarkably accurate."</p>
-      <div class="testi-author"><div class="testi-avatar" style="background:linear-gradient(135deg,#F59E0B,#EF4444)">SJ</div><div><div class="testi-name">Sarah Jameson</div><div class="testi-role">HR Director, TechBridge</div></div></div>
+      <div class="testi-author"><div class="testi-avatar" style="background:linear-gradient(135deg,#12b3ac,#12b3ac)">SJ</div><div><div class="testi-name">Sarah Jameson</div><div class="testi-role">HR Director, TechBridge</div></div></div>
     </div>
     <div class="testi-card">
       <div class="testi-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div>
       <p class="testi-text">"Found my first internship within a week! The AI matching showed me exactly why I was a good fit and what I needed to improve."</p>
-      <div class="testi-author"><div class="testi-avatar" style="background:linear-gradient(135deg,#10B981,#06B6D4)">RM</div><div><div class="testi-name">Rafi M.</div><div class="testi-role">Student, UP Diliman</div></div></div>
+      <div class="testi-author"><div class="testi-avatar" style="background:linear-gradient(135deg,#12b3ac,#12b3ac)">RM</div><div><div class="testi-name">Rafi M.</div><div class="testi-role">Student, UP Diliman</div></div></div>
     </div>
   </div>
 </section>

@@ -14,6 +14,13 @@ $completionRate = (int)($stats['completion_rate'] ?? 0);
 $topSkill = trim((string)($topSkills[0]['skill'] ?? 'No data yet'));
 $topSkillDemand = 0;
 $placementInsight = 'Based on active OJT records';
+$statusChart = [];
+$statusChartTotal = 0;
+$deptChart = array_slice($placementByDept, 0, 6);
+$moduleSettings = is_array($_SESSION['adviser_module_settings'] ?? null) ? $_SESSION['adviser_module_settings'] : [];
+$showAnalyticsGraphs = array_key_exists('show_analytics_graphs', $moduleSettings)
+  ? (bool)$moduleSettings['show_analytics_graphs']
+  : true;
 
 if (!empty($topSkills)) {
     $maxSkillPostings = max(array_map(static function ($skill) {
@@ -35,14 +42,32 @@ foreach ($trends as $trend) {
         break;
     }
 }
+
+$statusChart = [
+  ['label' => 'Completed', 'value' => (int)($stats['placed'] ?? 0), 'color' => '#1f6f6b'],
+  ['label' => 'In Progress', 'value' => (int)($stats['in_progress'] ?? 0), 'color' => '#2b8a84'],
+  ['label' => 'Searching', 'value' => (int)($stats['searching'] ?? 0), 'color' => '#78a9a6'],
+];
+
+foreach ($statusChart as $item) {
+  $statusChartTotal += (int)($item['value'] ?? 0);
+}
 ?>
 
 <style>
   .adviser-analytics-page {
+    --aa-ink: #000000;
+    --aa-verdigris-dark: #1f6f6b;
+    --aa-verdigris: #2b8a84;
+    --aa-verdigris-soft: #78a9a6;
+    --aa-surface: #eef4f3;
+  }
+
+  .adviser-analytics-page {
     display: flex;
     flex-direction: column;
     gap: 24px;
-    color: var(--text);
+    color: var(--aa-ink);
     font-size: var(--font-size-body);
   }
 
@@ -82,7 +107,7 @@ foreach ($trends as $trend) {
   .adviser-analytics-card-label {
     margin: 0 0 6px;
     font-size: 0.82rem;
-    color: var(--text3);
+    color: var(--aa-ink);
     font-weight: 500;
   }
 
@@ -91,7 +116,7 @@ foreach ($trends as $trend) {
     font-size: 1.95rem;
     line-height: 1;
     font-weight: 700;
-    color: var(--text);
+    color: var(--aa-ink);
   }
 
   .adviser-analytics-card-note {
@@ -100,13 +125,216 @@ foreach ($trends as $trend) {
     align-items: center;
     gap: 8px;
     font-size: 0.79rem;
-    color: #13a66b;
+    color: var(--aa-ink);
     font-weight: 600;
   }
 
   .adviser-analytics-card-note.is-muted {
-    color: var(--text3);
+    color: var(--aa-ink);
     font-weight: 500;
+  }
+
+  .adviser-analytics-chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .adviser-analytics-chart-section-title {
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: var(--aa-ink);
+  }
+
+  .adviser-analytics-chart-card.is-wide {
+    grid-column: 1 / -1;
+  }
+
+  .adviser-analytics-chart-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 22px;
+  }
+
+  .adviser-analytics-chart-title {
+    margin: 0 0 16px;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--aa-ink);
+  }
+
+  .adviser-status-chart-wrap {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  .adviser-status-donut {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .adviser-status-donut::after {
+    content: '';
+    position: absolute;
+    inset: 22px;
+    background: #fff;
+    border-radius: 50%;
+    border: 1px solid #e6edf6;
+  }
+
+  .adviser-status-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 1;
+    text-align: center;
+  }
+
+  .adviser-status-total {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--aa-ink);
+    line-height: 1;
+  }
+
+  .adviser-status-caption {
+    margin-top: 4px;
+    font-size: 0.72rem;
+    color: var(--aa-ink);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .adviser-status-legend {
+    display: grid;
+    gap: 8px;
+    min-width: 210px;
+  }
+
+  .adviser-status-legend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.82rem;
+    color: var(--aa-ink);
+  }
+
+  .adviser-status-legend-item strong {
+    font-weight: 700;
+    color: var(--aa-ink);
+  }
+
+  .adviser-status-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .adviser-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .adviser-dept-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    height: 190px;
+    padding-top: 8px;
+  }
+
+  .adviser-dept-bar {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .adviser-dept-bar-track {
+    width: 100%;
+    height: 140px;
+    border-radius: 12px;
+    background: var(--aa-surface);
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    border: 1px solid #e3eaf4;
+  }
+
+  .adviser-dept-bar-fill {
+    width: 100%;
+    background: linear-gradient(180deg, var(--aa-verdigris) 0%, var(--aa-verdigris-dark) 100%);
+    border-radius: 10px 10px 0 0;
+    min-height: 2px;
+  }
+
+  .adviser-dept-bar-rate {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--aa-ink);
+  }
+
+  .adviser-dept-bar-label {
+    font-size: 0.72rem;
+    color: var(--aa-ink);
+    text-align: center;
+    line-height: 1.2;
+    word-break: break-word;
+  }
+
+  .adviser-skills-chart {
+    display: grid;
+    gap: 10px;
+  }
+
+  .adviser-skills-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 190px) minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .adviser-skills-label {
+    font-size: 0.78rem;
+    color: var(--aa-ink);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .adviser-skills-track {
+    height: 10px;
+    border-radius: 999px;
+    background: #ecf1f8;
+    overflow: hidden;
+  }
+
+  .adviser-skills-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--aa-verdigris-dark) 0%, var(--aa-verdigris) 100%);
+  }
+
+  .adviser-skills-value {
+    font-size: 0.78rem;
+    color: var(--aa-ink);
+    font-weight: 700;
   }
 
   .adviser-analytics-grid {
@@ -123,7 +351,7 @@ foreach ($trends as $trend) {
     margin: 0 0 18px;
     font-size: 0.98rem;
     font-weight: 700;
-    color: var(--text);
+    color: var(--aa-ink);
   }
 
   .adviser-analytics-bars {
@@ -147,34 +375,34 @@ foreach ($trends as $trend) {
   }
 
   .adviser-analytics-bar-label {
-    color: var(--text);
+    color: var(--aa-ink);
     font-weight: 600;
   }
 
   .adviser-analytics-bar-value {
-    color: #e53935;
+    color: var(--aa-ink);
     font-weight: 600;
   }
 
   .adviser-analytics-track {
     height: 10px;
     border-radius: 999px;
-    background: #ecebff;
+    background: #ecf1f8;
     overflow: hidden;
   }
 
   .adviser-analytics-fill {
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #b71c1c 0%, #ff4d4f 100%);
+    background: linear-gradient(90deg, var(--aa-verdigris-dark) 0%, var(--aa-verdigris) 100%);
   }
 
   .adviser-analytics-empty {
     padding: 18px;
     border: 1px dashed var(--border);
     border-radius: 14px;
-    background: #fafafa;
-    color: #6b7280;
+    background: var(--aa-surface);
+    color: var(--aa-ink);
     font-size: 0.82rem;
   }
 
@@ -219,13 +447,13 @@ foreach ($trends as $trend) {
     margin: 0 0 4px;
     font-size: 0.92rem;
     font-weight: 700;
-    color: var(--text);
+    color: var(--aa-ink);
   }
 
   .adviser-company-industry {
     margin: 0;
     font-size: 0.8rem;
-    color: var(--text3);
+    color: var(--aa-ink);
   }
 
   .adviser-company-badge {
@@ -235,8 +463,8 @@ foreach ($trends as $trend) {
     width: fit-content;
     padding: 6px 10px;
     border-radius: 999px;
-    background: #e2f5f1;
-    color: #12a975;
+    background: var(--aa-surface);
+    color: var(--aa-ink);
     font-size: 0.76rem;
     font-weight: 600;
   }
@@ -252,14 +480,14 @@ foreach ($trends as $trend) {
     font-size: 1.2rem;
     font-weight: 700;
     line-height: 1.1;
-    color: var(--text);
+    color: var(--aa-ink);
   }
 
   .adviser-company-metric-label {
     display: block;
     margin-top: 3px;
     font-size: 0.76rem;
-    color: var(--text3);
+    color: var(--aa-ink);
   }
 
   @media (max-width: 1240px) {
@@ -273,8 +501,21 @@ foreach ($trends as $trend) {
   }
 
   @media (max-width: 900px) {
+    .adviser-analytics-chart-grid,
     .adviser-analytics-grid {
       grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .adviser-skills-row {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .adviser-skills-label,
+    .adviser-skills-value {
+      white-space: normal;
     }
   }
 
@@ -297,7 +538,7 @@ foreach ($trends as $trend) {
 <div class="adviser-analytics-page">
   <section class="adviser-analytics-stats">
     <article class="adviser-analytics-card">
-      <span class="adviser-analytics-icon" style="background:rgba(124,58,237,.10);color:#d32f2f;">
+      <span class="adviser-analytics-icon" style="background:rgba(31,111,107,.14);color:#1f6f6b;">
         <i class="fas fa-percent"></i>
       </span>
       <div>
@@ -311,7 +552,7 @@ foreach ($trends as $trend) {
     </article>
 
     <article class="adviser-analytics-card">
-      <span class="adviser-analytics-icon" style="background:rgba(20,184,166,.12);color:#11b89a;">
+      <span class="adviser-analytics-icon" style="background:rgba(31,111,107,.14);color:#1f6f6b;">
         <i class="fas fa-building"></i>
       </span>
       <div>
@@ -321,7 +562,7 @@ foreach ($trends as $trend) {
     </article>
 
     <article class="adviser-analytics-card">
-      <span class="adviser-analytics-icon" style="background:rgba(245,158,11,.14);color:#f59e0b;">
+      <span class="adviser-analytics-icon" style="background:rgba(43,138,132,.16);color:#1f6f6b;">
         <i class="fas fa-tools"></i>
       </span>
       <div>
@@ -334,7 +575,7 @@ foreach ($trends as $trend) {
     </article>
 
     <article class="adviser-analytics-card">
-      <span class="adviser-analytics-icon" style="background:rgba(14,165,233,.12);color:#06b6d4;">
+      <span class="adviser-analytics-icon" style="background:rgba(31,111,107,.14);color:#1f6f6b;">
         <i class="fas fa-graduation-cap"></i>
       </span>
       <div>
@@ -343,6 +584,111 @@ foreach ($trends as $trend) {
       </div>
     </article>
   </section>
+
+  <?php if ($showAnalyticsGraphs): ?>
+  <h3 class="adviser-analytics-chart-section-title">Analytics Graphs</h3>
+
+  <section class="adviser-analytics-chart-grid">
+    <article class="adviser-analytics-chart-card">
+      <h3 class="adviser-analytics-chart-title">Student Status Distribution</h3>
+      <?php
+        $completedPct = $statusChartTotal > 0 ? (int)round(((int)$statusChart[0]['value'] / $statusChartTotal) * 100) : 0;
+        $inProgressPct = $statusChartTotal > 0 ? (int)round(((int)$statusChart[1]['value'] / $statusChartTotal) * 100) : 0;
+        $searchingPct = max(0, 100 - $completedPct - $inProgressPct);
+        $donutBackground = $statusChartTotal > 0
+          ? 'conic-gradient(' .
+              $statusChart[0]['color'] . ' 0 ' . $completedPct . '%, ' .
+              $statusChart[1]['color'] . ' ' . $completedPct . '% ' . ($completedPct + $inProgressPct) . '%, ' .
+              $statusChart[2]['color'] . ' ' . ($completedPct + $inProgressPct) . '% 100%)'
+          : 'conic-gradient(#dbe5f1 0 100%)';
+      ?>
+      <div class="adviser-status-chart-wrap">
+        <div class="adviser-status-donut" style="background:<?php echo adviser_analytics_escape($donutBackground); ?>;">
+          <div class="adviser-status-center">
+            <span class="adviser-status-total"><?php echo adviser_analytics_escape($statusChartTotal); ?></span>
+            <span class="adviser-status-caption">Students</span>
+          </div>
+        </div>
+
+        <div class="adviser-status-legend">
+          <?php foreach ($statusChart as $item): ?>
+            <?php
+              $count = (int)($item['value'] ?? 0);
+              $share = $statusChartTotal > 0 ? (int)round(($count / $statusChartTotal) * 100) : 0;
+            ?>
+            <div class="adviser-status-legend-item">
+              <span class="adviser-status-key">
+                <span class="adviser-status-dot" style="background:<?php echo adviser_analytics_escape($item['color']); ?>;"></span>
+                <?php echo adviser_analytics_escape($item['label']); ?>
+              </span>
+              <strong><?php echo adviser_analytics_escape($count); ?> (<?php echo adviser_analytics_escape($share); ?>%)</strong>
+            </div>
+          <?php endforeach; ?>
+          <?php if ($statusChartTotal === 0): ?>
+            <div class="adviser-analytics-empty" style="padding:10px 12px;">
+              No status data yet.
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+    </article>
+
+    <article class="adviser-analytics-chart-card">
+      <h3 class="adviser-analytics-chart-title">Department Placement Chart</h3>
+      <?php if (!empty($deptChart)): ?>
+        <div class="adviser-dept-chart">
+          <?php foreach ($deptChart as $department): ?>
+            <?php
+              $rate = max(0, min(100, (int)($department['placement_rate'] ?? 0)));
+              $deptLabel = adviser_analytics_department_label($department['department'] ?? '');
+            ?>
+            <div class="adviser-dept-bar">
+              <span class="adviser-dept-bar-rate"><?php echo adviser_analytics_escape($rate); ?>%</span>
+              <div class="adviser-dept-bar-track">
+                <div class="adviser-dept-bar-fill" style="height:<?php echo adviser_analytics_escape($rate); ?>%;"></div>
+              </div>
+              <span class="adviser-dept-bar-label"><?php echo adviser_analytics_escape($deptLabel); ?></span>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php else: ?>
+        <div class="adviser-analytics-empty">
+          Department placement chart will appear once student placement data is available.
+        </div>
+      <?php endif; ?>
+    </article>
+
+    <article class="adviser-analytics-chart-card is-wide">
+      <h3 class="adviser-analytics-chart-title">Top Skills Trend</h3>
+      <?php if (!empty($topSkills)): ?>
+        <?php
+          $skillsMax = max(array_map(static function ($skill) {
+            return (int)($skill['postings'] ?? 0);
+          }, $topSkills));
+        ?>
+        <div class="adviser-skills-chart">
+          <?php foreach ($topSkills as $skill): ?>
+            <?php
+              $postings = (int)($skill['postings'] ?? 0);
+              $skillsWidth = $skillsMax > 0 ? (int)round(($postings / $skillsMax) * 100) : 0;
+            ?>
+            <div class="adviser-skills-row">
+              <span class="adviser-skills-label"><?php echo adviser_analytics_escape($skill['skill'] ?? 'Unknown skill'); ?></span>
+              <div class="adviser-skills-track">
+                <div class="adviser-skills-fill" style="width:<?php echo adviser_analytics_escape($skillsWidth); ?>%"></div>
+              </div>
+              <span class="adviser-skills-value"><?php echo adviser_analytics_escape($postings); ?> posts</span>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php else: ?>
+        <div class="adviser-analytics-empty">
+          Top skills trend will appear once internship postings include skill requirements.
+        </div>
+      <?php endif; ?>
+    </article>
+  </section>
+  <?php endif; ?>
 
   <section class="adviser-analytics-grid">
     <article class="adviser-analytics-panel">
@@ -433,8 +779,8 @@ foreach ($trends as $trend) {
               <?php echo adviser_analytics_escape(adviser_analytics_company_partner_label($company)); ?>
             </span>
 
-            <div class="adviser-analytics-track" style="height:12px;background:#e4f6f1;">
-              <div class="adviser-analytics-fill" style="width:<?php echo $companyCompletion; ?>%;background:linear-gradient(90deg,#16a34a 0%,#34d399 100%);"></div>
+            <div class="adviser-analytics-track" style="height:12px;background:#dcebe9;">
+              <div class="adviser-analytics-fill" style="width:<?php echo $companyCompletion; ?>%;background:linear-gradient(90deg,#1f6f6b 0%,#2b8a84 100%);"></div>
             </div>
 
             <div class="adviser-company-footer">

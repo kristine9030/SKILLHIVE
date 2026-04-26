@@ -75,8 +75,8 @@ $totalPages = (int)ceil($totalLogs/$perPage);
 $uniqueEvents = array_unique(array_column($logs,'event'));
 sort($uniqueEvents);
 
-$sevColors = ['info'=>'#4F46E5','warning'=>'#F59E0B','critical'=>'#EF4444'];
-$sevBg = ['info'=>'rgba(79,70,229,.08)','warning'=>'rgba(245,158,11,.08)','critical'=>'rgba(239,68,68,.08)'];
+$sevColors = ['info'=>'#12b3ac','warning'=>'#12b3ac','critical'=>'#12b3ac'];
+$sevBg = ['info'=>'rgba(79,70,229,.08)','warning'=>'rgba(245,158,11,.08)','critical'=>'rgba(18,179,172,.12)'];
 $sevIcons = ['info'=>'fa-info-circle','warning'=>'fa-exclamation-triangle','critical'=>'fa-skull'];
 ?>
 
@@ -125,7 +125,7 @@ $sevIcons = ['info'=>'fa-info-circle','warning'=>'fa-exclamation-triangle','crit
   <div style="overflow-x:auto">
   <table style="width:100%;border-collapse:collapse;min-width:700px">
     <thead>
-      <tr style="border-bottom:1.5px solid var(--border);background:#FAFAFA">
+      <tr style="border-bottom:1.5px solid var(--border);background:#ffffff">
         <th style="padding:12px 16px;text-align:left;font-size:.75rem;color:#999;font-weight:700;white-space:nowrap">TIMESTAMP</th>
         <th style="padding:12px 16px;text-align:left;font-size:.75rem;color:#999;font-weight:700;white-space:nowrap">EVENT</th>
         <th style="padding:12px 16px;text-align:left;font-size:.75rem;color:#999;font-weight:700;white-space:nowrap">ACTOR</th>
@@ -139,7 +139,7 @@ $sevIcons = ['info'=>'fa-info-circle','warning'=>'fa-exclamation-triangle','crit
         $sb = $sevBg[$log['severity']] ?? '#eee';
         $si = $sevIcons[$log['severity']] ?? 'fa-circle';
       ?>
-      <tr style="border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='#FAFAFA'" onmouseout="this.style.background=''">
+      <tr style="border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='#ffffff'" onmouseout="this.style.background=''">
         <td style="padding:11px 16px;font-size:.78rem;color:#999;white-space:nowrap">
           <?= $log['ts'] ? date('M d, Y H:i', strtotime($log['ts'])) : '—' ?>
         </td>
@@ -165,7 +165,7 @@ $sevIcons = ['info'=>'fa-info-circle','warning'=>'fa-exclamation-triangle','crit
     <?php for ($pg=1;$pg<=$totalPages;$pg++): 
       $pUrl='?'.http_build_query(['event'=>$filterEvent,'severity'=>$filterSev,'q'=>$search,'p'=>$pg]);
     ?>
-    <a href="<?= htmlspecialchars($pUrl) ?>" style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:600;text-decoration:none;border:1.5px solid <?= $pg===$page_num?'#4F46E5':'var(--border)' ?>;background:<?= $pg===$page_num?'#4F46E5':'#fff' ?>;color:<?= $pg===$page_num?'#fff':'#555' ?>"><?= $pg ?></a>
+    <a href="<?= htmlspecialchars($pUrl) ?>" style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:600;text-decoration:none;border:1.5px solid <?= $pg===$page_num?'#12b3ac':'var(--border)' ?>;background:<?= $pg===$page_num?'#12b3ac':'#fff' ?>;color:<?= $pg===$page_num?'#fff':'#555' ?>"><?= $pg ?></a>
     <?php endfor; ?>
   </div>
   <?php endif; ?>

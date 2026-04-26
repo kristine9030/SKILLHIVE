@@ -111,7 +111,7 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
 ?>
 <div class="stat-cards">
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(6,182,212,.1)"><i class="fas fa-clock" style="color:#06B6D4"></i></div>
+    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-clock" style="color:#12b3ac"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num" id="ojtHoursLogged"><?php echo (float)$hoursLogged; ?></div>
       <div class="stat-card-label">Hours Logged</div>
@@ -119,21 +119,21 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
     <div class="stat-card-trend neutral">of <span id="ojtHoursTarget"><?php echo (float)$hoursTarget; ?></span> target</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-calendar-day" style="color:#10B981"></i></div>
+    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-calendar-day" style="color:#12b3ac"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num" id="ojtDaysPresent"><?php echo (int)$daysPresent; ?></div>
       <div class="stat-card-label">Days Present</div>
     </div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-tasks" style="color:#F59E0B"></i></div>
+    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-tasks" style="color:#12b3ac"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num" id="ojtTasksCompleted"><?php echo (int)$tasksCompleted; ?></div>
       <div class="stat-card-label">Tasks Completed</div>
     </div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-percentage" style="color:#10B981"></i></div>
+    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-percentage" style="color:#12b3ac"></i></div>
     <div class="stat-card-info">
       <div class="stat-card-num" id="ojtProgressPct"><?php echo $progress; ?>%</div>
       <div class="stat-card-label">Progress</div>
@@ -148,10 +148,10 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <span style="font-size:.85rem;color:#666"><span id="ojtProgressHours"><?php echo (float) $hoursLogged; ?> of <?php echo (float) $hoursTarget; ?></span> hours completed</span>
-    <span id="ojtProgressPctTop" style="font-weight:700;color:#06B6D4"><?php echo $progress; ?>%</span>
+    <span id="ojtProgressPctTop" style="font-weight:700;color:#12b3ac"><?php echo $progress; ?>%</span>
   </div>
   <div class="progress-bar">
-    <div id="ojtProgressFill" class="progress-fill" style="width:<?php echo $progress; ?>%;background:linear-gradient(90deg,#06B6D4,#10B981)"></div>
+    <div id="ojtProgressFill" class="progress-fill" style="width:<?php echo $progress; ?>%;background:linear-gradient(90deg,#12b3ac,#12b3ac)"></div>
   </div>
   <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:.75rem;color:#999">
     <span>Started: Nov 4, 2024</span>
@@ -186,8 +186,8 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
   }
 
   .ojt-calendar-nav-btn:hover {
-    border-color: #06B6D4;
-    color: #0891B2;
+    border-color: #12b3ac;
+    color: #12b3ac;
   }
 
   .ojt-calendar-month-label {
@@ -225,15 +225,15 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
 
   .ojt-calendar-cell.is-other-month {
     opacity: .48;
-    background: #f9fafb;
+    background: #ffffff;
   }
 
   .ojt-calendar-cell.is-today {
-    border-color: #06B6D4;
+    border-color: #12b3ac;
   }
 
   .ojt-calendar-cell.is-selected {
-    border-color: #0891B2;
+    border-color: #12b3ac;
     box-shadow: 0 0 0 3px rgba(6, 182, 212, .12);
   }
 
@@ -265,7 +265,7 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
     height: 20px;
     padding: 0 6px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #06B6D4, #10B981);
+    background: linear-gradient(135deg, #12b3ac, #12b3ac);
     color: #fff;
     font-size: .7rem;
     font-weight: 700;
@@ -279,7 +279,7 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
     border: 1px solid var(--border, #e5e7eb);
     border-radius: 10px;
     padding: 10px 12px;
-    background: #f9fafb;
+    background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -293,14 +293,14 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
   }
 
   .ojt-calendar-selected-meta strong {
-    color: #111827;
+    color: #050505;
   }
 
   .ojt-calendar-log-btn {
     border: 0;
     border-radius: 999px;
     padding: 8px 12px;
-    background: #111827;
+    background: #050505;
     color: #fff;
     font-size: .78rem;
     font-weight: 700;

@@ -46,10 +46,10 @@ $profilePicturePath = $profilePictureFile !== '' ? ($baseUrl . '/assets/backend/
 $avatarPreset = trim((string) ($student['avatar_preset'] ?? ''));
 $avatarPresetMap = [
   'tech-girl' => ['emoji' => '👩‍💻', 'bg' => 'linear-gradient(135deg,#A855F7,#60A5FA)'],
-  'creative-boy' => ['emoji' => '🧑‍🎨', 'bg' => 'linear-gradient(135deg,#F59E0B,#FBBF24)'],
+  'creative-boy' => ['emoji' => '🧑‍🎨', 'bg' => 'linear-gradient(135deg,#12b3ac,#FBBF24)'],
   'mentor-man' => ['emoji' => '👨‍🏫', 'bg' => 'linear-gradient(135deg,#22C55E,#38BDF8)'],
-  'student-boy' => ['emoji' => '🧑‍🎓', 'bg' => 'linear-gradient(135deg,#6366F1,#A5B4FC)'],
-  'astronaut' => ['emoji' => '👨‍🚀', 'bg' => 'linear-gradient(135deg,#64748B,#93C5FD)'],
+  'student-boy' => ['emoji' => '🧑‍🎓', 'bg' => 'linear-gradient(135deg,#2a8b8d,#A5B4FC)'],
+  'astronaut' => ['emoji' => '👨‍🚀', 'bg' => 'linear-gradient(135deg,#64748B,#9ee7e1)'],
   'coder-girl' => ['emoji' => '👩‍💻', 'bg' => 'linear-gradient(135deg,#84CC16,#22C55E)'],
   'leader-girl' => ['emoji' => '👩‍💼', 'bg' => 'linear-gradient(135deg,#F472B6,#A855F7)'],
   'intern-boy' => ['emoji' => '🧑‍💼', 'bg' => 'linear-gradient(135deg,#2DD4BF,#38BDF8)'],
@@ -177,7 +177,7 @@ $portfolioTextAreaValue = implode("\n", array_map(static function (array $item):
 }, $portfolioEntries));
 
 $portfolioGradients = [
-  'linear-gradient(135deg,#BAE6FD,#93C5FD)',
+  'linear-gradient(135deg,#BAE6FD,#9ee7e1)',
   'linear-gradient(135deg,#FEF08A,#F97316)',
   'linear-gradient(135deg,#CBD5E1,#94A3B8)',
   'linear-gradient(135deg,#A7F3D0,#34D399)',
@@ -202,10 +202,10 @@ $levelPercent = [
 .pf-cover:hover .pf-cover-overlay { opacity:1; }
 .pf-cover-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-top:10px; }
 .pf-cover-option { border:2px solid #d1d5db; border-radius:10px; height:42px; cursor:pointer; transition:.2s; }
-.pf-cover-option.active { border-color:#111827; box-shadow:0 0 0 1px #111827 inset; }
+.pf-cover-option.active { border-color:#050505; box-shadow:0 0 0 1px #050505 inset; }
 .pf-cover-preview { height:74px; border-radius:12px; border:1px solid #d1d5db; margin-top:14px; background:linear-gradient(135deg,#FDE047 0%,#38BDF8 100%); }
 .pf-cover-actions { display:flex; gap:8px; align-items:center; margin-top:14px; flex-wrap:wrap; }
-.pf-upload-cover-btn { display:inline-flex; align-items:center; gap:7px; border:1px solid #d1d5db; padding:8px 12px; border-radius:10px; background:#fff; cursor:pointer; font-size:.78rem; font-weight:600; color:#111827; }
+.pf-upload-cover-btn { display:inline-flex; align-items:center; gap:7px; border:1px solid #d1d5db; padding:8px 12px; border-radius:10px; background:#fff; cursor:pointer; font-size:.78rem; font-weight:600; color:#050505; }
 .pf-upload-cover-btn input { display:none; }
 .pf-header { background:#fff; margin:0 20px; border-radius:22px; padding:0 24px 18px; margin-top:-24px; position:relative; z-index:2; box-shadow:0 10px 30px rgba(15,23,42,.08); overflow:visible; }
 .pf-header::before {
@@ -264,10 +264,10 @@ $levelPercent = [
 .pf-meta-item { display:flex; align-items:center; gap:7px; font-size:.85rem; color:#64748B; min-width:0; }
 .pf-meta-item i { font-size:.68rem; color:var(--text2); }
 .pf-meta-divider { display:none; }
-.pf-meta-stat { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:10px 12px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; min-height:62px; }
+.pf-meta-stat { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:10px 12px; background:#ffffff; border:1px solid #E2E8F0; border-radius:14px; min-height:62px; }
 .pf-meta-stat.clickable { cursor:pointer; }
 .pf-meta-stat.clickable:hover { border-color:#d1d5db; background:#f3f4f6; }
-.pf-meta-stat.active-nav { border-color:#9ca3af; background:linear-gradient(135deg,#f9fafb,#f3f4f6); }
+.pf-meta-stat.active-nav { border-color:#9ca3af; background:linear-gradient(135deg,#ffffff,#f3f4f6); }
 .pf-meta-stat.clickable:hover .pf-meta-stat-val,
 .pf-meta-stat.active-nav .pf-meta-stat-val,
 .pf-meta-stat.clickable:hover .pf-meta-stat-lbl { color:var(--text); }
@@ -280,12 +280,12 @@ $levelPercent = [
 .pf-card-title { font-size:.7rem; font-weight:600; color:#0F172A; text-transform:uppercase; letter-spacing:.08em; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
 .pf-card-title-edit { font-size:.65rem; color:var(--text); font-weight:600; cursor:pointer; text-transform:none; letter-spacing:0; }
 .pf-tags { display:flex; flex-wrap:wrap; gap:5px; }
-.pf-tag { padding:4px 10px; border-radius:50px; font-size:.71rem; font-weight:600; background:#F8FAFC; color:#475569; border:1px solid #E2E8F0; display:inline-flex; align-items:center; gap:6px; }
+.pf-tag { padding:4px 10px; border-radius:50px; font-size:.71rem; font-weight:600; background:#ffffff; color:#475569; border:1px solid #E2E8F0; display:inline-flex; align-items:center; gap:6px; }
 .pf-link-icons { display:flex; gap:8px; flex-wrap:wrap; }
 .pf-link-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:.85rem; color:#fff; text-decoration:none; font-family:inherit; cursor:pointer; }
 .pf-link-icon.placeholder-link { opacity:1; cursor:pointer; }
 .pf-vlist { display:flex; flex-direction:column; gap:7px; }
-.pf-vitem { display:flex; align-items:center; gap:8px; padding:7px 10px; background:#F8FAFC; border-radius:9px; }
+.pf-vitem { display:flex; align-items:center; gap:8px; padding:7px 10px; background:#ffffff; border-radius:9px; }
 .pf-vicon { width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.76rem; }
 .pf-vlabel { flex:1; font-size:.75rem; color:#374151; font-weight:500; }
 .pf-vcheck { color:#22C55E; font-size:.75rem; }
@@ -294,24 +294,24 @@ $levelPercent = [
 .pf-plabel { font-size:.74rem; font-weight:600; color:#374151; }
 .pf-ppct { font-size:.7rem; color:#94A3B8; }
 .pf-pbar { background:#F1F5F9; border-radius:99px; height:5px; overflow:hidden; }
-.pf-pfill { height:100%; border-radius:99px; background:linear-gradient(90deg,#111827,#374151); }
+.pf-pfill { height:100%; border-radius:99px; background:linear-gradient(90deg,#050505,#374151); }
 .pf-tab-bar { display:flex; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,.05); border:1px solid #F1F5F9; padding:4px; }
 .pf-tab-btn { flex:1; padding:9px 6px; font-size:.78rem; font-weight:600; cursor:pointer; border:none; background:transparent; color:#94A3B8; border-radius:10px; }
-.pf-tab-btn.active { background:linear-gradient(135deg,#111827,#374151); color:#fff; }
-.pf-rec-link-box { background:linear-gradient(135deg,#f8fafc,#f1f5f9); border:1.5px solid var(--border); border-radius:12px; padding:16px; display:flex; gap:14px; align-items:flex-start; }
-.pf-rec-link-icon { width:42px; height:42px; border-radius:12px; flex-shrink:0; background:linear-gradient(135deg,#111827,#374151); display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:#fff; }
+.pf-tab-btn.active { background:linear-gradient(135deg,#050505,#374151); color:#fff; }
+.pf-rec-link-box { background:linear-gradient(135deg,#ffffff,#f1f5f9); border:1.5px solid var(--border); border-radius:12px; padding:16px; display:flex; gap:14px; align-items:flex-start; }
+.pf-rec-link-icon { width:42px; height:42px; border-radius:12px; flex-shrink:0; background:linear-gradient(135deg,#050505,#374151); display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:#fff; }
 .pf-rec-link-copy { display:flex; align-items:center; gap:8px; background:#fff; border:1.5px solid var(--border); border-radius:9px; padding:7px 12px; margin-top:10px; }
 .pf-rec-link-url { font-size:.72rem; color:#374151; flex:1; }
-.pf-pending-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; border:1px solid #E2E8F0; background:#FAFAFA; }
+.pf-pending-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; border:1px solid #E2E8F0; background:#ffffff; }
 .pf-pending-avatar { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.74rem; color:#fff; flex-shrink:0; }
 .pf-status-pill { font-size:.65rem; font-weight:700; padding:3px 9px; border-radius:50px; white-space:nowrap; }
-.pf-rec-card { background:#FAFAFA; border:1px solid #E2E8F0; border-radius:13px; padding:14px 16px; position:relative; }
+.pf-rec-card { background:#ffffff; border:1px solid #E2E8F0; border-radius:13px; padding:14px 16px; position:relative; }
 .pf-rec-card.pending-approval { background:#FFFBEB; border:1.5px dashed #FDE68A; }
 .pf-rec-author { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
 .pf-rec-author-av { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.8rem; color:#fff; flex-shrink:0; }
 .pf-rec-name { font-size:.84rem; font-weight:700; color:#0F172A; }
 .pf-rec-role { font-size:.72rem; color:#94A3B8; }
-.pf-rec-stars { color:#F59E0B; font-size:.75rem; margin-left:auto; letter-spacing:1px; }
+.pf-rec-stars { color:#12b3ac; font-size:.75rem; margin-left:auto; letter-spacing:1px; }
 .pf-rec-text { font-size:.81rem; color:#4B5563; line-height:1.65; font-style:italic; }
 .pf-rec-actions { display:flex; gap:7px; margin-top:12px; }
 .pf-rec-approve { flex:1; padding:8px; border-radius:8px; border:none; background:#22C55E; color:#fff; font-size:.74rem; font-weight:700; }
@@ -320,7 +320,7 @@ $levelPercent = [
 .pf-search-bar input { border:none; outline:none; font-family:'Poppins', sans-serif; font-size:.82rem; flex:1; color:#0F172A; background:transparent; }
 .pf-filter-pills { display:flex; gap:6px; margin-top:8px; }
 .pf-filter-pill { padding:5px 14px; border-radius:50px; font-size:.72rem; font-weight:600; border:1.5px solid #E2E8F0; background:#fff; color:#64748B; }
-.pf-filter-pill.active { background:#111827; color:#fff; border-color:#111827; }
+.pf-filter-pill.active { background:#050505; color:#fff; border-color:#050505; }
 .pf-person-row { display:flex; align-items:center; gap:10px; padding:9px 12px; border:1px solid #F1F5F9; border-radius:11px; background:#fff; }
 .pf-person-avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.78rem; color:#fff; }
 .pf-person-avatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
@@ -328,13 +328,13 @@ $levelPercent = [
 .pf-person-role { font-size:.7rem; color:#94A3B8; margin-top:1px; }
 .pf-type-pill { font-size:.64rem; font-weight:700; padding:2px 8px; border-radius:50px; white-space:nowrap; }
 .pf-follow-btn { padding:6px 14px; border-radius:50px; font-size:.72rem; font-weight:700; border:1.5px solid #E2E8F0; background:#fff; color:#64748B; }
-.pf-follow-btn.following { border-color:#111827; color:#111827; }
+.pf-follow-btn.following { border-color:#050505; color:#050505; }
 .pf-about-intro { font-size:.83rem; color:#475569; line-height:1.75; margin-bottom:10px; }
 .pf-about-points { display:flex; flex-direction:column; gap:6px; }
 .pf-about-point { display:flex; align-items:flex-start; gap:8px; font-size:.8rem; color:#64748B; line-height:1.55; }
-.pf-about-point i { color:#111827; font-size:.7rem; margin-top:3px; }
+.pf-about-point i { color:#050505; font-size:.7rem; margin-top:3px; }
 .pf-exp-list { display:flex; flex-direction:column; }
-.pf-exp-row { display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid #F8FAFC; }
+.pf-exp-row { display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid #ffffff; }
 .pf-exp-logo { width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.88rem; color:#fff; flex-shrink:0; }
 .pf-exp-title { font-size:.84rem; font-weight:700; color:#0F172A; }
 .pf-exp-sub { font-size:.75rem; color:#64748B; }
@@ -349,7 +349,7 @@ $levelPercent = [
 .pf-mini-modal { width:420px; max-width:92vw; }
 .pf-avatar-grid { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:10px; margin-top:10px; }
 .pf-avatar-option { border:2px solid #d1d5db; border-radius:999px; width:56px; height:56px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.4rem; background:linear-gradient(135deg,#e5e7eb,#cbd5e1); }
-.pf-avatar-option.active { border-color:#111827; box-shadow:0 0 0 1px #111827 inset; }
+.pf-avatar-option.active { border-color:#050505; box-shadow:0 0 0 1px #050505 inset; }
 .pf-avatar-preview { width:86px; height:86px; border-radius:999px; border:3px solid #e5e7eb; display:flex; align-items:center; justify-content:center; font-size:2rem; margin-top:14px; }
 .pf-modal-head { display:flex; align-items:center; justify-content:space-between; padding:18px 24px 14px; border-bottom:1px solid #F1F5F9; }
 .pf-modal-head-title { font-size:.95rem; font-weight:800; color:#0F172A; }
@@ -375,18 +375,18 @@ $levelPercent = [
 .pf-body .pf-exp-date { font-size: calc(.71rem * var(--pf-font-scale)); }
 .pf-field { margin-bottom:12px; }
 .pf-field label { display:block; font-size:.76rem; font-weight:600; color:#374151; margin-bottom:4px; }
-.pf-field input, .pf-field select, .pf-field textarea { width:100%; padding:9px 13px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:.83rem; color:#0F172A; outline:none; font-family:'Poppins', sans-serif; background:#FAFAFA; }
+.pf-field input, .pf-field select, .pf-field textarea { width:100%; padding:9px 13px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:.83rem; color:#0F172A; outline:none; font-family:'Poppins', sans-serif; background:#ffffff; }
 .pf-field-2col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .pf-cancel-btn { padding:9px 22px; border-radius:50px; border:1.5px solid #E2E8F0; background:#fff; font-size:.8rem; font-weight:600; cursor:pointer; color:#374151; }
-.pf-save-btn { padding:9px 26px; border-radius:50px; border:none; background:linear-gradient(135deg,#111827,#374151); color:#fff; font-size:.8rem; font-weight:700; cursor:pointer; }
+.pf-save-btn { padding:9px 26px; border-radius:50px; border:none; background:linear-gradient(135deg,#050505,#374151); color:#fff; font-size:.8rem; font-weight:700; cursor:pointer; }
 .pf-chip-action { background:none; border:none; color:#6b7280; cursor:pointer; font-size:.78rem; }
 .pf-upload-input { margin-top:8px; }
-.pf-resume-file { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid #E2E8F0; border-radius:12px; background:linear-gradient(135deg,#ffffff,#F8FAFC); margin-bottom:10px; }
+.pf-resume-file { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid #E2E8F0; border-radius:12px; background:linear-gradient(135deg,#ffffff,#ffffff); margin-bottom:10px; }
 .pf-resume-file .pf-vlabel { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pf-resume-upload-card { margin-top:10px; border:1px dashed #CBD5E1; border-radius:12px; background:#F8FAFC; padding:12px; display:flex; flex-direction:column; gap:10px; }
+.pf-resume-upload-card { margin-top:10px; border:1px dashed #CBD5E1; border-radius:12px; background:#ffffff; padding:12px; display:flex; flex-direction:column; gap:10px; }
 .pf-resume-upload-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.pf-resume-picker { display:inline-flex; align-items:center; gap:8px; border:1.5px solid #D1D5DB; border-radius:10px; background:#fff; color:#111827; font-size:.76rem; font-weight:700; padding:8px 12px; cursor:pointer; }
-.pf-resume-picker:hover { border-color:#9CA3AF; background:#F9FAFB; }
+.pf-resume-picker { display:inline-flex; align-items:center; gap:8px; border:1.5px solid #D1D5DB; border-radius:10px; background:#fff; color:#050505; font-size:.76rem; font-weight:700; padding:8px 12px; cursor:pointer; }
+.pf-resume-picker:hover { border-color:#9CA3AF; background:#ffffff; }
 .pf-resume-picker input { display:none; }
 .pf-resume-selected { font-size:.74rem; color:#64748B; font-weight:500; }
 .pf-resume-hint { font-size:.7rem; color:#94A3B8; }
@@ -595,7 +595,7 @@ $levelPercent = [
       <div class="pf-card">
         <div class="pf-card-title">Experience <span class="pf-card-title-edit" onclick="openEditProfile()"><i class="fas fa-pen"></i> Edit</span></div>
         <div class="pf-exp-list">
-          <?php $expGradients = ['linear-gradient(135deg,#4285F4,#34A853)', 'linear-gradient(135deg,#111827,#374151)', 'linear-gradient(135deg,#0EA5E9,#6366F1)', 'linear-gradient(135deg,#10B981,#06B6D4)']; ?>
+          <?php $expGradients = ['linear-gradient(135deg,#12b3ac,#34A853)', 'linear-gradient(135deg,#050505,#374151)', 'linear-gradient(135deg,#0EA5E9,#2a8b8d)', 'linear-gradient(135deg,#12b3ac,#12b3ac)']; ?>
           <?php foreach ($experienceEntries as $index => $entry): ?>
             <?php $logoChar = strtoupper(substr((string) $entry['title'], 0, 1)); ?>
             <div class="pf-exp-row"><div class="pf-exp-logo" style="background:<?php echo $expGradients[$index % count($expGradients)]; ?>"><?php echo htmlspecialchars($logoChar !== '' ? $logoChar : 'E'); ?></div><div class="pf-exp-body"><div class="pf-exp-title"><?php echo htmlspecialchars($entry['title']); ?></div><div class="pf-exp-sub"><?php echo htmlspecialchars($entry['subtitle']); ?></div><div class="pf-exp-date"><?php echo htmlspecialchars($entry['date']); ?></div></div></div>
@@ -619,7 +619,7 @@ $levelPercent = [
         <div style="flex:1">
           <div style="font-weight:800;font-size:.88rem;color:#0F172A;margin-bottom:3px">How do others recommend you?</div>
           <div style="font-size:.77rem;color:#64748B;line-height:1.6">Share your link with supervisors, mentors, or classmates so they can send recommendations.</div>
-          <div class="pf-rec-link-copy"><i class="fas fa-link" style="color:#111827;font-size:.75rem"></i><span class="pf-rec-link-url">skillhive.app/recommend/<?php echo rawurlencode(strtolower(str_replace(' ', '-', $fullName))); ?></span></div>
+          <div class="pf-rec-link-copy"><i class="fas fa-link" style="color:#050505;font-size:.75rem"></i><span class="pf-rec-link-url">skillhive.app/recommend/<?php echo rawurlencode(strtolower(str_replace(' ', '-', $fullName))); ?></span></div>
         </div>
       </div>
 
@@ -629,7 +629,7 @@ $levelPercent = [
           <button class="pf-save-btn" type="button" style="padding:7px 16px;font-size:.74rem"><i class="fas fa-paper-plane"></i> Send Request</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          <div class="pf-pending-item"><div class="pf-pending-avatar" style="background:linear-gradient(135deg,#F59E0B,#EF4444)">DP</div><div style="flex:1"><div style="font-size:.82rem;font-weight:600;color:#0F172A">David Park</div><div style="font-size:.7rem;color:#94A3B8">Talent Lead, Google · 2 days ago</div></div><span class="pf-status-pill" style="background:#FEF3C7;color:#D97706">⏳ Pending</span></div>
+          <div class="pf-pending-item"><div class="pf-pending-avatar" style="background:linear-gradient(135deg,#12b3ac,#12b3ac)">DP</div><div style="flex:1"><div style="font-size:.82rem;font-weight:600;color:#0F172A">David Park</div><div style="font-size:.7rem;color:#94A3B8">Talent Lead, Google · 2 days ago</div></div><span class="pf-status-pill" style="background:#FEF3C7;color:#12b3ac">⏳ Pending</span></div>
         </div>
       </div>
 
@@ -637,11 +637,11 @@ $levelPercent = [
         <div class="pf-card-title">Received Recommendations</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div class="pf-rec-card">
-            <div class="pf-rec-author"><div class="pf-rec-author-av" style="background:linear-gradient(135deg,#4F46E5,#06B6D4)">MR</div><div><div class="pf-rec-name">Ma. Rivera</div><div class="pf-rec-role">OJT Adviser · UP Diliman</div></div><div class="pf-rec-stars">★★★★★</div></div>
+            <div class="pf-rec-author"><div class="pf-rec-author-av" style="background:linear-gradient(135deg,#12b3ac,#12b3ac)">MR</div><div><div class="pf-rec-name">Ma. Rivera</div><div class="pf-rec-role">OJT Adviser · UP Diliman</div></div><div class="pf-rec-stars">★★★★★</div></div>
             <p class="pf-rec-text">"Consistently demonstrated strong initiative and technical depth during internship preparation."</p>
           </div>
           <div class="pf-rec-card pending-approval">
-            <div class="pf-rec-author"><div class="pf-rec-author-av" style="background:linear-gradient(135deg,#F59E0B,#EF4444)">DP</div><div><div class="pf-rec-name">David Park</div><div class="pf-rec-role">Talent Lead · Google PH</div></div><div class="pf-rec-stars">★★★★★</div></div>
+            <div class="pf-rec-author"><div class="pf-rec-author-av" style="background:linear-gradient(135deg,#12b3ac,#12b3ac)">DP</div><div><div class="pf-rec-name">David Park</div><div class="pf-rec-role">Talent Lead · Google PH</div></div><div class="pf-rec-stars">★★★★★</div></div>
             <p class="pf-rec-text">"An outstanding intern candidate, creative and reliable."</p>
             <div class="pf-rec-actions"><button class="pf-rec-approve" type="button">✓ Approve & Make Public</button><button class="pf-rec-decline" type="button">Decline</button></div>
           </div>
@@ -680,7 +680,7 @@ $levelPercent = [
               }
             ?>
             <div class="pf-person-row" data-role="<?php echo htmlspecialchars($uRole); ?>" data-search="<?php echo htmlspecialchars(strtolower($uName . ' ' . $uHeadline . ' ' . $uSubtitle)); ?>">
-              <div class="pf-person-avatar" style="background:linear-gradient(135deg,#111827,#374151)">
+              <div class="pf-person-avatar" style="background:linear-gradient(135deg,#050505,#374151)">
                 <?php if ($avatarUrl !== ''): ?>
                   <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="Avatar">
                 <?php else: ?>
@@ -691,7 +691,7 @@ $levelPercent = [
                 <div class="pf-person-name"><?php echo htmlspecialchars($uName); ?></div>
                 <div class="pf-person-role"><?php echo htmlspecialchars($uHeadline); ?><?php echo $uSubtitle !== '' ? ' · ' . htmlspecialchars($uSubtitle) : ''; ?><?php echo ' · ID: ' . (int) $uId; ?></div>
               </div>
-              <span class="pf-type-pill" style="background:#F3F4F6;color:#111827"><?php echo htmlspecialchars(ucfirst($uRole)); ?></span>
+              <span class="pf-type-pill" style="background:#F3F4F6;color:#050505"><?php echo htmlspecialchars(ucfirst($uRole)); ?></span>
               <form method="post" class="js-follow-form" style="margin:0;">
                 <input type="hidden" name="action" value="<?php echo !empty($u['is_following']) ? 'unfollow_user' : 'follow_user'; ?>">
                 <input type="hidden" name="target_role" value="<?php echo htmlspecialchars($uRole); ?>">
@@ -706,7 +706,7 @@ $levelPercent = [
       <div class="pf-card" id="pfFollowingCard">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div><div class="pf-card-title" style="margin-bottom:1px">People You Follow</div><div style="font-size:.72rem;color:#94A3B8">Their updates appear in your feed</div></div>
-          <span id="pfFollowingCountBadge" style="font-size:.7rem;font-weight:700;background:#F3F4F6;color:#111827;padding:3px 10px;border-radius:50px"><?php echo $followingCount; ?> following</span>
+          <span id="pfFollowingCountBadge" style="font-size:.7rem;font-weight:700;background:#F3F4F6;color:#050505;padding:3px 10px;border-radius:50px"><?php echo $followingCount; ?> following</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:7px" id="pfFollowingRows">
           <?php if (!$followingUsers): ?>
@@ -731,7 +731,7 @@ $levelPercent = [
                 }
               ?>
               <div class="pf-person-row">
-                <div class="pf-person-avatar" style="background:linear-gradient(135deg,#10B981,#06B6D4)">
+                <div class="pf-person-avatar" style="background:linear-gradient(135deg,#12b3ac,#12b3ac)">
                   <?php if ($avatarUrl !== ''): ?>
                     <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="Avatar">
                   <?php else: ?>
@@ -758,7 +758,7 @@ $levelPercent = [
       <div class="pf-card" id="pfFollowersCard">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div><div class="pf-card-title" style="margin-bottom:1px">People Following You</div><div style="font-size:.72rem;color:#94A3B8">These users follow your account</div></div>
-          <span id="pfFollowersCountBadge" style="font-size:.7rem;font-weight:700;background:#F3F4F6;color:#111827;padding:3px 10px;border-radius:50px"><?php echo $followersCount; ?> followers</span>
+          <span id="pfFollowersCountBadge" style="font-size:.7rem;font-weight:700;background:#F3F4F6;color:#050505;padding:3px 10px;border-radius:50px"><?php echo $followersCount; ?> followers</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:7px" id="pfFollowerRows">
           <?php if (!$followerUsers): ?>
@@ -783,7 +783,7 @@ $levelPercent = [
                 }
               ?>
               <div class="pf-person-row">
-                <div class="pf-person-avatar" style="background:linear-gradient(135deg,#111827,#374151)">
+                <div class="pf-person-avatar" style="background:linear-gradient(135deg,#050505,#374151)">
                   <?php if ($avatarUrl !== ''): ?>
                     <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="Avatar">
                   <?php else: ?>
@@ -791,7 +791,7 @@ $levelPercent = [
                   <?php endif; ?>
                 </div>
                 <div style="flex:1"><div class="pf-person-name"><?php echo htmlspecialchars($uName); ?></div><div class="pf-person-role"><?php echo htmlspecialchars($uHeadline); ?><?php echo $uSubtitle !== '' ? ' · ' . htmlspecialchars($uSubtitle) : ''; ?><?php echo ' · ID: ' . (int) $uId; ?></div></div>
-                <span class="pf-type-pill" style="background:#F3F4F6;color:#111827"><?php echo htmlspecialchars(ucfirst($uRole)); ?></span>
+                <span class="pf-type-pill" style="background:#F3F4F6;color:#050505"><?php echo htmlspecialchars(ucfirst($uRole)); ?></span>
                 <form method="post" class="js-follow-form" style="margin:0;">
                   <input type="hidden" name="action" value="<?php echo !empty($u['is_following']) ? 'unfollow_user' : 'follow_user'; ?>">
                   <input type="hidden" name="target_role" value="<?php echo htmlspecialchars($uRole); ?>">
@@ -823,10 +823,10 @@ $levelPercent = [
         <div class="pf-card-title" style="margin-bottom:8px">Select Your Avatar</div>
         <div class="pf-avatar-grid" id="pfAvatarGrid">
           <button class="pf-avatar-option" type="button" data-avatar="tech-girl" data-emoji="👩‍💻" style="background:linear-gradient(135deg,#A855F7,#60A5FA)">👩‍💻</button>
-          <button class="pf-avatar-option" type="button" data-avatar="creative-boy" data-emoji="🧑‍🎨" style="background:linear-gradient(135deg,#F59E0B,#FBBF24)">🧑‍🎨</button>
+          <button class="pf-avatar-option" type="button" data-avatar="creative-boy" data-emoji="🧑‍🎨" style="background:linear-gradient(135deg,#12b3ac,#FBBF24)">🧑‍🎨</button>
           <button class="pf-avatar-option" type="button" data-avatar="mentor-man" data-emoji="👨‍🏫" style="background:linear-gradient(135deg,#22C55E,#38BDF8)">👨‍🏫</button>
-          <button class="pf-avatar-option" type="button" data-avatar="student-boy" data-emoji="🧑‍🎓" style="background:linear-gradient(135deg,#6366F1,#A5B4FC)">🧑‍🎓</button>
-          <button class="pf-avatar-option" type="button" data-avatar="astronaut" data-emoji="👨‍🚀" style="background:linear-gradient(135deg,#64748B,#93C5FD)">👨‍🚀</button>
+          <button class="pf-avatar-option" type="button" data-avatar="student-boy" data-emoji="🧑‍🎓" style="background:linear-gradient(135deg,#2a8b8d,#A5B4FC)">🧑‍🎓</button>
+          <button class="pf-avatar-option" type="button" data-avatar="astronaut" data-emoji="👨‍🚀" style="background:linear-gradient(135deg,#64748B,#9ee7e1)">👨‍🚀</button>
           <button class="pf-avatar-option" type="button" data-avatar="coder-girl" data-emoji="👩‍💻" style="background:linear-gradient(135deg,#84CC16,#22C55E)">👩‍💻</button>
           <button class="pf-avatar-option" type="button" data-avatar="leader-girl" data-emoji="👩‍💼" style="background:linear-gradient(135deg,#F472B6,#A855F7)">👩‍💼</button>
           <button class="pf-avatar-option" type="button" data-avatar="intern-boy" data-emoji="🧑‍💼" style="background:linear-gradient(135deg,#2DD4BF,#38BDF8)">🧑‍💼</button>
@@ -867,15 +867,15 @@ $levelPercent = [
         <div class="pf-card-title" style="margin-bottom:8px">Choose A Cover Style</div>
         <div class="pf-cover-grid" id="pfCoverGrid">
           <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#FDE047 0%,#38BDF8 100%)" style="background:linear-gradient(135deg,#FDE047 0%,#38BDF8 100%)"></button>
-          <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#1D4ED8 0%,#22D3EE 100%)" style="background:linear-gradient(135deg,#1D4ED8 0%,#22D3EE 100%)"></button>
+          <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#12b3ac 0%,#22D3EE 100%)" style="background:linear-gradient(135deg,#12b3ac 0%,#22D3EE 100%)"></button>
           <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#059669 0%,#34D399 100%)" style="background:linear-gradient(135deg,#059669 0%,#34D399 100%)"></button>
-          <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#EF4444 0%,#F59E0B 100%)" style="background:linear-gradient(135deg,#EF4444 0%,#F59E0B 100%)"></button>
-          <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#4338CA 0%,#6366F1 100%)" style="background:linear-gradient(135deg,#4338CA 0%,#6366F1 100%)"></button>
+          <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#12b3ac 0%,#12b3ac 100%)" style="background:linear-gradient(135deg,#12b3ac 0%,#12b3ac 100%)"></button>
+          <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#4338CA 0%,#2a8b8d 100%)" style="background:linear-gradient(135deg,#4338CA 0%,#2a8b8d 100%)"></button>
           <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#0EA5E9 0%,#38BDF8 100%)" style="background:linear-gradient(135deg,#0EA5E9 0%,#38BDF8 100%)"></button>
           <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#A21CAF 0%,#C084FC 100%)" style="background:linear-gradient(135deg,#A21CAF 0%,#C084FC 100%)"></button>
-          <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#9333EA 0%,#3B82F6 100%)" style="background:linear-gradient(135deg,#9333EA 0%,#3B82F6 100%)"></button>
+          <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#12b3ac 0%,#12b3ac 100%)" style="background:linear-gradient(135deg,#12b3ac 0%,#12b3ac 100%)"></button>
           <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#16A34A 0%,#86EFAC 100%)" style="background:linear-gradient(135deg,#16A34A 0%,#86EFAC 100%)"></button>
-          <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#111827 0%,#9CA3AF 100%)" style="background:linear-gradient(135deg,#111827 0%,#9CA3AF 100%)"></button>
+          <button class="pf-cover-option" type="button" data-gradient="linear-gradient(135deg,#050505 0%,#9CA3AF 100%)" style="background:linear-gradient(135deg,#050505 0%,#9CA3AF 100%)"></button>
         </div>
 
         <div class="pf-cover-preview" id="pfCoverPreview" style="<?php echo $coverPreviewStyle; ?>"></div>
@@ -1241,9 +1241,9 @@ function escapeHtml(text) {
 }
 
 function rolePillStyle(role) {
-  if (role === 'student') return 'background:#F3F4F6;color:#111827';
+  if (role === 'student') return 'background:#F3F4F6;color:#050505';
   if (role === 'employer') return 'background:#ECFDF5;color:#059669';
-  return 'background:#EFF6FF;color:#1D4ED8';
+  return 'background:#EFF6FF;color:#12b3ac';
 }
 
 function avatarHtml(user, gradient) {
@@ -1276,7 +1276,7 @@ function renderDiscoverRows(users) {
   root.innerHTML = users.map(function (u) {
     var search = (u.display_name + ' ' + u.headline + ' ' + u.subtitle).toLowerCase();
     return '<div class="pf-person-row" data-role="' + escapeHtml(u.role) + '" data-search="' + escapeHtml(search) + '">'
-      + avatarHtml(u, 'linear-gradient(135deg,#111827,#374151)')
+      + avatarHtml(u, 'linear-gradient(135deg,#050505,#374151)')
       + '<div style="flex:1"><div class="pf-person-name">' + escapeHtml(u.display_name) + '</div><div class="pf-person-role">' + escapeHtml(u.headline) + (u.subtitle ? ' · ' + escapeHtml(u.subtitle) : '') + '</div></div>'
       + '<span class="pf-type-pill" style="' + rolePillStyle(u.role) + '">' + escapeHtml(u.role.charAt(0).toUpperCase() + u.role.slice(1)) + '</span>'
       + followFormHtml(u, false)
@@ -1294,7 +1294,7 @@ function renderFollowingRows(users) {
   }
   root.innerHTML = users.map(function (u) {
     return '<div class="pf-person-row">'
-      + avatarHtml(u, 'linear-gradient(135deg,#10B981,#06B6D4)')
+      + avatarHtml(u, 'linear-gradient(135deg,#12b3ac,#12b3ac)')
       + '<div style="flex:1"><div class="pf-person-name">' + escapeHtml(u.display_name) + '</div><div class="pf-person-role">' + escapeHtml(u.headline) + (u.subtitle ? ' · ' + escapeHtml(u.subtitle) : '') + '</div></div>'
       + '<span class="pf-type-pill" style="' + rolePillStyle(u.role) + '">' + escapeHtml(u.role.charAt(0).toUpperCase() + u.role.slice(1)) + '</span>'
       + followFormHtml(u, false)
@@ -1311,7 +1311,7 @@ function renderFollowerRows(users) {
   }
   root.innerHTML = users.map(function (u) {
     return '<div class="pf-person-row">'
-      + avatarHtml(u, 'linear-gradient(135deg,#111827,#374151)')
+      + avatarHtml(u, 'linear-gradient(135deg,#050505,#374151)')
       + '<div style="flex:1"><div class="pf-person-name">' + escapeHtml(u.display_name) + '</div><div class="pf-person-role">' + escapeHtml(u.headline) + (u.subtitle ? ' · ' + escapeHtml(u.subtitle) : '') + '</div></div>'
       + '<span class="pf-type-pill" style="' + rolePillStyle(u.role) + '">' + escapeHtml(u.role.charAt(0).toUpperCase() + u.role.slice(1)) + '</span>'
       + followFormHtml(u, true)

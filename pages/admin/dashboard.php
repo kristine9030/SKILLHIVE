@@ -39,26 +39,26 @@ $appStatusBreakdown = $pdo->query("
 
 $totalUsers = ($stats['total_students'] ?? 0) + ($stats['total_employers'] ?? 0) + ($stats['total_admins'] ?? 0);
 $breakdownCards = [
-    ['label' => 'Pending', 'value' => $appStatusBreakdown['Pending'] ?? 0, 'accent' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.1)'],
+    ['label' => 'Pending', 'value' => $appStatusBreakdown['Pending'] ?? 0, 'accent' => '#12b3ac', 'bg' => 'rgba(245, 158, 11, 0.1)'],
     ['label' => 'Shortlisted', 'value' => $appStatusBreakdown['Shortlisted'] ?? 0, 'accent' => '#0f766e', 'bg' => 'rgba(15, 118, 110, 0.1)'],
-    ['label' => 'Interview Scheduled', 'value' => $appStatusBreakdown['Interview Scheduled'] ?? 0, 'accent' => '#06b6d4', 'bg' => 'rgba(6, 182, 212, 0.1)'],
-    ['label' => 'Accepted', 'value' => $appStatusBreakdown['Accepted'] ?? 0, 'accent' => '#4f46e5', 'bg' => 'rgba(79, 70, 229, 0.1)'],
-    ['label' => 'Rejected', 'value' => $appStatusBreakdown['Rejected'] ?? 0, 'accent' => '#ef4444', 'bg' => 'rgba(239, 68, 68, 0.1)'],
+    ['label' => 'Interview Scheduled', 'value' => $appStatusBreakdown['Interview Scheduled'] ?? 0, 'accent' => '#12b3ac', 'bg' => 'rgba(6, 182, 212, 0.1)'],
+    ['label' => 'Accepted', 'value' => $appStatusBreakdown['Accepted'] ?? 0, 'accent' => '#12b3ac', 'bg' => 'rgba(79, 70, 229, 0.1)'],
+    ['label' => 'Rejected', 'value' => $appStatusBreakdown['Rejected'] ?? 0, 'accent' => '#12b3ac', 'bg' => 'rgba(239, 68, 68, 0.1)'],
 ];
 $healthCards = [
-    ['icon' => 'fa-briefcase', 'label' => 'Open Listings', 'copy' => 'Active internship roles accepting applicants right now.', 'value' => (int) ($stats['open_internships'] ?? 0), 'tone' => '#111827', 'bg' => 'rgba(15, 23, 42, 0.08)'],
-    ['icon' => 'fa-paper-plane', 'label' => 'Applications', 'copy' => 'Total submissions currently flowing through the marketplace.', 'value' => (int) ($stats['total_applications'] ?? 0), 'tone' => '#4f46e5', 'bg' => 'rgba(79, 70, 229, 0.1)'],
-    ['icon' => 'fa-shield-halved', 'label' => 'Pending Review', 'copy' => 'Companies waiting for admin approval or additional checks.', 'value' => (int) ($stats['pending_verifications'] ?? 0), 'tone' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.1)'],
-    ['icon' => 'fa-badge-check', 'label' => 'Verified Companies', 'copy' => 'Approved partners currently visible across the platform.', 'value' => (int) ($stats['verified_companies'] ?? 0), 'tone' => '#10b981', 'bg' => 'rgba(16, 185, 129, 0.1)'],
+    ['icon' => 'fa-briefcase', 'label' => 'Open Listings', 'copy' => 'Active internship roles accepting applicants right now.', 'value' => (int) ($stats['open_internships'] ?? 0), 'tone' => '#050505', 'bg' => 'rgba(15, 23, 42, 0.08)'],
+    ['icon' => 'fa-paper-plane', 'label' => 'Applications', 'copy' => 'Total submissions currently flowing through the marketplace.', 'value' => (int) ($stats['total_applications'] ?? 0), 'tone' => '#12b3ac', 'bg' => 'rgba(79, 70, 229, 0.1)'],
+    ['icon' => 'fa-shield-halved', 'label' => 'Pending Review', 'copy' => 'Companies waiting for admin approval or additional checks.', 'value' => (int) ($stats['pending_verifications'] ?? 0), 'tone' => '#12b3ac', 'bg' => 'rgba(245, 158, 11, 0.1)'],
+    ['icon' => 'fa-badge-check', 'label' => 'Verified Companies', 'copy' => 'Approved partners currently visible across the platform.', 'value' => (int) ($stats['verified_companies'] ?? 0), 'tone' => '#12b3ac', 'bg' => 'rgba(16, 185, 129, 0.1)'],
 ];
 $statusStyles = [
-    'Pending' => ['color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.12)'],
+    'Pending' => ['color' => '#12b3ac', 'bg' => 'rgba(245, 158, 11, 0.12)'],
     'Shortlisted' => ['color' => '#0f766e', 'bg' => 'rgba(15, 118, 110, 0.12)'],
-    'Interview Scheduled' => ['color' => '#06b6d4', 'bg' => 'rgba(6, 182, 212, 0.12)'],
-    'Accepted' => ['color' => '#4f46e5', 'bg' => 'rgba(79, 70, 229, 0.12)'],
-    'Rejected' => ['color' => '#ef4444', 'bg' => 'rgba(239, 68, 68, 0.12)'],
-    'Approved' => ['color' => '#10b981', 'bg' => 'rgba(16, 185, 129, 0.12)'],
-    'Flagged' => ['color' => '#ef4444', 'bg' => 'rgba(239, 68, 68, 0.12)'],
+    'Interview Scheduled' => ['color' => '#12b3ac', 'bg' => 'rgba(6, 182, 212, 0.12)'],
+    'Accepted' => ['color' => '#12b3ac', 'bg' => 'rgba(79, 70, 229, 0.12)'],
+    'Rejected' => ['color' => '#12b3ac', 'bg' => 'rgba(239, 68, 68, 0.12)'],
+    'Approved' => ['color' => '#12b3ac', 'bg' => 'rgba(16, 185, 129, 0.12)'],
+    'Flagged' => ['color' => '#12b3ac', 'bg' => 'rgba(239, 68, 68, 0.12)'],
 ];
 ?>
 
@@ -114,7 +114,7 @@ $statusStyles = [
   ?>
 
   <section class="admin-stat-grid">
-    <article class="admin-stat-card" style="--admin-accent:#111827;--admin-accent-soft:rgba(17,24,39,0.08)">
+    <article class="admin-stat-card" style="--admin-accent:#050505;--admin-accent-soft:rgba(17,24,39,0.08)">
       <div class="admin-stat-top">
         <div class="admin-stat-label">Total Users</div>
         <div class="admin-stat-icon"><i class="fas fa-users"></i></div>
@@ -122,7 +122,7 @@ $statusStyles = [
       <div class="admin-stat-value"><?= number_format($totalUsers) ?></div>
       <div class="admin-stat-note">Combined student, employer, and administrator accounts.</div>
     </article>
-    <article class="admin-stat-card" style="--admin-accent:#06b6d4;--admin-accent-soft:rgba(6,182,212,0.1)">
+    <article class="admin-stat-card" style="--admin-accent:#12b3ac;--admin-accent-soft:rgba(6,182,212,0.1)">
       <div class="admin-stat-top">
         <div class="admin-stat-label">Students</div>
         <div class="admin-stat-icon"><i class="fas fa-user-graduate"></i></div>
@@ -130,7 +130,7 @@ $statusStyles = [
       <div class="admin-stat-value"><?= number_format($stats['total_students'] ?? 0) ?></div>
       <div class="admin-stat-note">Learners building profiles, applying, and tracking OJT progress.</div>
     </article>
-    <article class="admin-stat-card" style="--admin-accent:#10b981;--admin-accent-soft:rgba(16,185,129,0.1)">
+    <article class="admin-stat-card" style="--admin-accent:#12b3ac;--admin-accent-soft:rgba(16,185,129,0.1)">
       <div class="admin-stat-top">
         <div class="admin-stat-label">Companies</div>
         <div class="admin-stat-icon"><i class="fas fa-building"></i></div>
@@ -138,7 +138,7 @@ $statusStyles = [
       <div class="admin-stat-value"><?= number_format($stats['total_employers'] ?? 0) ?></div>
       <div class="admin-stat-note"><?= number_format($stats['verified_companies'] ?? 0) ?> verified and <?= number_format($stats['pending_verifications'] ?? 0) ?> still awaiting review.</div>
     </article>
-    <article class="admin-stat-card" style="--admin-accent:#f59e0b;--admin-accent-soft:rgba(245,158,11,0.1)">
+    <article class="admin-stat-card" style="--admin-accent:#12b3ac;--admin-accent-soft:rgba(245,158,11,0.1)">
       <div class="admin-stat-top">
         <div class="admin-stat-label">Active OJT</div>
         <div class="admin-stat-icon"><i class="fas fa-briefcase"></i></div>

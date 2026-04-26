@@ -54,120 +54,112 @@ if (!function_exists('adviser_journal_decode_array_field')) {
     }
 }
 
-if (!function_exists('adviser_journal_analyze_sentiment')) {
-    /**
-     * Analyzes the sentiment of a journal entry and returns a score, label, and urgency flag.
-     * Returns: ['score' => float(-1 to 1), 'label' => string, 'tone' => string, 'needs_action' => bool, 'action_reasons' => array]
-     */
-    function adviser_journal_analyze_sentiment(array $entry): array
+if (!function_exists('adviser_analyze_sentiment')) {
+    function adviser_analyze_sentiment(string $text): array
     {
+        $normalized = strtolower(trim($text));
+        if ($normalized === '') {
+            return [
+                'score' => 0.0,
+                'label' => 'Neutral',
+                'tone' => 'No reflection content provided.',
+                'needs_action' => false,
+                'action_reasons' => [],
+            ];
+        }
+
         $positiveWords = [
-            'accomplished', 'achieved', 'excited', 'happy', 'great', 'excellent', 'enjoyed',
-            'productive', 'motivated', 'confident', 'proud', 'improved', 'successful',
-            'learned', 'grateful', 'inspired', 'progress', 'effective', 'efficient',
-            'helpful', 'rewarding', 'satisfied', 'positive', 'opportunity', 'growth',
-            'innovative', 'creative', 'collaborative', 'teamwork', 'appreciation',
-            'breakthrough', 'milestone', 'encouragement', 'gain', 'mastered', 'smooth',
+            'good', 'great', 'improve', 'improved', 'progress', 'learned', 'confident',
+            'happy', 'productive', 'success', 'accomplished', 'helpful', 'excited',
+            'smooth', 'clear', 'supported', 'mentor', 'teamwork', 'cooperative',
+            'on time', 'resolved', 'naintindihan', 'natuto', 'maayos', 'nakatulong',
+        ];
+        $positivePhrases = [
+            'did well', 'went well', 'feeling better', 'more confident', 'well guided',
+            'learned a lot', 'handled it well', 'got positive feedback',
         ];
 
         $negativeWords = [
-            'difficult', 'stressed', 'overwhelmed', 'confused', 'frustrated', 'struggling',
-            'failed', 'problem', 'issue', 'error', 'behind', 'unclear', 'lost', 'stuck',
-            'worried', 'anxious', 'uncomfortable', 'exhausted', 'burnout', 'misunderstood',
-            'conflict', 'unfair', 'difficult', 'neglected', 'pressured', 'demotivated',
-            'ignored', 'bored', 'helpless', 'hopeless', 'tension', 'hostile',
+            'bad', 'difficult', 'hard', 'stress', 'stressed', 'anxious', 'overwhelmed',
+            'problem', 'failed', 'confused', 'frustrated', 'burnout', 'worried',
+            'toxic', 'delay', 'delayed', 'late', 'mistake', 'errors', 'pagod',
+            'nahirapan', 'kulang', 'pressure', 'exhausted',
+        ];
+        $negativePhrases = [
+            'not good', 'did not go well', 'no guidance', 'walang guidance',
+            'hindi ko alam', 'hindi ko kaya', 'too much workload', 'i feel unsafe',
+            'i cannot focus', 'drained every day',
         ];
 
-        // Critical/urgent distress signals that warrant immediate adviser action
         $urgentFlags = [
-            'harassed',
-            'bullied',
-            'discriminated',
-            'unsafe',
-            'threatened',
-            'hostile',
-            'abuse',
-            'abusive',
-            'quit',
-            'quitting',
-            'leave',
-            'mental health',
-            'breakdown',
-            'burnout',
-            'hopeless',
-            'helpless',
-            'crying',
-            'cried',
-            'panic',
-            'anxious',
-            'anxiety',
-            'depressed',
-            'depression',
+            'depressed' => 'Possible depression signal',
+            'hopeless' => 'Hopeless wording detected',
+            'panic' => 'Panic-related wording detected',
+            'suicidal' => 'Potential self-harm signal detected',
+            'self-harm' => 'Potential self-harm signal detected',
+            'abuse' => 'Abuse-related wording detected',
+            'harassed' => 'Harassment wording detected',
+            'sexual harassment' => 'Possible sexual harassment report',
+            'unsafe' => 'Safety concern detected',
+            'threat' => 'Threat-related wording detected',
+            'trauma' => 'Trauma-related wording detected',
+            'mental health' => 'Mental health concern detected',
+            'breakdown' => 'Possible emotional breakdown wording detected',
+            'gusto ko sumuko' => 'Student may be expressing intent to give up',
+            'ayoko na' => 'Student may be expressing acute distress',
+            'cannot cope' => 'Student may be unable to cope',
+            "can't cope" => 'Student may be unable to cope',
         ];
 
-        // Combine all text fields for analysis
-        $allText = implode(' ', array_filter([
-            $entry['reflection'] ?? '',
-            implode(' ', is_array($entry['tasks_accomplished'] ?? null) ? $entry['tasks_accomplished'] : []),
-            implode(' ', is_array($entry['challenges_encountered'] ?? null) ? $entry['challenges_encountered'] : []),
-            implode(' ', is_array($entry['solutions_actions_taken'] ?? null) ? $entry['solutions_actions_taken'] : []),
-            implode(' ', is_array($entry['key_learnings_insights'] ?? null) ? $entry['key_learnings_insights'] : []),
-        ]));
+        $countMatches = static function (string $haystack, array $needles): int {
+            $count = 0;
+            foreach ($needles as $needle) {
+                $count += substr_count($haystack, (string)$needle);
+            }
+            return $count;
+        };
 
-        $textLower = strtolower($allText);
+        $posCount = $countMatches($normalized, $positiveWords) + (2 * $countMatches($normalized, $positivePhrases));
+        $negCount = $countMatches($normalized, $negativeWords) + (2 * $countMatches($normalized, $negativePhrases));
 
-        $posCount = 0;
-        $negCount = 0;
-        foreach ($positiveWords as $word) {
-            $posCount += substr_count($textLower, $word);
-        }
-        foreach ($negativeWords as $word) {
-            $negCount += substr_count($textLower, $word);
-        }
+        $denominator = max(1, $posCount + $negCount);
+        $score = ($posCount - $negCount) / $denominator;
 
-        $total = $posCount + $negCount;
-        $score = $total > 0 ? ($posCount - $negCount) / $total : 0.0;
-
-        // Determine label and tone
-        if ($score >= 0.5) {
+        if ($score >= 0.6) {
             $label = 'Positive';
-            $tone  = 'The student appears engaged and optimistic.';
-        } elseif ($score >= 0.1) {
+            $tone = 'The student entry is optimistic and constructive.';
+        } elseif ($score >= 0.2) {
             $label = 'Mostly Positive';
-            $tone  = 'The student is generally doing well with minor challenges.';
-        } elseif ($score >= -0.1) {
+            $tone = 'The student shows generally positive momentum.';
+        } elseif ($score > -0.2) {
             $label = 'Neutral';
-            $tone  = 'The student\'s entry reflects a balanced, matter-of-fact tone.';
-        } elseif ($score >= -0.5) {
+            $tone = 'The student entry reflects a balanced, matter-of-fact tone.';
+        } elseif ($score > -0.6) {
             $label = 'Mostly Negative';
-            $tone  = 'The student shows signs of difficulty or frustration.';
+            $tone = 'The student shows signs of difficulty or frustration.';
         } else {
             $label = 'Negative';
-            $tone  = 'The student may be experiencing significant stress or challenges.';
+            $tone = 'The student may be experiencing significant stress or challenges.';
         }
 
-        // Check urgent distress flags
         $actionReasons = [];
-        foreach ($urgentFlags as $flag) {
-            if (strpos($textLower, $flag) !== false) {
-                $actionReasons[] = ucfirst($flag);
+        foreach ($urgentFlags as $flag => $reason) {
+            if (strpos($normalized, $flag) !== false) {
+                $actionReasons[] = $reason;
             }
         }
 
-        // Auto-escalate if sentiment is very negative even without explicit keywords
         $needsAction = !empty($actionReasons) || $score <= -0.6;
         if ($score <= -0.6 && empty($actionReasons)) {
-            $actionReasons[] = 'Highly negative entry detected — please review';
+            $actionReasons[] = 'Highly negative entry detected - please review';
         }
 
         return [
-            'score'          => round($score, 2),
-            'label'          => $label,
-            'tone'           => $tone,
-            'needs_action'   => $needsAction,
-            'action_reasons' => array_unique($actionReasons),
-            'pos_count'      => $posCount,
-            'neg_count'      => $negCount,
+            'score' => round($score, 2),
+            'label' => $label,
+            'tone' => $tone,
+            'needs_action' => $needsAction,
+            'action_reasons' => array_values(array_unique($actionReasons)),
         ];
     }
 }
@@ -178,8 +170,10 @@ $journalEntries = [];
 $studentStats = null;
 $entryQualityScores = [];
 $entrySentiments = [];
-$journalVisibilityColumnExists = false;
 $overallSentimentSummary = null;
+$journalVisibilityColumnExists = false;
+$entryTrendData = [];
+$entryCategoryData = [];
 
 try {
     $visibilityCheckStmt = $pdo->prepare(
@@ -311,18 +305,53 @@ if ($studentId > 0) {
             $totalChallenges = 0;
             $totalSolutions = 0;
             $totalTasks = 0;
+            $totalInsights = 0;
+            $totalReflections = 0;
+            $entriesPerWeek = [];
 
             foreach ($journalEntries as $entry) {
                 $skills = is_array($entry['skills_applied_learned'] ?? null) ? $entry['skills_applied_learned'] : [];
                 $challenges = is_array($entry['challenges_encountered'] ?? null) ? $entry['challenges_encountered'] : [];
                 $solutions = is_array($entry['solutions_actions_taken'] ?? null) ? $entry['solutions_actions_taken'] : [];
                 $tasks = is_array($entry['tasks_accomplished'] ?? null) ? $entry['tasks_accomplished'] : [];
+                $insights = is_array($entry['key_learnings_insights'] ?? null) ? $entry['key_learnings_insights'] : [];
+                $reflection = trim((string)($entry['reflection'] ?? ''));
+                $entryDateRaw = trim((string)($entry['entry_date'] ?? ''));
+                $entryTs = $entryDateRaw !== '' ? strtotime($entryDateRaw) : false;
+                if ($entryTs !== false) {
+                    $weekKey = date('Y-m-d', strtotime('monday this week', $entryTs));
+                    $entriesPerWeek[$weekKey] = (int)($entriesPerWeek[$weekKey] ?? 0) + 1;
+                }
 
                 $allSkills = array_merge($allSkills, $skills);
                 $totalChallenges += count($challenges);
                 $totalSolutions += count($solutions);
                 $totalTasks += count($tasks);
+                $totalInsights += count($insights);
+                if ($reflection !== '') {
+                    $totalReflections++;
+                }
             }
+
+            if (!empty($entriesPerWeek)) {
+                ksort($entriesPerWeek);
+                $entriesPerWeek = array_slice($entriesPerWeek, -8, null, true);
+                foreach ($entriesPerWeek as $weekDate => $count) {
+                    $entryTrendData[] = [
+                        'label' => date('M j', strtotime((string)$weekDate)),
+                        'value' => (int)$count,
+                    ];
+                }
+            }
+
+            $entryCategoryData = [
+                ['label' => 'Tasks', 'value' => $totalTasks],
+                ['label' => 'Skills', 'value' => count($allSkills)],
+                ['label' => 'Challenges', 'value' => $totalChallenges],
+                ['label' => 'Solutions', 'value' => $totalSolutions],
+                ['label' => 'Insights', 'value' => $totalInsights],
+                ['label' => 'Reflections', 'value' => $totalReflections],
+            ];
 
             $uniqueSkills = count(array_unique(array_filter(array_map('strval', $allSkills))));
             $avgDailyTasks = $totalEntries > 0 ? round($totalTasks / $totalEntries, 1) : 0.0;
@@ -341,42 +370,54 @@ if ($studentId > 0) {
                 }
             }
 
-            // Compute per-entry sentiment
-            if (function_exists('adviser_journal_analyze_sentiment')) {
-                $totalSentimentScore = 0.0;
-                $positiveCount = 0;
-                $negativeCount = 0;
-                $needsActionCount = 0;
+            $sentimentTotal = 0.0;
+            $positiveEntries = 0;
+            $negativeEntries = 0;
+            $needsActionCount = 0;
 
-                foreach ($journalEntries as $entry) {
-                    $sentiment = adviser_journal_analyze_sentiment($entry);
-                    $entrySentiments[(int)$entry['journal_id']] = $sentiment;
+            foreach ($journalEntries as $entry) {
+                $entryId = (int)($entry['journal_id'] ?? 0);
+                $sentimentText = trim(
+                    implode(' ', is_array($entry['tasks_accomplished'] ?? null) ? $entry['tasks_accomplished'] : [])
+                    . ' ' . implode(' ', is_array($entry['key_learnings_insights'] ?? null) ? $entry['key_learnings_insights'] : [])
+                    . ' ' . (string)($entry['reflection'] ?? '')
+                );
+                $analysis = adviser_analyze_sentiment($sentimentText);
+                $entrySentiments[$entryId] = $analysis;
 
-                    $totalSentimentScore += $sentiment['score'];
-                    if ($sentiment['score'] >= 0.1) {
-                        $positiveCount++;
-                    } elseif ($sentiment['score'] <= -0.1) {
-                        $negativeCount++;
-                    }
-                    if ($sentiment['needs_action']) {
-                        $needsActionCount++;
-                    }
+                $score = (float)($analysis['score'] ?? 0.0);
+                $sentimentTotal += $score;
+
+                if ($score >= 0.2) {
+                    $positiveEntries++;
+                } elseif ($score <= -0.2) {
+                    $negativeEntries++;
                 }
 
-                $avgScore = $totalEntries > 0 ? $totalSentimentScore / $totalEntries : 0.0;
-                $overallLabel = match (true) {
-                    $avgScore >= 0.4   => 'Generally Positive',
-                    $avgScore >= 0.05  => 'Mostly Positive',
-                    $avgScore >= -0.05 => 'Mixed',
-                    $avgScore >= -0.4  => 'Mostly Negative',
-                    default            => 'Predominantly Negative',
-                };
+                if (!empty($analysis['needs_action'])) {
+                    $needsActionCount++;
+                }
+            }
+
+            if ($totalEntries > 0) {
+                $averageScore = $sentimentTotal / $totalEntries;
+                if ($averageScore >= 0.6) {
+                    $overallLabel = 'Generally Positive';
+                } elseif ($averageScore >= 0.2) {
+                    $overallLabel = 'Mostly Positive';
+                } elseif ($averageScore > -0.2) {
+                    $overallLabel = 'Mixed / Neutral';
+                } elseif ($averageScore > -0.6) {
+                    $overallLabel = 'Mostly Negative';
+                } else {
+                    $overallLabel = 'Generally Negative';
+                }
 
                 $overallSentimentSummary = [
-                    'avg_score'          => round($avgScore, 2),
-                    'label'              => $overallLabel,
-                    'positive_entries'   => $positiveCount,
-                    'negative_entries'   => $negativeCount,
+                    'avg_score' => round($averageScore, 2),
+                    'label' => $overallLabel,
+                    'positive_entries' => $positiveEntries,
+                    'negative_entries' => $negativeEntries,
                     'needs_action_count' => $needsActionCount,
                 ];
             }
@@ -403,618 +444,802 @@ $sortChangeBaseUrl = $baseUrl . '/layout.php?' . http_build_query([
 ?>
 
 <style>
-    /* ═══════════════════════════════════════════════
-       LAYOUT
-    ═══════════════════════════════════════════════ */
-    .ja-container {
+    .journal-hero-banner,
+    .analytics-container {
+        --ja-banner-dark: #050505;
+        --ja-banner-mid: #12b3ac;
+        --ja-ink-strong: #102238;
+        --ja-ink: #25384d;
+        --ja-muted: #627489;
+        --ja-surface: #f6f9fc;
+        --ja-border: #d7e0eb;
+        --ja-accent: #1a6678;
+        --ja-accent-soft: #deeff1;
+    }
+
+    .analytics-container {
         display: grid;
-        grid-template-columns: 280px 1fr;
+        grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
         gap: 20px;
         margin-top: 20px;
-        align-items: start;
-    }
-    @media (max-width: 1200px) {
-        .ja-container { grid-template-columns: 1fr; }
     }
 
-    /* ═══════════════════════════════════════════════
-       STUDENT SIDEBAR
-    ═══════════════════════════════════════════════ */
-    .ja-sidebar {
-        background: var(--card);
-        border-radius: var(--radius);
-        border: 1px solid var(--border);
+    .student-list {
+        background: #ffffff;
+        border: 1px solid var(--ja-border);
+        border-radius: 14px;
         overflow: hidden;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+        max-height: 78vh;
         position: sticky;
-        top: 20px;
+        top: 18px;
+        overflow-y: auto;
     }
-    .ja-sidebar-head {
-        background: var(--primary);
-        color: #fff;
-        padding: 14px 18px;
-        font-size: .82rem;
+
+    .student-list-header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: linear-gradient(135deg, var(--ja-banner-dark) 0%, var(--ja-banner-mid) 100%);
+        color: #ffffff;
+        padding: 14px 16px;
         font-weight: 700;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        font-size: 0.92rem;
+        letter-spacing: 0.02em;
     }
-    .ja-student-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--border);
+
+    .student-item {
+        display: block;
+        padding: 12px 14px;
+        border-bottom: 1px solid #ecf1f6;
         text-decoration: none;
-        color: var(--text);
-        transition: background var(--transition);
+        color: inherit;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
     }
-    .ja-student-item:last-child { border-bottom: none; }
-    .ja-student-item:hover { background: var(--bg-soft); }
-    .ja-student-item.active {
-        background: rgba(6,182,212,.07);
-        border-left: 3px solid var(--secondary);
-        padding-left: 13px;
+
+    .student-item:hover {
+        background: var(--ja-surface);
     }
-    .ja-student-avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: var(--primary);
-        color: #fff;
-        font-size: .78rem;
+
+    .student-item.active {
+        background: #edf3fa;
+        border-left: 4px solid var(--ja-accent);
+        padding-left: 10px;
+    }
+
+    .student-name {
         font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-    .ja-student-item.active .ja-student-avatar {
-        background: var(--secondary);
-    }
-    .ja-student-name {
-        font-weight: 600;
-        font-size: .88rem;
-        color: var(--text);
-        line-height: 1.3;
-    }
-    .ja-student-meta {
-        font-size: .75rem;
-        color: var(--text3);
-        margin-top: 2px;
-    }
-    .ja-entry-badge {
-        margin-left: auto;
-        background: var(--bg-soft);
-        border: 1px solid var(--border);
-        color: var(--text2);
-        padding: 2px 8px;
-        border-radius: 50px;
-        font-size: .72rem;
-        font-weight: 700;
-        flex-shrink: 0;
-    }
-    .ja-student-item.active .ja-entry-badge {
-        background: rgba(6,182,212,.12);
-        border-color: rgba(6,182,212,.3);
-        color: var(--secondary);
+        color: var(--ja-ink-strong);
+        font-size: 0.93rem;
     }
 
-    /* ═══════════════════════════════════════════════
-       MAIN AREA
-    ═══════════════════════════════════════════════ */
-    .ja-main { display: flex; flex-direction: column; gap: 16px; }
-
-    /* ═══════════════════════════════════════════════
-       STUDENT HEADER CARD
-    ═══════════════════════════════════════════════ */
-    .ja-student-card {
-        background: var(--card);
-        border-radius: var(--radius);
-        border: 1px solid var(--border);
-        padding: 20px 24px;
-    }
-    .ja-student-card-name {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: var(--text);
-        margin: 0 0 4px 0;
-    }
-    .ja-student-card-sub {
-        font-size: .83rem;
-        color: var(--text3);
-    }
-    .ja-progress-wrap { margin-top: 16px; }
-    .ja-progress-label {
-        display: flex;
-        justify-content: space-between;
-        font-size: .82rem;
-        font-weight: 600;
-        color: var(--text2);
-        margin-bottom: 6px;
-    }
-    .ja-progress-bar {
-        width: 100%;
-        height: 6px;
-        background: var(--border);
-        border-radius: 99px;
-        overflow: hidden;
-    }
-    .ja-progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, var(--secondary), #0284c7);
-        border-radius: 99px;
-        transition: width .5s ease;
-    }
-
-    /* ═══════════════════════════════════════════════
-       STAT TILES
-    ═══════════════════════════════════════════════ */
-    .ja-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-    }
-    @media (max-width: 900px) { .ja-stats-grid { grid-template-columns: repeat(2, 1fr); } }
-    .ja-stat-tile {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        padding: 16px 14px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        transition: box-shadow var(--transition), transform var(--transition);
-    }
-    .ja-stat-tile:hover {
-        box-shadow: 0 6px 20px rgba(0,0,0,.08);
-        transform: translateY(-2px);
-    }
-    .ja-stat-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: .9rem;
-        margin-bottom: 4px;
-    }
-    .ja-stat-icon.cyan    { background: rgba(6,182,212,.1);  color: var(--secondary); }
-    .ja-stat-icon.amber   { background: rgba(245,158,11,.1); color: var(--accent); }
-    .ja-stat-icon.green   { background: rgba(16,185,129,.1); color: var(--accent2); }
-    .ja-stat-icon.slate   { background: rgba(100,116,139,.1);color: #64748b; }
-    .ja-stat-num {
-        font-size: 1.6rem;
-        font-weight: 800;
-        color: var(--text);
-        line-height: 1;
-    }
-    .ja-stat-lbl {
-        font-size: .75rem;
-        color: var(--text3);
-        font-weight: 500;
-    }
-
-    /* ═══════════════════════════════════════════════
-       GLOBAL ACTION BANNER
-    ═══════════════════════════════════════════════ */
-    .ja-action-banner {
-        background: #fff1f2;
-        border: 1px solid #fecaca;
-        border-left: 4px solid var(--danger);
-        border-radius: var(--radius-sm);
-        padding: 14px 18px;
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-    }
-    .ja-action-banner-icon {
-        width: 36px;
-        height: 36px;
-        background: rgba(239,68,68,.12);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--danger);
-        font-size: 1rem;
-        flex-shrink: 0;
-        margin-top: 1px;
-    }
-    .ja-action-banner h4 {
-        margin: 0 0 3px 0;
-        font-size: .9rem;
-        font-weight: 700;
-        color: #7f1d1d;
-    }
-    .ja-action-banner p {
-        margin: 0;
-        font-size: .82rem;
-        color: #991b1b;
-        line-height: 1.5;
-    }
-
-    /* ═══════════════════════════════════════════════
-       SENTIMENT OVERVIEW CARD
-    ═══════════════════════════════════════════════ */
-    .ja-sentiment-card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 20px 22px;
-    }
-    .ja-sentiment-card-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-    }
-    .ja-sentiment-card-head h3 {
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--text);
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .ja-sentiment-card-head h3 i { color: var(--secondary); }
-
-    /* overall label */
-    .ja-overall-label {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 14px;
-        border-radius: 50px;
-        font-size: .8rem;
-        font-weight: 700;
-        letter-spacing: .01em;
-        border: 1.5px solid transparent;
-    }
-    .ja-overall-label.pos  { background: rgba(16,185,129,.1);  color: #065f46; border-color: rgba(16,185,129,.25); }
-    .ja-overall-label.mpos { background: rgba(6,182,212,.08);  color: #0369a1; border-color: rgba(6,182,212,.2); }
-    .ja-overall-label.neu  { background: var(--bg-soft);       color: var(--text2); border-color: var(--border); }
-    .ja-overall-label.mneg { background: rgba(245,158,11,.1);  color: #92400e; border-color: rgba(245,158,11,.25); }
-    .ja-overall-label.neg  { background: rgba(239,68,68,.1);   color: #991b1b; border-color: rgba(239,68,68,.25); }
-
-    /* meter */
-    .ja-meter-wrap { margin: 4px 0 2px 0; }
-    .ja-meter-track {
-        width: 100%;
-        height: 8px;
-        border-radius: 99px;
-        background: linear-gradient(90deg,
-            var(--danger) 0%,
-            var(--accent) 40%,
-            var(--accent2) 100%);
-        position: relative;
-    }
-    .ja-meter-needle {
-        position: absolute;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        width: 16px;
-        height: 16px;
-        background: #fff;
-        border: 2px solid var(--primary);
-        border-radius: 50%;
-        box-shadow: 0 1px 4px rgba(0,0,0,.18);
-        transition: left .4s ease;
-    }
-    .ja-meter-labels {
-        display: flex;
-        justify-content: space-between;
-        font-size: .7rem;
-        color: var(--text3);
+    .student-meta {
+        font-size: 0.81rem;
+        color: var(--ja-muted);
         margin-top: 4px;
     }
 
-    /* filter pills */
-    .ja-filter-row {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-top: 14px;
-    }
-    .ja-filter-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 13px;
-        border-radius: 50px;
-        font-size: .78rem;
+    .student-badge {
+        display: inline-block;
+        background: var(--ja-accent-soft);
+        color: var(--ja-accent);
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.72rem;
         font-weight: 700;
-        cursor: pointer;
-        border: 1.5px solid transparent;
-        transition: all var(--transition);
-        user-select: none;
-        outline: none;
-        background: var(--bg-soft);
-        color: var(--text2);
-        border-color: var(--border);
-    }
-    .ja-filter-pill .pill-x {
-        display: none;
-        font-size: .7rem;
-        opacity: .7;
-        margin-left: 2px;
-    }
-    .ja-filter-pill.active .pill-x { display: inline; }
-    .ja-filter-pill.active .pill-default-icon { display: none; }
-
-    /* pill colour themes */
-    .ja-filter-pill.pill-positive { background: rgba(16,185,129,.08); color: #065f46; border-color: rgba(16,185,129,.22); }
-    .ja-filter-pill.pill-positive:hover,
-    .ja-filter-pill.pill-positive.active {
-        background: var(--accent2); color: #fff; border-color: var(--accent2);
-        box-shadow: 0 3px 10px rgba(16,185,129,.3);
-    }
-    .ja-filter-pill.pill-neutral { background: var(--bg-soft); color: var(--text2); border-color: var(--border); }
-    .ja-filter-pill.pill-neutral:hover,
-    .ja-filter-pill.pill-neutral.active {
-        background: #64748b; color: #fff; border-color: #64748b;
-        box-shadow: 0 3px 10px rgba(100,116,139,.3);
-    }
-    .ja-filter-pill.pill-negative { background: rgba(239,68,68,.08); color: #991b1b; border-color: rgba(239,68,68,.22); }
-    .ja-filter-pill.pill-negative:hover,
-    .ja-filter-pill.pill-negative.active {
-        background: var(--danger); color: #fff; border-color: var(--danger);
-        box-shadow: 0 3px 10px rgba(239,68,68,.3);
-    }
-    .ja-filter-pill.pill-action { background: rgba(245,158,11,.1); color: #92400e; border-color: rgba(245,158,11,.3); }
-    .ja-filter-pill.pill-action:hover,
-    .ja-filter-pill.pill-action.active {
-        background: var(--accent); color: #fff; border-color: var(--accent);
-        box-shadow: 0 3px 10px rgba(245,158,11,.3);
+        margin-right: 4px;
     }
 
-    /* filter empty notice */
-    .ja-filter-empty {
-        text-align: center;
-        padding: 32px 20px;
-        color: var(--text3);
-        display: none;
-    }
-    .ja-filter-empty i { font-size: 1.8rem; display: block; margin-bottom: 8px; opacity: .4; }
-
-    /* ═══════════════════════════════════════════════
-       JOURNAL ENTRIES PANEL
-    ═══════════════════════════════════════════════ */
-    .ja-panel {
-        background: var(--card);
-        border-radius: var(--radius);
-        border: 1px solid var(--border);
-        padding: 20px;
-    }
-    .ja-panel-head {
+    .analytics-main {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-        padding-bottom: 14px;
-        border-bottom: 1px solid var(--border);
+        flex-direction: column;
+        gap: 18px;
     }
-    .ja-panel-head h3 {
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--text);
+
+    .panel-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid var(--ja-border);
+        padding: 18px;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+    }
+
+    .student-profile-title {
         margin: 0;
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--ja-ink-strong);
+    }
+
+    .student-profile-subtitle {
+        color: var(--ja-muted);
+        margin: 8px 0 16px 0;
+        font-size: 0.9rem;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 10px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--ja-banner-mid), #335d89);
+        border-radius: 999px;
+    }
+
+    .stat-card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+        gap: 12px;
+    }
+
+    .stat-card {
+        background: var(--ja-surface);
+        border: 1px solid var(--ja-border);
+        border-radius: 12px;
+        padding: 14px;
+        text-align: left;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--ja-banner-mid);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--ja-muted);
+        margin-top: 6px;
+        font-weight: 600;
+    }
+
+    .panel-card-header {
         display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 10px;
+    }
+
+    .panel-card-header h3 {
+        font-size: 1.05rem;
+        margin: 0;
+        color: var(--ja-ink-strong);
+        font-weight: 800;
+    }
+
+    .journal-entry-controls {
+        display: inline-flex;
         align-items: center;
         gap: 8px;
-    }
-    .ja-panel-head h3 i { color: var(--secondary); }
-    .ja-sort-select {
-        padding: 6px 12px;
-        border: 1px solid var(--border);
-        border-radius: 50px;
-        font-size: .8rem;
-        font-weight: 600;
-        font-family: var(--font-family-base);
-        color: var(--text);
-        background: var(--bg-soft);
-        cursor: pointer;
-        outline: none;
-        transition: border-color var(--transition);
-    }
-    .ja-sort-select:focus { border-color: var(--secondary); }
-
-    /* ═══════════════════════════════════════════════
-       JOURNAL ENTRY CARD
-    ═══════════════════════════════════════════════ */
-    .ja-entry {
-        background: var(--bg-soft);
-        border: 1px solid var(--border);
-        border-left: 3px solid var(--secondary);
-        border-radius: var(--radius-sm);
-        padding: 16px;
-        margin-bottom: 10px;
-        transition: box-shadow var(--transition), border-color var(--transition);
-    }
-    .ja-entry:last-child { margin-bottom: 0; }
-    .ja-entry:hover {
-        box-shadow: 0 4px 16px rgba(6,182,212,.1);
-        border-color: rgba(6,182,212,.3);
-    }
-    .ja-entry[data-needs-action="1"] {
-        border-left-color: var(--danger);
-    }
-    .ja-entry-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
         flex-wrap: wrap;
     }
-    .ja-entry-date {
-        font-size: .9rem;
+
+    .sort-select,
+    .print-btn {
+        border: 1px solid var(--ja-border);
+        border-radius: 999px;
+        min-height: 34px;
+        padding: 0 12px;
+        font-size: 0.83rem;
         font-weight: 700;
-        color: var(--text);
-        display: flex;
-        align-items: center;
-        gap: 7px;
+        color: var(--ja-ink);
+        background: #ffffff;
     }
-    .ja-entry-date i { color: var(--secondary); }
-    .ja-entry-badges {
-        display: flex;
+
+    .print-btn {
+        cursor: pointer;
+        display: inline-flex;
         align-items: center;
         gap: 6px;
+    }
+
+    .print-btn:hover,
+    .sort-select:hover {
+        border-color: var(--ja-accent);
+        color: var(--ja-accent);
+    }
+
+    .analytics-graph-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .analytics-graph-card {
+        background: #ffffff;
+        border: 1px solid var(--ja-border);
+        border-radius: 12px;
+        padding: 12px;
+    }
+
+    .analytics-graph-title {
+        margin: 0 0 10px 0;
+        font-size: 0.86rem;
+        font-weight: 800;
+        color: var(--ja-banner-mid);
+    }
+
+    .graph-row {
+        display: grid;
+        grid-template-columns: 66px 1fr 28px;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 7px;
+    }
+
+    .graph-label {
+        font-size: 0.73rem;
+        color: var(--ja-muted);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .graph-track {
+        height: 9px;
+        border-radius: 999px;
+        background: #edf2f8;
+        overflow: hidden;
+    }
+
+    .graph-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--ja-banner-dark), var(--ja-banner-mid));
+    }
+
+    .graph-value {
+        font-size: 0.73rem;
+        color: var(--ja-ink);
+        font-weight: 700;
+        text-align: right;
+    }
+
+    .sentiment-card {
+        background: #ffffff;
+        border: 1px solid var(--ja-border);
+        border-radius: 12px;
+        padding: 14px;
+    }
+
+    .sentiment-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .sentiment-title {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: var(--ja-ink-strong);
+    }
+
+    .sentiment-overall-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #ffffff;
+        background: linear-gradient(135deg, var(--ja-banner-dark), var(--ja-banner-mid));
+        white-space: nowrap;
+    }
+
+    .sentiment-meter-track {
+        width: 100%;
+        height: 8px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #d32f2f 0%, #f59e0b 45%, #16a34a 100%);
+        position: relative;
+        margin: 8px 0 6px;
+    }
+
+    .sentiment-meter-needle {
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid #102238;
+    }
+
+    .sentiment-meter-labels {
+        display: flex;
+        justify-content: space-between;
+        color: var(--ja-muted);
+        font-size: 0.72rem;
+        margin-bottom: 10px;
+    }
+
+    .sentiment-filter-row {
+        display: flex;
+        gap: 8px;
         flex-wrap: wrap;
     }
-    .ja-entry-preview {
-        font-size: .85rem;
-        color: var(--text2);
-        margin-top: 10px;
-        line-height: 1.5;
-    }
-    .ja-skill-chips { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
-    .ja-skill-chip {
-        background: rgba(6,182,212,.08);
-        color: var(--secondary);
-        border: 1px solid rgba(6,182,212,.2);
-        padding: 2px 10px;
-        border-radius: 50px;
-        font-size: .73rem;
-        font-weight: 600;
-    }
 
-    /* quality badge */
-    .ja-quality {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 3px 10px;
-        border-radius: 50px;
-        font-size: .72rem;
+    .sentiment-pill {
+        border: 1px solid var(--ja-border);
+        border-radius: 999px;
+        background: #ffffff;
+        color: var(--ja-ink);
+        padding: 5px 12px;
+        font-size: 0.76rem;
         font-weight: 700;
+        cursor: pointer;
     }
-    .ja-quality.excellent { background: rgba(16,185,129,.1);  color: #065f46; }
-    .ja-quality.good      { background: rgba(6,182,212,.1);   color: #0369a1; }
-    .ja-quality.fair      { background: rgba(245,158,11,.1);  color: #92400e; }
-    .ja-quality.basic     { background: rgba(239,68,68,.08);  color: #991b1b; }
-    .ja-quality.minimal   { background: var(--bg-soft);       color: var(--text3); }
 
-    /* sentiment badge */
-    .ja-sent-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 3px 10px;
-        border-radius: 50px;
-        font-size: .72rem;
-        font-weight: 700;
+    .sentiment-pill.active {
+        color: #ffffff;
+        border-color: transparent;
+        background: linear-gradient(135deg, var(--ja-banner-dark), var(--ja-banner-mid));
     }
-    .ja-sent-badge.pos  { background: rgba(16,185,129,.1);  color: #065f46; }
-    .ja-sent-badge.mpos { background: rgba(6,182,212,.1);   color: #0369a1; }
-    .ja-sent-badge.neu  { background: var(--bg-soft); border: 1px solid var(--border); color: var(--text2); }
-    .ja-sent-badge.mneg { background: rgba(245,158,11,.1);  color: #92400e; }
-    .ja-sent-badge.neg  { background: rgba(239,68,68,.1);   color: #991b1b; }
 
-    /* action alert */
-    .ja-alert {
+    .sentiment-alert {
         background: #fff1f2;
         border: 1px solid #fecaca;
-        border-left: 3px solid var(--danger);
-        border-radius: var(--radius-sm);
-        padding: 11px 14px;
-        margin-top: 10px;
-    }
-    .ja-alert-head {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        font-size: .82rem;
-        font-weight: 700;
-        color: #b91c1c;
-    }
-    .ja-alert-body {
-        font-size: .8rem;
+        border-left: 4px solid #dc2626;
+        border-radius: 12px;
+        padding: 12px;
         color: #7f1d1d;
-        margin-top: 5px;
-        line-height: 1.5;
+        font-size: 0.82rem;
     }
-    .ja-alert-reasons {
-        margin: 5px 0 0 0;
-        padding-left: 14px;
-        font-size: .78rem;
-        color: #991b1b;
-    }
-    .ja-alert-reasons li { margin-bottom: 2px; }
 
-    /* details expand */
-    .ja-details {
-        margin-top: 12px;
-        padding-top: 10px;
-        border-top: 1px dashed var(--border);
+    .sentiment-alert-title {
+        margin: 0 0 4px;
+        font-weight: 800;
     }
-    .ja-details summary {
-        list-style: none;
-        cursor: pointer;
-        font-size: .82rem;
-        font-weight: 700;
-        color: var(--text2);
+
+    .entry-sentiment-badge {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        transition: color var(--transition);
-    }
-    .ja-details summary:hover { color: var(--secondary); }
-    .ja-details summary::-webkit-details-marker { display: none; }
-    .ja-details-grid { display: grid; gap: 10px; margin-top: 10px; }
-    .ja-detail-block h5 {
-        margin: 0 0 5px 0;
-        font-size: .72rem;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        color: var(--secondary);
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.74rem;
         font-weight: 700;
-    }
-    .ja-detail-block ul {
-        margin: 0; padding-left: 16px;
-        color: var(--text2); font-size: .84rem;
-    }
-    .ja-detail-block p {
-        margin: 0; color: var(--text2);
-        font-size: .84rem; white-space: pre-wrap; line-height: 1.5;
+        margin-top: 8px;
+        border: 1px solid transparent;
     }
 
-    /* empty / no-student states */
-    .ja-empty {
-        text-align: center;
-        padding: 40px 20px;
-        color: var(--text3);
+    .entry-sentiment-badge.pos,
+    .entry-sentiment-badge.mpos {
+        background: #dcfce7;
+        color: #166534;
+        border-color: #86efac;
     }
-    .ja-empty i { font-size: 2.2rem; display: block; margin-bottom: 10px; opacity: .35; }
-    .ja-no-student {
-        text-align: center;
-        padding: 56px 20px;
+
+    .entry-sentiment-badge.neu {
+        background: #eef2f7;
+        color: #334155;
+        border-color: #cbd5e1;
     }
-    .ja-no-student i { font-size: 2.8rem; color: var(--text3); opacity: .4; display: block; margin-bottom: 12px; }
-    .ja-no-student h3 { font-size: 1.05rem; color: var(--text); margin-bottom: 6px; }
-    .ja-no-student p  { font-size: .85rem; color: var(--text3); }
+
+    .entry-sentiment-badge.mneg,
+    .entry-sentiment-badge.neg {
+        background: #fee2e2;
+        color: #991b1b;
+        border-color: #fca5a5;
+    }
+
+    .entry-action-alert {
+        margin-top: 10px;
+        border: 1px solid #fecaca;
+        border-left: 3px solid #dc2626;
+        border-radius: 10px;
+        background: #fff6f6;
+        padding: 9px 10px;
+        color: #7f1d1d;
+        font-size: 0.8rem;
+    }
+
+    .entry-action-alert ul {
+        margin: 6px 0 0;
+        padding-left: 18px;
+    }
+
+    .journal-entry-preview {
+        background: #ffffff;
+        border: 1px solid #dbe3ef;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 12px;
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .journal-entry-preview:hover {
+        border-color: #c3d4ea;
+        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+    }
+
+    .entry-date {
+        font-weight: 800;
+        color: var(--ja-banner-mid);
+        font-size: 0.92rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .entry-preview-text {
+        color: var(--ja-ink);
+        font-size: 0.88rem;
+        margin-top: 8px;
+        line-height: 1.55;
+    }
+
+    .quality-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-top: 8px;
+    }
+
+    .quality-excellent {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .quality-good {
+        background: #dbeafe;
+        color: #12b3ac;
+    }
+
+    .quality-fair {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .quality-basic {
+        background: #fee2e2;
+        color: #9f1239;
+    }
+
+    .skill-tag {
+        display: inline-block;
+        background: var(--ja-accent-soft);
+        color: var(--ja-accent);
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 6px;
+        margin-bottom: 6px;
+    }
+
+    .entry-details {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px dashed #cbd5e1;
+    }
+
+    .entry-details summary {
+        list-style: none;
+        cursor: pointer;
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: var(--ja-ink-strong);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .entry-details summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .entry-details-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .entry-detail-block {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 10px;
+        background: #fafcff;
+    }
+
+    .entry-detail-block h5 {
+        margin: 0 0 6px 0;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--ja-accent);
+        font-weight: 800;
+    }
+
+    .entry-detail-block ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--ja-ink);
+        font-size: 0.84rem;
+        line-height: 1.45;
+    }
+
+    .entry-detail-block p {
+        margin: 0;
+        color: var(--ja-ink);
+        font-size: 0.84rem;
+        white-space: pre-wrap;
+        line-height: 1.45;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 36px 20px;
+        color: #64748b;
+    }
+
+    .empty-state-icon {
+        font-size: 2.2rem;
+        margin-bottom: 10px;
+        opacity: 0.45;
+    }
+
+    .no-student-message {
+        text-align: center;
+        padding: 48px 20px;
+    }
+
+    .no-student-message-icon {
+        font-size: 2.5rem;
+        color: #64748b;
+        margin-bottom: 14px;
+    }
+
+    .print-sheet-header {
+        display: none;
+    }
+
+    @media (max-width: 1100px) {
+        .analytics-container {
+            grid-template-columns: 1fr;
+        }
+
+        .student-list {
+            position: static;
+            max-height: none;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .analytics-graph-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .entry-details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .panel-card-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+
+    @media print {
+        @page {
+            size: A4;
+            margin: 12mm;
+        }
+
+        body {
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        .dashboard-shell,
+        .sidebar,
+        .navbar,
+        .journal-hero-banner,
+        .student-list,
+        .print-btn,
+        .sort-select,
+        .panel-card-header,
+        .page-header,
+        .tab-nav,
+        .filter-row {
+            display: none !important;
+        }
+
+        .analytics-container,
+        .analytics-main {
+            display: block !important;
+            margin: 0 !important;
+            gap: 0 !important;
+        }
+
+        .panel-card,
+        .journal-entry-preview {
+            border: 1px solid #d1d5db !important;
+            box-shadow: none !important;
+            background: #ffffff !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .panel-card {
+            padding: 0 !important;
+            border: 0 !important;
+        }
+
+        .print-sheet-header {
+            display: block !important;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .print-sheet-header h2 {
+            margin: 0 0 4px 0;
+            font-size: 16pt;
+            color: #0f172a;
+        }
+
+        .print-sheet-header p {
+            margin: 0;
+            font-size: 9.5pt;
+            color: #334155;
+            line-height: 1.45;
+        }
+
+        .journal-entry-preview {
+            margin-bottom: 8px !important;
+            padding: 10px !important;
+        }
+
+        .entry-details {
+            display: block !important;
+            border-top: 1px solid #d1d5db !important;
+        }
+
+        .entry-details summary {
+            display: none !important;
+        }
+
+        details.entry-details > * {
+            display: block !important;
+        }
+
+        details.entry-details > summary {
+            display: none !important;
+        }
+
+        .entry-details-grid {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 6px !important;
+        }
+
+        .entry-detail-block {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+    }
 </style>
 
-<div class="page-header">
-    <div>
-        <h2 class="page-title"><i class="fas fa-book-open" style="color:var(--secondary);"></i> Student Journal Analytics</h2>
-        <p class="page-subtitle">Monitor internship journal entries and progress for your assigned students.</p>
+<div class="journal-hero-banner" style="background:linear-gradient(90deg, #050505 0%, #12b3ac 40%, rgba(0, 0, 0, 0.38) 100%), url('/Skillhive/assets/media/element%203.png') right center / auto 100% no-repeat;border-radius:16px;padding:28px;margin-bottom:20px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0, 0, 0, 0.44);">
+    <div style="z-index:2;flex:1;">
+        <h2 style="font-size:1.8rem;font-weight:900;margin:0 0 12px 0;line-height:1.2;color:white;">Student Journal Analytics</h2>
+        <p style="font-size:0.95rem;margin:0;line-height:1.6;color:#e0e0e0;">Monitor student internship journal entries and progress. Only your assigned students are visible.</p>
     </div>
 </div>
 
-<div class="ja-container">
-    <!-- ── Student Sidebar ── -->
-    <div class="ja-sidebar">
-        <div class="ja-sidebar-head">
+<script>
+(function () {
+    var activeSentimentFilters = new Set();
+
+    function updateClearButton() {
+        var clearButton = document.getElementById('clearSentimentFilters');
+        if (!clearButton) {
+            return;
+        }
+        clearButton.style.display = activeSentimentFilters.size > 0 ? 'inline-flex' : 'none';
+    }
+
+    function applySentimentFilters() {
+        var entries = document.querySelectorAll('.journal-entry-preview[data-sentiment]');
+        var emptyNode = document.getElementById('sentimentFilterEmpty');
+        var visibleCount = 0;
+
+        entries.forEach(function (entry) {
+            var shouldShow = true;
+
+            if (activeSentimentFilters.size > 0) {
+                var sentiment = String(entry.getAttribute('data-sentiment') || 'neutral');
+                var needsAction = String(entry.getAttribute('data-needs-action') || '0') === '1';
+                var matches = false;
+
+                activeSentimentFilters.forEach(function (filterKey) {
+                    if (filterKey === 'action' && needsAction) {
+                        matches = true;
+                    }
+                    if (filterKey === sentiment) {
+                        matches = true;
+                    }
+                });
+
+                shouldShow = matches;
+            }
+
+            entry.style.display = shouldShow ? '' : 'none';
+            if (shouldShow) {
+                visibleCount++;
+            }
+        });
+
+        if (emptyNode) {
+            emptyNode.style.display = (entries.length > 0 && visibleCount === 0) ? 'block' : 'none';
+        }
+    }
+
+    window.toggleSentimentFilter = function (button) {
+        if (!button) {
+            return;
+        }
+
+        var filterKey = String(button.getAttribute('data-filter') || '');
+        if (!filterKey) {
+            return;
+        }
+
+        if (activeSentimentFilters.has(filterKey)) {
+            activeSentimentFilters.delete(filterKey);
+            button.classList.remove('active');
+        } else {
+            activeSentimentFilters.add(filterKey);
+            button.classList.add('active');
+        }
+
+        updateClearButton();
+        applySentimentFilters();
+    };
+
+    window.clearSentimentFilters = function () {
+        activeSentimentFilters.clear();
+        document.querySelectorAll('.sentiment-pill[data-filter]').forEach(function (button) {
+            button.classList.remove('active');
+        });
+
+        updateClearButton();
+        applySentimentFilters();
+    };
+})();
+</script>
+
+<div class="analytics-container">
+    <div class="student-list">
+        <div class="student-list-header">
             <i class="fas fa-users"></i> Your Students
         </div>
 
         <?php if (empty($students)): ?>
-            <div class="ja-empty">
-                <i class="fas fa-inbox"></i>
-                <p>No assigned students found.</p>
+            <div class="empty-state" style="padding: 40px 20px;">
+                <i class="fas fa-inbox empty-state-icon"></i>
+                <p>No assigned students found</p>
             </div>
         <?php else: ?>
             <?php foreach ($students as $student): ?>
@@ -1022,378 +1247,395 @@ $sortChangeBaseUrl = $baseUrl . '/layout.php?' . http_build_query([
                 $studentItemId = (int)($student['student_id'] ?? 0);
                 $isActive = $studentItemId === $studentId;
                 $studentHref = adviser_journal_analytics_url($baseUrl, $studentItemId, $sortBy);
-                $initials = strtoupper(
-                    substr((string)($student['first_name'] ?? 'U'), 0, 1) .
-                    substr((string)($student['last_name'] ?? ''), 0, 1)
-                );
                 ?>
-                <a class="ja-student-item <?php echo $isActive ? 'active' : ''; ?>"
-                   href="<?php echo htmlspecialchars($studentHref, ENT_QUOTES, 'UTF-8'); ?>">
-                    <div class="ja-student-avatar"><?php echo htmlspecialchars($initials, ENT_QUOTES, 'UTF-8'); ?></div>
-                    <div style="flex:1;min-width:0;">
-                        <div class="ja-student-name">
-                            <?php echo htmlspecialchars(trim((string)($student['first_name'] ?? '') . ' ' . (string)($student['last_name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
-                        </div>
+                <a class="student-item <?php echo $isActive ? 'active' : ''; ?>" href="<?php echo htmlspecialchars($studentHref, ENT_QUOTES, 'UTF-8'); ?>">
+                    <div class="student-name">
+                        <?php echo htmlspecialchars(((string)($student['first_name'] ?? '') . ' ' . (string)($student['last_name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                    </div>
+                    <div class="student-meta">
+                        <span class="student-badge"><?php echo (int)($student['journal_count'] ?? 0); ?> entries</span>
                         <?php if (!empty($student['last_entry_date'])): ?>
-                            <div class="ja-student-meta">Last: <?php echo date('M d, Y', strtotime((string)$student['last_entry_date'])); ?></div>
+                            <div style="margin-top: 4px; color: var(--text3); font-size: 0.8rem;">
+                                Last: <?php echo date('M d', strtotime((string)$student['last_entry_date'])); ?>
+                            </div>
                         <?php endif; ?>
                     </div>
-                    <span class="ja-entry-badge"><?php echo (int)($student['journal_count'] ?? 0); ?></span>
                 </a>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
 
-    <!-- ── Main Area ── -->
-    <div class="ja-main">
+    <div class="analytics-main">
         <?php if (!$selectedStudent): ?>
-            <div class="ja-panel">
-                <div class="ja-no-student">
-                    <i class="fas fa-hand-pointer"></i>
+            <div class="panel-card">
+                <div class="no-student-message">
+                    <div class="no-student-message-icon">
+                        <i class="fas fa-hand-pointer"></i>
+                    </div>
                     <h3>Select a Student</h3>
-                    <p>Choose a student from the list on the left to view their journal analytics and entries.</p>
+                    <p>Choose a student from the list to view journal analytics and entries.</p>
                 </div>
             </div>
         <?php else: ?>
-
-            <!-- Student Header Card -->
-            <div class="ja-student-card">
-                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                    <div>
-                        <p class="ja-student-card-name">
-                            <?php echo htmlspecialchars(trim((string)($selectedStudent['first_name'] ?? '') . ' ' . (string)($selectedStudent['last_name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
-                        </p>
-                        <?php if ($studentStats): ?>
-                            <p class="ja-student-card-sub">
-                                <i class="fas fa-building" style="color:var(--secondary);margin-right:4px;"></i>
-                                <?php echo htmlspecialchars((string)$studentStats['company'], ENT_QUOTES, 'UTF-8'); ?>
-                                &nbsp;·&nbsp;
-                                <?php echo htmlspecialchars((string)$studentStats['internship_title'], ENT_QUOTES, 'UTF-8'); ?>
-                            </p>
-                        <?php endif; ?>
-                    </div>
-                    <span style="background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);color:var(--secondary);padding:4px 14px;border-radius:50px;font-size:.75rem;font-weight:700;">
-                        <?php echo htmlspecialchars((string)($selectedStudent['program'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                    </span>
-                </div>
+            <div class="panel-card">
+                <h3 class="student-profile-title">
+                    <?php echo htmlspecialchars(((string)($selectedStudent['first_name'] ?? '') . ' ' . (string)($selectedStudent['last_name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                </h3>
 
                 <?php if ($studentStats): ?>
+                    <p class="student-profile-subtitle">
+                        <strong><?php echo htmlspecialchars((string)$studentStats['company'], ENT_QUOTES, 'UTF-8'); ?></strong> -
+                        <?php echo htmlspecialchars((string)$studentStats['internship_title'], ENT_QUOTES, 'UTF-8'); ?>
+                    </p>
+
                     <?php
                     $hoursCompleted = (float)($studentStats['hours_completed'] ?? 0);
-                    $hoursRequired  = max(1.0, (float)($studentStats['hours_required'] ?? 0));
+                    $hoursRequired = max(1.0, (float)($studentStats['hours_required'] ?? 0));
                     $progressPercent = min(100, ($hoursCompleted / $hoursRequired) * 100);
                     ?>
-                    <div class="ja-progress-wrap">
-                        <div class="ja-progress-label">
-                            <span>OJT Hours Progress</span>
-                            <span><?php echo number_format($hoursCompleted, 1); ?> / <?php echo number_format((float)($studentStats['hours_required'] ?? 0), 0); ?> hrs</span>
+                    <div style="margin-top: 16px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="font-weight: 600;">Hours Progress</span>
+                            <span style="color: var(--text3);">
+                                <?php echo number_format($hoursCompleted, 1); ?> /
+                                <?php echo number_format((float)($studentStats['hours_required'] ?? 0), 0); ?>
+                            </span>
                         </div>
-                        <div class="ja-progress-bar">
-                            <div class="ja-progress-fill" style="width:<?php echo (float)$progressPercent; ?>%;"></div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: <?php echo (float)$progressPercent; ?>%"></div>
                         </div>
                     </div>
                 <?php endif; ?>
             </div>
 
-            <!-- Stat Tiles -->
             <?php if ($studentStats): ?>
-                <div class="ja-stats-grid">
-                    <div class="ja-stat-tile">
-                        <div class="ja-stat-icon cyan"><i class="fas fa-book"></i></div>
-                        <div class="ja-stat-num"><?php echo (int)$studentStats['total_entries']; ?></div>
-                        <div class="ja-stat-lbl">Total Entries</div>
+                <div class="stat-card-grid">
+                    <div class="stat-card">
+                        <div class="stat-value"><?php echo (int)$studentStats['total_entries']; ?></div>
+                        <div class="stat-label">Total Entries</div>
                     </div>
-                    <div class="ja-stat-tile">
-                        <div class="ja-stat-icon green"><i class="fas fa-lightbulb"></i></div>
-                        <div class="ja-stat-num"><?php echo (int)$studentStats['unique_skills']; ?></div>
-                        <div class="ja-stat-lbl">Unique Skills</div>
+                    <div class="stat-card">
+                        <div class="stat-value"><?php echo (int)$studentStats['unique_skills']; ?></div>
+                        <div class="stat-label">Unique Skills</div>
                     </div>
-                    <div class="ja-stat-tile">
-                        <div class="ja-stat-icon amber"><i class="fas fa-triangle-exclamation"></i></div>
-                        <div class="ja-stat-num"><?php echo (int)$studentStats['total_challenges']; ?></div>
-                        <div class="ja-stat-lbl">Challenges</div>
+                    <div class="stat-card">
+                        <div class="stat-value"><?php echo (int)$studentStats['total_challenges']; ?></div>
+                        <div class="stat-label">Challenges</div>
                     </div>
-                    <div class="ja-stat-tile">
-                        <div class="ja-stat-icon slate"><i class="fas fa-list-check"></i></div>
-                        <div class="ja-stat-num"><?php echo number_format((float)$studentStats['avg_daily_tasks'], 1); ?></div>
-                        <div class="ja-stat-lbl">Avg Daily Tasks</div>
+                    <div class="stat-card">
+                        <div class="stat-value"><?php echo (float)$studentStats['avg_daily_tasks']; ?></div>
+                        <div class="stat-label">Avg Daily Tasks</div>
+                    </div>
+                </div>
+
+                <?php
+                $trendMax = 1;
+                foreach ($entryTrendData as $trendPoint) {
+                    $trendMax = max($trendMax, (int)($trendPoint['value'] ?? 0));
+                }
+
+                $categoryMax = 1;
+                foreach ($entryCategoryData as $categoryPoint) {
+                    $categoryMax = max($categoryMax, (int)($categoryPoint['value'] ?? 0));
+                }
+                ?>
+
+                <div class="analytics-graph-grid">
+                    <div class="analytics-graph-card">
+                        <h4 class="analytics-graph-title">Entry Trend (Last 8 Weeks)</h4>
+                        <?php if (empty($entryTrendData)): ?>
+                            <div class="empty-state" style="padding: 14px 10px;">No trend data available yet.</div>
+                        <?php else: ?>
+                            <?php foreach ($entryTrendData as $trendPoint): ?>
+                                <?php
+                                $trendValue = (int)($trendPoint['value'] ?? 0);
+                                $trendWidth = $trendMax > 0 ? ($trendValue / $trendMax) * 100 : 0;
+                                ?>
+                                <div class="graph-row">
+                                    <div class="graph-label"><?php echo htmlspecialchars((string)($trendPoint['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                                    <div class="graph-track"><div class="graph-fill" style="width: <?php echo (float)$trendWidth; ?>%;"></div></div>
+                                    <div class="graph-value"><?php echo $trendValue; ?></div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="analytics-graph-card">
+                        <h4 class="analytics-graph-title">Activity Breakdown</h4>
+                        <?php foreach ($entryCategoryData as $categoryPoint): ?>
+                            <?php
+                            $categoryValue = (int)($categoryPoint['value'] ?? 0);
+                            $categoryWidth = $categoryMax > 0 ? ($categoryValue / $categoryMax) * 100 : 0;
+                            ?>
+                            <div class="graph-row">
+                                <div class="graph-label"><?php echo htmlspecialchars((string)($categoryPoint['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                                <div class="graph-track"><div class="graph-fill" style="width: <?php echo (float)$categoryWidth; ?>%;"></div></div>
+                                <div class="graph-value"><?php echo $categoryValue; ?></div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
             <?php endif; ?>
 
-            <!-- Global Action Banner -->
-            <?php if ($overallSentimentSummary && $overallSentimentSummary['needs_action_count'] > 0): ?>
-                <div class="ja-action-banner" role="alert">
-                    <div class="ja-action-banner-icon"><i class="fas fa-bell"></i></div>
-                    <div>
-                        <h4>Immediate Adviser Action Required</h4>
-                        <p>
-                            <?php echo (int)$overallSentimentSummary['needs_action_count']; ?>
-                            <?php echo $overallSentimentSummary['needs_action_count'] === 1 ? 'journal entry' : 'journal entries'; ?>
-                            contain distress signals or highly negative sentiment. Please review the flagged entries below and consider reaching out to this student promptly.
-                        </p>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <!-- Sentiment Overview Card -->
             <?php if ($overallSentimentSummary): ?>
                 <?php
-                $needlePercent  = (($overallSentimentSummary['avg_score'] + 1) / 2) * 100;
-                $needlePercent  = max(2, min(98, $needlePercent));
-                $overallLabel   = $overallSentimentSummary['label'];
-                $overallClass   = match (true) {
-                    str_contains($overallLabel, 'Generally Positive') => 'pos',
-                    str_contains($overallLabel, 'Mostly Positive')    => 'mpos',
-                    str_contains($overallLabel, 'Mixed')              => 'neu',
-                    str_contains($overallLabel, 'Mostly Negative')    => 'mneg',
-                    default                                            => 'neg',
-                };
-                $neutralCount = (int)$studentStats['total_entries']
-                    - (int)$overallSentimentSummary['positive_entries']
-                    - (int)$overallSentimentSummary['negative_entries'];
+                $needlePercent = (($overallSentimentSummary['avg_score'] + 1) / 2) * 100;
+                $needlePercent = max(2, min(98, $needlePercent));
+                $neutralCount = max(
+                    0,
+                    (int)($studentStats['total_entries'] ?? 0)
+                    - (int)($overallSentimentSummary['positive_entries'] ?? 0)
+                    - (int)($overallSentimentSummary['negative_entries'] ?? 0)
+                );
                 ?>
-                <div class="ja-sentiment-card">
-                    <div class="ja-sentiment-card-head">
-                        <h3><i class="fas fa-chart-line"></i> Journal Sentiment Overview</h3>
-                        <span class="ja-overall-label <?php echo $overallClass; ?>">
-                            <?php echo htmlspecialchars($overallLabel, ENT_QUOTES, 'UTF-8'); ?>
-                            &nbsp;<span style="opacity:.6;">( <?php echo number_format($overallSentimentSummary['avg_score'], 2); ?> )</span>
+                <div class="sentiment-card">
+                    <div class="sentiment-card-header">
+                        <h4 class="sentiment-title">Journal Sentiment Overview</h4>
+                        <span class="sentiment-overall-label">
+                            <?php echo htmlspecialchars((string)$overallSentimentSummary['label'], ENT_QUOTES, 'UTF-8'); ?>
+                            (<?php echo number_format((float)$overallSentimentSummary['avg_score'], 2); ?>)
                         </span>
                     </div>
 
-                    <!-- Sentiment Meter -->
-                    <div class="ja-meter-wrap">
-                        <div class="ja-meter-track">
-                            <div class="ja-meter-needle" style="left:<?php echo $needlePercent; ?>%;"></div>
-                        </div>
-                        <div class="ja-meter-labels">
-                            <span>Negative</span><span>Neutral</span><span>Positive</span>
-                        </div>
+                    <div class="sentiment-meter-track">
+                        <div class="sentiment-meter-needle" style="left:<?php echo (float)$needlePercent; ?>%;"></div>
+                    </div>
+                    <div class="sentiment-meter-labels">
+                        <span>Negative</span><span>Neutral</span><span>Positive</span>
                     </div>
 
-                    <!-- Filter Pills -->
-                    <div class="ja-filter-row" id="sentimentFilterRow" style="align-items:center;justify-content:space-between;flex-wrap:wrap;">
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                            <button type="button"
-                                    class="ja-filter-pill pill-positive"
-                                    data-filter="positive"
-                                    onclick="jaToggleFilter(this)">
-                                <i class="fas fa-face-smile pill-default-icon"></i>
-                                <i class="fas fa-xmark pill-x"></i>
-                                <?php echo (int)$overallSentimentSummary['positive_entries']; ?> Positive
+                    <div class="sentiment-filter-row">
+                        <button type="button" class="sentiment-pill" data-filter="positive" onclick="toggleSentimentFilter(this)">
+                            <?php echo (int)$overallSentimentSummary['positive_entries']; ?> Positive
+                        </button>
+                        <button type="button" class="sentiment-pill" data-filter="neutral" onclick="toggleSentimentFilter(this)">
+                            <?php echo $neutralCount; ?> Neutral
+                        </button>
+                        <button type="button" class="sentiment-pill" data-filter="negative" onclick="toggleSentimentFilter(this)">
+                            <?php echo (int)$overallSentimentSummary['negative_entries']; ?> Negative
+                        </button>
+                        <?php if ((int)$overallSentimentSummary['needs_action_count'] > 0): ?>
+                            <button type="button" class="sentiment-pill" data-filter="action" onclick="toggleSentimentFilter(this)">
+                                <?php echo (int)$overallSentimentSummary['needs_action_count']; ?> Need Action
                             </button>
-                            <button type="button"
-                                    class="ja-filter-pill pill-neutral"
-                                    data-filter="neutral"
-                                    onclick="jaToggleFilter(this)">
-                                <i class="fas fa-face-meh pill-default-icon"></i>
-                                <i class="fas fa-xmark pill-x"></i>
-                                <?php echo max(0, $neutralCount); ?> Neutral
-                            </button>
-                            <button type="button"
-                                    class="ja-filter-pill pill-negative"
-                                    data-filter="negative"
-                                    onclick="jaToggleFilter(this)">
-                                <i class="fas fa-face-frown pill-default-icon"></i>
-                                <i class="fas fa-xmark pill-x"></i>
-                                <?php echo (int)$overallSentimentSummary['negative_entries']; ?> Negative
-                            </button>
-                            <?php if ($overallSentimentSummary['needs_action_count'] > 0): ?>
-                                <button type="button"
-                                        class="ja-filter-pill pill-action"
-                                        data-filter="action"
-                                        onclick="jaToggleFilter(this)">
-                                    <i class="fas fa-flag pill-default-icon"></i>
-                                    <i class="fas fa-xmark pill-x"></i>
-                                    <?php echo (int)$overallSentimentSummary['needs_action_count']; ?> Need Action
-                                </button>
-                            <?php endif; ?>
-                        </div>
-                        <button type="button"
-                                id="jaClearFilters"
-                                onclick="jaClearAllFilters()"
-                                style="display:none;align-items:center;gap:6px;padding:5px 14px;border-radius:50px;font-size:.78rem;font-weight:700;cursor:pointer;background:transparent;color:var(--text2);border:1.5px solid var(--border);transition:all var(--transition);white-space:nowrap;">
-                            <i class="fas fa-xmark"></i> Clear filters
+                        <?php endif; ?>
+                        <button type="button" class="sentiment-pill" id="clearSentimentFilters" style="display:none;" onclick="clearSentimentFilters()">
+                            Clear filters
                         </button>
                     </div>
                 </div>
+
+                <?php if ((int)$overallSentimentSummary['needs_action_count'] > 0): ?>
+                    <div class="sentiment-alert">
+                        <p class="sentiment-alert-title">Immediate Adviser Action Recommended</p>
+                        <p>
+                            <?php echo (int)$overallSentimentSummary['needs_action_count']; ?>
+                            <?php echo (int)$overallSentimentSummary['needs_action_count'] === 1 ? 'entry requires attention.' : 'entries require attention.'; ?>
+                            Please review flagged journals and follow up with the student.
+                        </p>
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
 
-            <!-- Journal Entries Panel -->
-            <div class="ja-panel">
-                <div class="ja-panel-head">
-                    <h3><i class="fas fa-book-open"></i> Journal Entries</h3>
-                    <select class="ja-sort-select"
+            <div class="panel-card">
+                <?php if ($studentStats): ?>
+                    <div class="print-sheet-header">
+                        <h2>Student Journal Record</h2>
+                        <p>
+                            Student: <?php echo htmlspecialchars(((string)($selectedStudent['first_name'] ?? '') . ' ' . (string)($selectedStudent['last_name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?> |
+                            Company: <?php echo htmlspecialchars((string)$studentStats['company'], ENT_QUOTES, 'UTF-8'); ?> |
+                            Position: <?php echo htmlspecialchars((string)$studentStats['internship_title'], ENT_QUOTES, 'UTF-8'); ?> |
+                            Entries: <?php echo (int)$studentStats['total_entries']; ?>
+                        </p>
+                    </div>
+                <?php endif; ?>
+                <div class="panel-card-header">
+                    <h3>Journal Entries</h3>
+                    <div class="journal-entry-controls">
+                        <select
+                            class="sort-select"
                             onchange="window.location.href='<?php echo htmlspecialchars($sortChangeBaseUrl, ENT_QUOTES, 'UTF-8'); ?>&sort_by=' + encodeURIComponent(this.value)">
-                        <option value="date_desc" <?php echo $sortBy === 'date_desc' ? 'selected' : ''; ?>>Newest First</option>
-                        <option value="date_asc"  <?php echo $sortBy === 'date_asc'  ? 'selected' : ''; ?>>Oldest First</option>
-                    </select>
+                            <option value="date_desc" <?php echo $sortBy === 'date_desc' ? 'selected' : ''; ?>>Newest First</option>
+                            <option value="date_asc" <?php echo $sortBy === 'date_asc' ? 'selected' : ''; ?>>Oldest First</option>
+                        </select>
+                        <button class="print-btn" type="button" onclick="window.print()">
+                            <i class="fas fa-print"></i>
+                            Print Journal
+                        </button>
+                    </div>
                 </div>
 
                 <?php if (empty($journalEntries)): ?>
-                    <div class="ja-empty">
-                        <i class="fas fa-book"></i>
-                        <p>No journal entries found for this student.</p>
+                    <div class="empty-state">
+                        <i class="fas fa-book empty-state-icon"></i>
+                        <p>No journal entries found for this student</p>
                     </div>
                 <?php else: ?>
-                    <div id="ja-filter-empty" class="ja-filter-empty">
-                        <i class="fas fa-filter"></i>
-                        <p>No entries match the selected filter.</p>
+                    <div id="sentimentFilterEmpty" class="empty-state" style="display:none;padding:14px 10px;">
+                        No entries match the selected sentiment filter.
                     </div>
-
                     <?php foreach ($journalEntries as $entry): ?>
                         <?php
-                        $entryTasks      = is_array($entry['tasks_accomplished']     ?? null) ? $entry['tasks_accomplished']     : [];
-                        $entrySkills     = is_array($entry['skills_applied_learned'] ?? null) ? $entry['skills_applied_learned'] : [];
+                        $entryTasks = is_array($entry['tasks_accomplished'] ?? null) ? $entry['tasks_accomplished'] : [];
+                        $entrySkills = is_array($entry['skills_applied_learned'] ?? null) ? $entry['skills_applied_learned'] : [];
                         $entryChallenges = is_array($entry['challenges_encountered'] ?? null) ? $entry['challenges_encountered'] : [];
-                        $entrySolutions  = is_array($entry['solutions_actions_taken']?? null) ? $entry['solutions_actions_taken'] : [];
-                        $entryInsights   = is_array($entry['key_learnings_insights'] ?? null) ? $entry['key_learnings_insights'] : [];
-                        $entryDept       = trim((string)($entry['company_department'] ?? ''));
+                        $entrySolutions = is_array($entry['solutions_actions_taken'] ?? null) ? $entry['solutions_actions_taken'] : [];
+                        $entryInsights = is_array($entry['key_learnings_insights'] ?? null) ? $entry['key_learnings_insights'] : [];
+                        $entryCompanyDepartment = trim((string)($entry['company_department'] ?? ''));
                         $entryReflection = trim((string)($entry['reflection'] ?? ''));
-                        $entryId         = (int)($entry['journal_id'] ?? 0);
+                        $entryId = (int)($entry['journal_id'] ?? 0);
+                        $hasFullDetails =
+                            !empty($entryTasks) ||
+                            !empty($entrySkills) ||
+                            !empty($entryChallenges) ||
+                            !empty($entrySolutions) ||
+                            !empty($entryInsights) ||
+                            $entryCompanyDepartment !== '' ||
+                            $entryReflection !== '';
 
-                        $hasFullDetails = !empty($entryTasks) || !empty($entrySkills) || !empty($entryChallenges)
-                            || !empty($entrySolutions) || !empty($entryInsights)
-                            || $entryDept !== '' || $entryReflection !== '';
-
-                        // Sentiment info for this entry
-                        $esSentiment  = $entrySentiments[$entryId] ?? null;
-                        $esLabel      = $esSentiment ? ($esSentiment['label'] ?? 'Neutral') : 'Neutral';
-                        $esScore      = $esSentiment ? ($esSentiment['score'] ?? 0.0) : 0.0;
-                        $esNeedsAction= $esSentiment ? (bool)($esSentiment['needs_action'] ?? false) : false;
-                        $esSentClass  = match ($esLabel) {
-                            'Positive'        => 'pos',
+                        $entrySentiment = $entrySentiments[$entryId] ?? null;
+                        $entrySentLabel = (string)($entrySentiment['label'] ?? 'Neutral');
+                        $entrySentScore = (float)($entrySentiment['score'] ?? 0.0);
+                        $entryNeedsAction = (bool)($entrySentiment['needs_action'] ?? false);
+                        $entrySentClass = match ($entrySentLabel) {
+                            'Positive' => 'pos',
                             'Mostly Positive' => 'mpos',
                             'Mostly Negative' => 'mneg',
-                            'Negative'        => 'neg',
-                            default           => 'neu',
+                            'Negative' => 'neg',
+                            default => 'neu',
                         };
-                        $esSentIcon   = in_array($esLabel, ['Positive', 'Mostly Positive']) ? 'fa-face-smile'
-                            : (in_array($esLabel, ['Negative', 'Mostly Negative']) ? 'fa-face-frown' : 'fa-face-meh');
-
-                        // data-sentiment attribute for JS filtering
-                        $dsSentiment = match ($esLabel) {
-                            'Positive', 'Mostly Positive' => 'positive',
-                            'Negative', 'Mostly Negative' => 'negative',
-                            default                       => 'neutral',
-                        };
-
-                        // Quality
-                        $quality      = $entryQualityScores[$entryId] ?? null;
-                        $qLevel       = $quality ? strtolower((string)($quality['level'] ?? 'minimal')) : null;
+                        $entrySentIcon = in_array($entrySentLabel, ['Positive', 'Mostly Positive'], true)
+                            ? 'fa-face-smile'
+                            : (in_array($entrySentLabel, ['Negative', 'Mostly Negative'], true) ? 'fa-face-frown' : 'fa-face-meh');
+                        $entrySentFilter = in_array($entrySentLabel, ['Positive', 'Mostly Positive'], true)
+                            ? 'positive'
+                            : (in_array($entrySentLabel, ['Negative', 'Mostly Negative'], true) ? 'negative' : 'neutral');
                         ?>
-                        <div class="ja-entry"
-                             data-sentiment="<?php echo htmlspecialchars($dsSentiment, ENT_QUOTES, 'UTF-8'); ?>"
-                             data-needs-action="<?php echo $esNeedsAction ? '1' : '0'; ?>">
-
-                            <div class="ja-entry-header">
-                                <div class="ja-entry-date">
-                                    <i class="fas fa-calendar-days"></i>
-                                    <?php echo date('l, F j, Y', strtotime((string)$entry['entry_date'])); ?>
-                                </div>
-                                <div class="ja-entry-badges">
-                                    <?php if ($quality): ?>
-                                        <span class="ja-quality <?php echo $qLevel; ?>">
-                                            <i class="fas fa-star"></i>
-                                            <?php echo htmlspecialchars((string)($quality['level'] ?? 'Minimal'), ENT_QUOTES, 'UTF-8'); ?>
-                                            (<?php echo (int)($quality['overall'] ?? 0); ?>%)
-                                        </span>
-                                    <?php endif; ?>
-                                    <span class="ja-sent-badge <?php echo $esSentClass; ?>">
-                                        <i class="fas <?php echo $esSentIcon; ?>"></i>
-                                        <?php echo htmlspecialchars($esLabel, ENT_QUOTES, 'UTF-8'); ?>
-                                        <span style="opacity:.65;">(<?php echo number_format($esScore, 2); ?>)</span>
-                                    </span>
-                                </div>
+                        <div class="journal-entry-preview" data-sentiment="<?php echo htmlspecialchars($entrySentFilter, ENT_QUOTES, 'UTF-8'); ?>" data-needs-action="<?php echo $entryNeedsAction ? '1' : '0'; ?>">
+                            <div class="entry-date">
+                                <i class="fas fa-calendar"></i>
+                                <?php echo date('l, F j, Y', strtotime((string)$entry['entry_date'])); ?>
                             </div>
 
-                            <div class="ja-entry-preview">
+                            <div class="entry-preview-text">
                                 <?php if (!empty($entryTasks)): ?>
                                     <strong>Tasks:</strong>
                                     <?php echo htmlspecialchars(implode(', ', array_slice($entryTasks, 0, 2)), ENT_QUOTES, 'UTF-8'); ?>
                                     <?php if (count($entryTasks) > 2): ?>
-                                        <em style="color:var(--text3);">+<?php echo count($entryTasks) - 2; ?> more</em>
+                                        <em>and <?php echo count($entryTasks) - 2; ?> more</em>
                                     <?php endif; ?>
                                 <?php else: ?>
-                                    <span style="color:var(--text3);">No tasks listed for this date.</span>
+                                    No tasks listed for this date.
                                 <?php endif; ?>
                             </div>
 
                             <?php if (!empty($entrySkills)): ?>
-                                <div class="ja-skill-chips">
-                                    <?php foreach (array_slice($entrySkills, 0, 4) as $skill): ?>
-                                        <span class="ja-skill-chip"><?php echo htmlspecialchars((string)$skill, ENT_QUOTES, 'UTF-8'); ?></span>
+                                <div style="margin-top: 8px;">
+                                    <?php foreach (array_slice($entrySkills, 0, 3) as $skill): ?>
+                                        <span class="skill-tag"><?php echo htmlspecialchars((string)$skill, ENT_QUOTES, 'UTF-8'); ?></span>
                                     <?php endforeach; ?>
-                                    <?php if (count($entrySkills) > 4): ?>
-                                        <span class="ja-skill-chip">+<?php echo count($entrySkills) - 4; ?> more</span>
+                                    <?php if (count($entrySkills) > 3): ?>
+                                        <span class="skill-tag">+<?php echo count($entrySkills) - 3; ?> more</span>
                                     <?php endif; ?>
                                 </div>
                             <?php endif; ?>
 
-                            <!-- Immediate Action Alert -->
-                            <?php if ($esNeedsAction): ?>
-                                <div class="ja-alert">
-                                    <div class="ja-alert-head">
-                                        <i class="fas fa-triangle-exclamation"></i>
-                                        Immediate Adviser Attention Required
-                                    </div>
-                                    <div class="ja-alert-body">
-                                        This entry contains signals that may require follow-up. Consider reaching out to the student.
-                                        <?php if (!empty($esSentiment['action_reasons'])): ?>
-                                            <ul class="ja-alert-reasons">
-                                                <?php foreach ($esSentiment['action_reasons'] as $reason): ?>
-                                                    <li><?php echo htmlspecialchars((string)$reason, ENT_QUOTES, 'UTF-8'); ?></li>
-                                                <?php endforeach; ?>
-                                            </ul>
-                                        <?php endif; ?>
-                                    </div>
+                            <?php if (isset($entryQualityScores[$entryId]) && is_array($entryQualityScores[$entryId])): ?>
+                                <?php $quality = $entryQualityScores[$entryId]; ?>
+                                <div class="quality-badge quality-<?php echo strtolower((string)($quality['level'] ?? 'basic')); ?>">
+                                    <i class="fas fa-star"></i>
+                                    <?php echo htmlspecialchars((string)($quality['level'] ?? 'Basic'), ENT_QUOTES, 'UTF-8'); ?>
+                                    (<?php echo (int)($quality['overall'] ?? 0); ?>%)
                                 </div>
                             <?php endif; ?>
 
-                            <!-- Full Details -->
+                            <div class="entry-sentiment-badge <?php echo $entrySentClass; ?>">
+                                <i class="fas <?php echo $entrySentIcon; ?>"></i>
+                                <?php echo htmlspecialchars($entrySentLabel, ENT_QUOTES, 'UTF-8'); ?>
+                                (<?php echo number_format($entrySentScore, 2); ?>)
+                            </div>
+
+                            <?php if ($entryNeedsAction): ?>
+                                <div class="entry-action-alert">
+                                    This entry includes negative or sensitive signals that may need follow-up.
+                                    <?php if (!empty($entrySentiment['action_reasons']) && is_array($entrySentiment['action_reasons'])): ?>
+                                        <ul>
+                                            <?php foreach ($entrySentiment['action_reasons'] as $reason): ?>
+                                                <li><?php echo htmlspecialchars((string)$reason, ENT_QUOTES, 'UTF-8'); ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
                             <?php if ($hasFullDetails): ?>
-                                <details class="ja-details">
-                                    <summary><i class="fas fa-chevron-right" style="font-size:.7rem;transition:transform .2s;"></i> View full entry details</summary>
-                                    <div class="ja-details-grid">
-                                        <?php if ($entryDept !== ''): ?>
-                                            <div class="ja-detail-block">
-                                                <h5>Company / Department</h5>
-                                                <p><?php echo htmlspecialchars($entryDept, ENT_QUOTES, 'UTF-8'); ?></p>
+                                <details class="entry-details">
+                                    <summary><i class="fas fa-eye"></i> View full journal details</summary>
+                                    <div class="entry-details-grid">
+                                        <?php if ($entryCompanyDepartment !== ''): ?>
+                                            <div class="entry-detail-block">
+                                                <h5>Company/Department</h5>
+                                                <p><?php echo htmlspecialchars($entryCompanyDepartment, ENT_QUOTES, 'UTF-8'); ?></p>
                                             </div>
                                         <?php endif; ?>
+
                                         <?php if (!empty($entryTasks)): ?>
-                                            <div class="ja-detail-block">
+                                            <div class="entry-detail-block">
                                                 <h5>Tasks Accomplished</h5>
-                                                <ul><?php foreach ($entryTasks as $item): ?><li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li><?php endforeach; ?></ul>
+                                                <ul>
+                                                    <?php foreach ($entryTasks as $item): ?>
+                                                        <li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
                                             </div>
                                         <?php endif; ?>
+
                                         <?php if (!empty($entrySkills)): ?>
-                                            <div class="ja-detail-block">
-                                                <h5>Skills Applied / Learned</h5>
-                                                <ul><?php foreach ($entrySkills as $item): ?><li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li><?php endforeach; ?></ul>
+                                            <div class="entry-detail-block">
+                                                <h5>Skills Applied/Learned</h5>
+                                                <ul>
+                                                    <?php foreach ($entrySkills as $item): ?>
+                                                        <li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
                                             </div>
                                         <?php endif; ?>
+
                                         <?php if (!empty($entryChallenges)): ?>
-                                            <div class="ja-detail-block">
+                                            <div class="entry-detail-block">
                                                 <h5>Challenges Encountered</h5>
-                                                <ul><?php foreach ($entryChallenges as $item): ?><li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li><?php endforeach; ?></ul>
+                                                <ul>
+                                                    <?php foreach ($entryChallenges as $item): ?>
+                                                        <li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
                                             </div>
                                         <?php endif; ?>
+
                                         <?php if (!empty($entrySolutions)): ?>
-                                            <div class="ja-detail-block">
-                                                <h5>Solutions / Actions Taken</h5>
-                                                <ul><?php foreach ($entrySolutions as $item): ?><li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li><?php endforeach; ?></ul>
+                                            <div class="entry-detail-block">
+                                                <h5>Solutions/Actions Taken</h5>
+                                                <ul>
+                                                    <?php foreach ($entrySolutions as $item): ?>
+                                                        <li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
                                             </div>
                                         <?php endif; ?>
+
                                         <?php if (!empty($entryInsights)): ?>
-                                            <div class="ja-detail-block">
-                                                <h5>Key Learnings / Insights</h5>
-                                                <ul><?php foreach ($entryInsights as $item): ?><li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li><?php endforeach; ?></ul>
+                                            <div class="entry-detail-block">
+                                                <h5>Key Learnings/Insights</h5>
+                                                <ul>
+                                                    <?php foreach ($entryInsights as $item): ?>
+                                                        <li><?php echo htmlspecialchars((string)$item, ENT_QUOTES, 'UTF-8'); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
                                             </div>
                                         <?php endif; ?>
+
                                         <?php if ($entryReflection !== ''): ?>
-                                            <div class="ja-detail-block">
+                                            <div class="entry-detail-block">
                                                 <h5>Reflection</h5>
                                                 <p><?php echo htmlspecialchars($entryReflection, ENT_QUOTES, 'UTF-8'); ?></p>
                                             </div>
@@ -1408,82 +1650,3 @@ $sortChangeBaseUrl = $baseUrl . '/layout.php?' . http_build_query([
         <?php endif; ?>
     </div>
 </div>
-
-<script>
-(function () {
-    'use strict';
-
-    /* active filters — now a Set, supports multiple selections */
-    const activeFilters = new Set();
-
-    window.jaToggleFilter = function (btn) {
-        const filter = btn.dataset.filter;
-
-        if (activeFilters.has(filter)) {
-            activeFilters.delete(filter);
-            btn.classList.remove('active');
-        } else {
-            activeFilters.add(filter);
-            btn.classList.add('active');
-        }
-
-        updateClearButton();
-        applyFilter();
-    };
-
-    window.jaClearAllFilters = function () {
-        activeFilters.clear();
-        document.querySelectorAll('.ja-filter-pill').forEach(function (p) {
-            p.classList.remove('active');
-        });
-        updateClearButton();
-        applyFilter();
-    };
-
-    function updateClearButton () {
-        const btn = document.getElementById('jaClearFilters');
-        if (!btn) return;
-        btn.style.display = activeFilters.size > 0 ? 'inline-flex' : 'none';
-    }
-
-    function applyFilter () {
-        const entries  = document.querySelectorAll('.ja-entry');
-        const emptyMsg = document.getElementById('ja-filter-empty');
-        let   visCount = 0;
-
-        entries.forEach(function (entry) {
-            let show = true;
-
-            if (activeFilters.size > 0) {
-                /* entry is shown if it matches ANY active filter */
-                let matchesAny = false;
-                activeFilters.forEach(function (filter) {
-                    if (filter === 'action') {
-                        if (entry.dataset.needsAction === '1') matchesAny = true;
-                    } else {
-                        if (entry.dataset.sentiment === filter) matchesAny = true;
-                    }
-                });
-                show = matchesAny;
-            }
-
-            entry.style.display = show ? '' : 'none';
-            if (show) visCount++;
-        });
-
-        if (emptyMsg) {
-            emptyMsg.style.display = (visCount === 0 && activeFilters.size > 0) ? 'block' : 'none';
-        }
-    }
-
-    /* chevron rotation on details open */
-    document.addEventListener('toggle', function (e) {
-        if (e.target && e.target.classList.contains('ja-details')) {
-            const chevron = e.target.querySelector('summary i.fa-chevron-right');
-            if (chevron) {
-                chevron.style.transform = e.target.open ? 'rotate(90deg)' : '';
-            }
-        }
-    }, true);
-})();
-</script>

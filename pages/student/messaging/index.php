@@ -14,8 +14,8 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     <div style="padding:12px 16px;border-bottom:1px solid #e5e7eb;background:#ffffff;display:flex;align-items:center;gap:10px;">
       <i class="fas fa-search" style="color:#9ca3af;"></i>
       <input type="text" id="msgGlobalSearch" placeholder="Search people and messages..."
-        style="border:none;outline:none;background:transparent;flex:1;font-size:.92rem;color:#111827;">
-      <span id="msgUnreadBadge" style="display:none;background:#2563eb;color:#fff;border-radius:999px;padding:3px 8px;font-size:.72rem;font-weight:700;"></span>
+        style="border:none;outline:none;background:transparent;flex:1;font-size:.92rem;color:#050505;">
+      <span id="msgUnreadBadge" style="display:none;background:#12b3ac;color:#fff;border-radius:999px;padding:3px 8px;font-size:.72rem;font-weight:700;"></span>
     </div>
 
     <div style="display:flex;flex:1;min-height:0;">
@@ -24,7 +24,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
 
       <!-- Tabs -->
       <div style="display:flex;border-bottom:1px solid #e5e7eb;padding:0 12px;">
-        <button id="tabConversations" class="msg-tab active" style="flex:1;padding:12px;border:none;background:none;cursor:pointer;font-weight:600;color:#3b82f6;border-bottom:2px solid #3b82f6;">
+        <button id="tabConversations" class="msg-tab active" style="flex:1;padding:12px;border:none;background:none;cursor:pointer;font-weight:600;color:#12b3ac;border-bottom:2px solid #12b3ac;">
           Conversations
         </button>
         <button id="tabContacts" class="msg-tab" style="flex:1;padding:12px;border:none;background:none;cursor:pointer;font-weight:600;color:#6b7280;">
@@ -143,7 +143,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
   .msg-profile-name {
     font-size: .95rem;
     font-weight: 700;
-    color: #111827;
+    color: #050505;
     margin-bottom: 4px;
   }
 
@@ -189,7 +189,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
   }
 
   .msg-attachments-label i {
-    color: #3b82f6;
+    color: #12b3ac;
   }
 
   .msg-attachment-item {
@@ -197,7 +197,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     align-items: center;
     gap: 10px;
     padding: 10px;
-    background: #f9fafb;
+    background: #ffffff;
     border-radius: 8px;
     margin-bottom: 8px;
     cursor: pointer;
@@ -207,7 +207,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
 
   .msg-attachment-item:hover {
     background: #f3f4f6;
-    border-color: #3b82f6;
+    border-color: #12b3ac;
     transform: translateX(4px);
   }
 
@@ -224,7 +224,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
   .msg-attachment-name {
     font-size: .8rem;
     font-weight: 600;
-    color: #111827;
+    color: #050505;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -250,11 +250,11 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     transition: background-color 0.15s;
   }
   .msg-conv-item:hover {
-    background-color: #f9fafb;
+    background-color: #ffffff;
   }
   .msg-conv-item.active {
     background-color: #eff6ff;
-    border-left: 3px solid #3b82f6;
+    border-left: 3px solid #12b3ac;
     padding-left: 9px;
   }
 
@@ -294,7 +294,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     max-width: 100%;
   }
   .msg-thread-item.own .msg-thread-bubble {
-    background: #3b82f6;
+    background: #12b3ac;
     color: white;
     border-bottom-right-radius: 4px;
   }
@@ -347,7 +347,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     border: 1px solid #bfdbfe;
     border-radius: 6px;
     font-size: .8rem;
-    color: #1e40af;
+    color: #12b3ac;
   }
 
   .msg-file-preview.active {
@@ -361,7 +361,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     padding: 0 16px;
     border: none;
     border-radius: 10px;
-    background: #3b82f6;
+    background: #12b3ac;
     color: white;
     cursor: pointer;
     font-weight: 600;
@@ -533,10 +533,10 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
         html += '<div style="margin-top:8px;margin-bottom:8px;background:rgba(0,0,0,0.05);border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="window.open(\'' + escapeHtml(item.url) + '\', \'_blank\')">'
           + '<div style="font-size:24px;">📄</div>'
           + '<div style="flex:1;min-width:0;">'
-          + '<div style="font-weight:600;font-size:.85rem;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(item.name) + '</div>'
+          + '<div style="font-weight:600;font-size:.85rem;color:#050505;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(item.name) + '</div>'
           + '<div style="font-size:.75rem;color:#6b7280;margin-top:2px;">' + formatFileSize(item.size) + '</div>'
           + '</div>'
-          + '<div style="color:#3b82f6;font-size:20px;">⬇</div>'
+          + '<div style="color:#12b3ac;font-size:20px;">⬇</div>'
           + '</div>';
       }
       
@@ -569,7 +569,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     for (var i = 0; i < name.length; i++) {
       sum += name.charCodeAt(i);
     }
-    var colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#6366f1', '#ef4444'];
+    var colors = ['#12b3ac', '#12b3ac', '#ec4899', '#12b3ac', '#12b3ac', '#12b3ac', '#2a8b8d', '#12b3ac'];
     return colors[sum % colors.length];
   }
 
@@ -722,12 +722,12 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
         + '</div>'
         + '<div style="flex:1;min-width:0;">'
         + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">'
-        + '<div style="font-weight:600;color:#111827;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(convName) + '</div>'
+        + '<div style="font-weight:600;color:#050505;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(convName) + '</div>'
         + '<div style="font-size:.75rem;color:#9ca3af;white-space:nowrap;">' + escapeHtml(secondaryInfo) + '</div>'
         + '</div>'
         + '<div style="font-size:.8rem;color:#6b7280;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(conv.last_message || '') + '</div>'
         + '</div>'
-        + (conv.unread_count > 0 ? '<div style="width:20px;height:20px;background:#3b82f6;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;">' + conv.unread_count + '</div>' : '')
+        + (conv.unread_count > 0 ? '<div style="width:20px;height:20px;background:#12b3ac;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;">' + conv.unread_count + '</div>' : '')
         + '</div>'
         + '</div>';
     }).join('');
@@ -815,10 +815,10 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
         + renderAvatar(contact.name, contact.profile_picture, '40px')
         + '</div>'
         + '<div style="flex:1;min-width:0;">'
-        + '<div style="font-weight:600;color:#111827;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(contact.name) + '</div>'
+        + '<div style="font-weight:600;color:#050505;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(contact.name) + '</div>'
         + '<div style="font-size:.75rem;color:#9ca3af;margin-top:2px;">' + escapeHtml(contact.role_label) + (contact.headline ? ' • ' + escapeHtml(contact.headline) : '') + '</div>'
         + '</div>'
-        + '<div style="color:#3b82f6;font-size:.8rem;font-weight:600;">→</div>'
+        + '<div style="color:#12b3ac;font-size:.8rem;font-weight:600;">→</div>'
         + '</div>';
     }).join('');
 
@@ -830,7 +830,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
         switchTab('conversations');
       });
       el.addEventListener('mouseover', function() {
-        this.style.backgroundColor = '#f9fafb';
+        this.style.backgroundColor = '#ffffff';
       });
       el.addEventListener('mouseout', function() {
         this.style.backgroundColor = 'transparent';
@@ -847,8 +847,8 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
     if (tab === 'conversations') {
       convPane.style.display = 'flex';
       contactPane.style.display = 'none';
-      convTab.style.color = '#3b82f6';
-      convTab.style.borderBottomColor = '#3b82f6';
+      convTab.style.color = '#12b3ac';
+      convTab.style.borderBottomColor = '#12b3ac';
       contactTab.style.color = '#6b7280';
       contactTab.style.borderBottomColor = 'transparent';
     } else {
@@ -856,8 +856,8 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
       contactPane.style.display = 'flex';
       convTab.style.color = '#6b7280';
       convTab.style.borderBottomColor = 'transparent';
-      contactTab.style.color = '#3b82f6';
-      contactTab.style.borderBottomColor = '#3b82f6';
+      contactTab.style.color = '#12b3ac';
+      contactTab.style.borderBottomColor = '#12b3ac';
     }
   }
 
@@ -907,7 +907,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
         + '<div style="width:56px;height:56px;">' + renderAvatar(data.other_user_name, profilePicture, '56px') + '</div>'
         + '</div>'
         + '<div style="flex:1;min-width:0;">'
-        + '<div style="font-weight:700;color:#111827;font-size:.95rem;margin-bottom:2px;">' + escapeHtml(data.other_user_name) + '</div>'
+        + '<div style="font-weight:700;color:#050505;font-size:.95rem;margin-bottom:2px;">' + escapeHtml(data.other_user_name) + '</div>'
         + '<div style="font-size:.77rem;color:' + (data.is_online ? '#16a34a' : '#6b7280') + ';margin-bottom:4px;">● ' + escapeHtml(onlineLabel) + '</div>'
         + '<div style="font-size:.8rem;color:#475569;margin-bottom:2px;">' + (headline ? escapeHtml(headline) : 'Profile available') + '</div>'
         + '<div style="font-size:.75rem;color:#6b7280;">' + (email ? escapeHtml(email) : '') + '</div>'
@@ -921,7 +921,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
         + '<div class="msg-composer">'
         + '<input type="file" id="msgFileInput" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" style="display:none;">'
         + '<div class="msg-composer-input-row">'
-        + '<button id="msgAttachBtn" type="button" style="flex:0 0 auto;width:44px;height:44px;border:1px solid #d1d5db;border-radius:10px;background:#fff;color:#3b82f6;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;"><i class="fas fa-paperclip"></i></button>'
+        + '<button id="msgAttachBtn" type="button" style="flex:0 0 auto;width:44px;height:44px;border:1px solid #d1d5db;border-radius:10px;background:#fff;color:#12b3ac;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;"><i class="fas fa-paperclip"></i></button>'
         + '<textarea placeholder="Send a message..." id="msgInput" class="msg-input" rows="1"></textarea>'
         + '<button id="msgSendBtn" class="msg-send-btn" type="button">Send</button>'
         + '</div>'
@@ -1061,7 +1061,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
 
       document.getElementById('currentUserProfileContent').innerHTML = html;
     }).catch(function(err) {
-      document.getElementById('currentUserProfileContent').innerHTML = '<div style="color:#ef4444;font-size:.8rem;">Failed to load profile</div>';
+      document.getElementById('currentUserProfileContent').innerHTML = '<div style="color:#12b3ac;font-size:.8rem;">Failed to load profile</div>';
     });
   }
 
@@ -1119,7 +1119,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
       renderConversationsList(allConversations, activeFilterTerm);
       updateUnreadBadge();
     }).catch(function() {
-      document.getElementById('msgConversationsList').innerHTML = '<div style="padding:20px;text-align:center;color:#ef4444;font-size:.875rem;">Unable to load messages</div>';
+      document.getElementById('msgConversationsList').innerHTML = '<div style="padding:20px;text-align:center;color:#12b3ac;font-size:.875rem;">Unable to load messages</div>';
     });
   }
 
@@ -1129,7 +1129,7 @@ $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
       renderContactsList(allContacts, activeFilterTerm);
       renderActiveUsers(allContacts);
     }).catch(function() {
-      document.getElementById('msgContactsList').innerHTML = '<div style="padding:20px;text-align:center;color:#ef4444;font-size:.875rem;">Unable to load contacts</div>';
+      document.getElementById('msgContactsList').innerHTML = '<div style="padding:20px;text-align:center;color:#12b3ac;font-size:.875rem;">Unable to load contacts</div>';
     });
   }
 

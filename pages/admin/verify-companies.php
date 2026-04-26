@@ -58,7 +58,7 @@ $summary = $pdo->query("SELECT verification_status, COUNT(*) cnt FROM employer G
 <div class="page-header" style="margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
   <div>
     <h2 class="page-title" style="font-size:1.25rem;font-weight:800;color:#111;margin-bottom:4px">
-      <i class="fas fa-building" style="color:#10B981;margin-right:8px"></i>Company Registry
+      <i class="fas fa-building" style="color:#12b3ac;margin-right:8px"></i>Company Registry
     </h2>
     <p class="page-subtitle" style="color:#999;font-size:.85rem">Verify and manage all partner companies</p>
   </div>
@@ -68,7 +68,7 @@ $summary = $pdo->query("SELECT verification_status, COUNT(*) cnt FROM employer G
 <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
   <?php
   $pills = [''=>'All','Pending'=>'Pending','Approved'=>'Approved','Rejected'=>'Rejected','Flagged'=>'Flagged'];
-  $pillColors = [''=>'#111','Pending'=>'#F59E0B','Approved'=>'#10B981','Rejected'=>'#EF4444','Flagged'=>'#EF4444'];
+  $pillColors = [''=>'#111','Pending'=>'#12b3ac','Approved'=>'#12b3ac','Rejected'=>'#12b3ac','Flagged'=>'#12b3ac'];
   foreach ($pills as $val => $lbl):
     $cnt = $val === '' ? array_sum($summary) : ($summary[$val] ?? 0);
     $active = ($filterStatus === $val);
@@ -115,10 +115,10 @@ $summary = $pdo->query("SELECT verification_status, COUNT(*) cnt FROM employer G
 <?php else: ?>
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px">
   <?php foreach ($companies as $co):
-    $vsColors=['Pending'=>'#F59E0B','Approved'=>'#10B981','Rejected'=>'#EF4444','Flagged'=>'#EF4444'];
+    $vsColors=['Pending'=>'#12b3ac','Approved'=>'#12b3ac','Rejected'=>'#12b3ac','Flagged'=>'#12b3ac'];
     $vc = $vsColors[$co['verification_status']] ?? '#999';
     $abbr = strtoupper(substr(preg_replace('/[^A-Za-z]/','',$co['company_name']),0,2));
-    $gradColors = ['#10B981','#4F46E5','#06B6D4','#F59E0B','#EF4444','#8B5CF6'];
+    $gradColors = ['#12b3ac','#12b3ac','#12b3ac','#12b3ac','#12b3ac','#12b3ac'];
     $grad = $gradColors[crc32($co['company_name']) % count($gradColors)];
   ?>
   <div class="panel-card" style="padding:0;overflow:hidden">
@@ -143,15 +143,15 @@ $summary = $pdo->query("SELECT verification_status, COUNT(*) cnt FROM employer G
     <div style="padding:14px 16px">
       <!-- Stats -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
-        <div style="text-align:center;padding:8px;background:#FAFAFA;border-radius:8px">
+        <div style="text-align:center;padding:8px;background:#ffffff;border-radius:8px">
           <div style="font-weight:800;font-size:.95rem;color:<?= $grad ?>"><?= $co['posting_count'] ?></div>
           <div style="font-size:.65rem;color:#999">Postings</div>
         </div>
-        <div style="text-align:center;padding:8px;background:#FAFAFA;border-radius:8px">
+        <div style="text-align:center;padding:8px;background:#ffffff;border-radius:8px">
           <div style="font-weight:800;font-size:.95rem;color:<?= $grad ?>"><?= $co['applicant_count'] ?></div>
           <div style="font-size:.65rem;color:#999">Applicants</div>
         </div>
-        <div style="text-align:center;padding:8px;background:#FAFAFA;border-radius:8px">
+        <div style="text-align:center;padding:8px;background:#ffffff;border-radius:8px">
           <div style="font-weight:700;font-size:.72rem;color:<?= $vc ?>;padding:2px 0"><?= $co['verification_status'] ?></div>
           <div style="font-size:.65rem;color:#999">Status</div>
         </div>
@@ -165,7 +165,7 @@ $summary = $pdo->query("SELECT verification_status, COUNT(*) cnt FROM employer G
         <?php endif; ?>
         <div style="display:flex;align-items:center;gap:6px">
           <?php if ($co['company_badge_status'] !== 'None'): ?>
-          <span style="background:rgba(245,158,11,.1);color:#B45309;padding:2px 8px;border-radius:50px;font-size:.68rem;font-weight:700"><i class="fas fa-star"></i> <?= $co['company_badge_status'] ?></span>
+          <span style="background:rgba(18,179,172,.12);color:#B45309;padding:2px 8px;border-radius:50px;font-size:.68rem;font-weight:700"><i class="fas fa-star"></i> <?= $co['company_badge_status'] ?></span>
           <?php endif; ?>
           <span style="color:#ccc;font-size:.72rem">Joined <?= date('M Y', strtotime($co['created_at'])) ?></span>
         </div>
@@ -173,7 +173,7 @@ $summary = $pdo->query("SELECT verification_status, COUNT(*) cnt FROM employer G
 
       <!-- Risk notes if any -->
       <?php if ($co['risk_assessment_notes']): ?>
-      <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;padding:8px 10px;font-size:.78rem;color:#EF4444;margin-bottom:12px">
+      <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;padding:8px 10px;font-size:.78rem;color:#12b3ac;margin-bottom:12px">
         <i class="fas fa-exclamation-triangle" style="margin-right:6px"></i><?= htmlspecialchars($co['risk_assessment_notes']) ?>
       </div>
       <?php endif; ?>
@@ -193,7 +193,7 @@ $summary = $pdo->query("SELECT verification_status, COUNT(*) cnt FROM employer G
           <input type="hidden" name="employer_id" value="<?= $co['employer_id'] ?>">
           <input type="hidden" name="decision" value="Rejected">
           <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
-          <button type="submit" class="btn btn-ghost" style="font-size:.78rem;padding:6px 14px;color:#EF4444;border-color:#EF4444"><i class="fas fa-times"></i> Reject</button>
+          <button type="submit" class="btn btn-ghost" style="font-size:.78rem;padding:6px 14px;color:#12b3ac;border-color:#12b3ac"><i class="fas fa-times"></i> Reject</button>
         </form>
         <?php elseif ($co['verification_status'] === 'Approved'): ?>
         <form method="post" action="<?= $baseUrl ?>/pages/admin/admin_actions.php" style="display:contents">
@@ -201,7 +201,7 @@ $summary = $pdo->query("SELECT verification_status, COUNT(*) cnt FROM employer G
           <input type="hidden" name="employer_id" value="<?= $co['employer_id'] ?>">
           <input type="hidden" name="decision" value="Flagged">
           <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
-          <button type="submit" class="btn btn-ghost" style="font-size:.78rem;padding:6px 14px;color:#F59E0B;border-color:#F59E0B"><i class="fas fa-flag"></i> Flag</button>
+          <button type="submit" class="btn btn-ghost" style="font-size:.78rem;padding:6px 14px;color:#12b3ac;border-color:#12b3ac"><i class="fas fa-flag"></i> Flag</button>
         </form>
         <form method="post" action="<?= $baseUrl ?>/pages/admin/admin_actions.php" style="display:contents">
           <input type="hidden" name="action" value="award_badge">

@@ -154,7 +154,7 @@ if (!isset($baseUrl)) {
         }
 
         .section-builder {
-            background: #f8fafc;
+            background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
             padding: 14px;
@@ -305,7 +305,7 @@ if (!isset($baseUrl)) {
         }
 
         .btn-primary {
-            background: #111827;
+            background: #050505;
             color: white;
             box-shadow: 0 4px 12px rgba(17, 24, 39, 0.3);
         }
@@ -327,7 +327,7 @@ if (!isset($baseUrl)) {
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: linear-gradient(135deg, #12b3ac, #059669);
             color: white;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
@@ -463,7 +463,7 @@ if (!isset($baseUrl)) {
             margin-top: 8px;
             color: #475569;
             font-size: 0.83rem;
-            background: #f8fafc;
+            background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 10px;
             padding: 10px 12px;
@@ -634,7 +634,7 @@ if (!isset($baseUrl)) {
         }
 
         .stat-box {
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
             border: 1px solid #e5e7eb;
             border-radius: 12px;
             padding: 16px;
@@ -678,7 +678,7 @@ if (!isset($baseUrl)) {
 
         .quality-good {
             background: #dbeafe;
-            color: #1e40af;
+            color: #12b3ac;
         }
 
         .quality-fair {
@@ -788,7 +788,7 @@ if (!isset($baseUrl)) {
             gap: 12px;
             padding: 14px 16px;
             border-bottom: 1px solid #e2e8f0;
-            background: #f8fafc;
+            background: #ffffff;
         }
 
         .entry-modal-title {
@@ -1651,7 +1651,7 @@ if (!isset($baseUrl)) {
                     openSaveSuccessModal();
                     document.getElementById('journalForm').reset();
                     document.getElementById('previewContainer').innerHTML = 
-                        '<div style="text-align: center; padding: 40px 20px; color: var(--text3);"><i class="fas fa-check-circle" style="font-size: 2rem; color: #10b981; margin-bottom: 12px;"></i><p>Entry saved! Generate another entry or view your journal.</p></div>';
+                        '<div style="text-align: center; padding: 40px 20px; color: var(--text3);"><i class="fas fa-check-circle" style="font-size: 2rem; color: #12b3ac; margin-bottom: 12px;"></i><p>Entry saved! Generate another entry or view your journal.</p></div>';
                     // Refresh entries list
                     setTimeout(() => loadMyEntries(), 500);
                 } else {
@@ -1728,7 +1728,7 @@ if (!isset($baseUrl)) {
 
             modalBody.innerHTML =
                 '<div style="text-align:center;padding:22px 12px;">'
-                + '<i class="fas fa-circle-check" style="font-size:2.15rem;color:#10b981;margin-bottom:10px;"></i>'
+                + '<i class="fas fa-circle-check" style="font-size:2.15rem;color:#12b3ac;margin-bottom:10px;"></i>'
                 + '<p style="margin:0;color:#0f172a;font-weight:700;font-size:1rem;">Entry saved successfully.</p>'
                 + '<p style="margin:10px 0 0;color:#64748b;font-size:.88rem;">You can create another entry or view your saved journal entries.</p>'
                 + '</div>';

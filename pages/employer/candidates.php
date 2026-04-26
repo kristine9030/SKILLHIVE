@@ -114,7 +114,7 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
 </div>
 
 <?php if ($errorMessage !== ''): ?>
-  <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#EF4444;padding:10px 12px;border-radius:8px;margin-bottom:14px;font-size:.82rem;">
+  <div style="background:rgba(18,179,172,.12);border:1px solid rgba(18,179,172,.3);color:#12b3ac;padding:10px 12px;border-radius:8px;margin-bottom:14px;font-size:.82rem;">
     <?php echo dashboard_escape($errorMessage); ?>
   </div>
 <?php endif; ?>
@@ -230,8 +230,8 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
         </div>
 
         <div style="display:flex;gap:6px;margin-top:12px;font-size:.78rem">
-          <span style="background:rgba(16,185,129,.1);color:#10B981;padding:4px 10px;border-radius:50px">Year: <?php echo dashboard_escape($yearLevel); ?></span>
-          <span style="background:rgba(6,182,212,.1);color:#06B6D4;padding:4px 10px;border-radius:50px">Readiness: <?php echo dashboard_escape($readinessText); ?></span>
+          <span style="background:rgba(16,185,129,.1);color:#12b3ac;padding:4px 10px;border-radius:50px">Year: <?php echo dashboard_escape($yearLevel); ?></span>
+          <span style="background:rgba(18,179,172,.12);color:#12b3ac;padding:4px 10px;border-radius:50px">Readiness: <?php echo dashboard_escape($readinessText); ?></span>
         </div>
 
         <div style="display:flex;gap:8px;margin-top:14px">
@@ -268,11 +268,11 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
             data-skills="<?php echo dashboard_escape($skillsText !== '' ? $skillsText : 'No skills listed'); ?>"
           >View Profile</button>
 
-          <button class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#EF4444" type="button" onclick="quickRejectCandidate(<?php echo (int)($candidate['application_id'] ?? 0); ?>, '<?php echo dashboard_escape($selected['search']); ?>', '<?php echo dashboard_escape($selected['position']); ?>', '<?php echo dashboard_escape($selected['status']); ?>', '<?php echo dashboard_escape($selected['sort']); ?>')"><i class="fas fa-times"></i></button>
+          <button class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#12b3ac" type="button" onclick="quickRejectCandidate(<?php echo (int)($candidate['application_id'] ?? 0); ?>, '<?php echo dashboard_escape($selected['search']); ?>', '<?php echo dashboard_escape($selected['position']); ?>', '<?php echo dashboard_escape($selected['status']); ?>', '<?php echo dashboard_escape($selected['sort']); ?>')"><i class="fas fa-times"></i></button>
         </div>
 
         <?php if (!$isEndorsementApproved && in_array($statusCanonical, ['Pending', 'Shortlisted'], true)): ?>
-          <div style="margin-top:10px;font-size:.75rem;color:#B45309;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);padding:8px 10px;border-radius:8px;">
+          <div style="margin-top:10px;font-size:.75rem;color:#B45309;background:rgba(18,179,172,.12);border:1px solid rgba(245,158,11,.25);padding:8px 10px;border-radius:8px;">
             Interview is locked until adviser endorsement is approved.
           </div>
         <?php endif; ?>
@@ -350,7 +350,7 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
   <div style="background:#fff;border-radius:12px;max-width:460px;width:100%;padding:18px 18px 14px;max-height:90vh;overflow:auto;box-shadow:0 18px 45px rgba(0,0,0,.24);">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
       <div style="display:flex;align-items:flex-start;gap:10px;">
-        <div style="width:30px;height:30px;border-radius:999px;background:rgba(16,185,129,.14);color:#10B981;display:flex;align-items:center;justify-content:center;font-size:.92rem;flex-shrink:0;">
+        <div style="width:30px;height:30px;border-radius:999px;background:rgba(16,185,129,.14);color:#12b3ac;display:flex;align-items:center;justify-content:center;font-size:.92rem;flex-shrink:0;">
           <i class="fas fa-check"></i>
         </div>
         <div>
@@ -526,7 +526,7 @@ var candidatePolling = {
     var message = '🚀 New Application! ' + latestCandidate.student_name + ' (' + latestCandidate.compatibility_score + '% match) just applied.';
 
     var toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#4F46E5;color:#fff;padding:14px 18px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.2);z-index:9999;font-weight:600;max-width:360px;cursor:pointer';
+    toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#12b3ac;color:#fff;padding:14px 18px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.2);z-index:9999;font-weight:600;max-width:360px;cursor:pointer';
     toast.textContent = message;
     toast.onclick = function() {
       location.reload();

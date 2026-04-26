@@ -42,10 +42,14 @@ $atRiskStudents = $dashboardData['at_risk_students'];
 
 <style>
   .adviser-dashboard-page {
+    --ad-ink: #000000;
+    --ad-verdigris-dark: #1f6f6b;
+    --ad-verdigris: #2b8a84;
+    --ad-verdigris-soft: #78a9a6;
     display: flex;
     flex-direction: column;
     gap: 20px;
-    color: var(--text);
+    color: var(--ad-ink);
     font-size: var(--font-size-body);
   }
 
@@ -115,9 +119,9 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     align-items: center;
     justify-content: center;
     font-size: 1rem;
-    background: rgba(156, 163, 175, 0.12);
-    color: #6B7280;
-    box-shadow: 0 2px 8px rgba(156, 163, 175, 0.12);
+    background: rgba(31, 111, 107, 0.12);
+    color: var(--ad-verdigris-dark);
+    box-shadow: 0 2px 8px rgba(31, 111, 107, 0.12);
     position: relative;
     z-index: 2;
   }
@@ -125,7 +129,7 @@ $atRiskStudents = $dashboardData['at_risk_students'];
   .adviser-stat-label {
     margin: 0 0 6px;
     font-size: 0.82rem;
-    color: var(--text3);
+    color: var(--ad-ink);
     font-weight: 500;
   }
 
@@ -134,7 +138,7 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     font-size: 1.9rem;
     font-weight: 700;
     line-height: 1;
-    color: var(--text);
+    color: var(--ad-ink);
   }
 
   .adviser-dashboard-grid {
@@ -159,18 +163,18 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     margin: 0;
     font-size: 1rem;
     font-weight: 700;
-    color: var(--text);
+    color: var(--ad-ink);
   }
 
   .adviser-dashboard-link {
-    color: var(--text2);
+    color: var(--ad-ink);
     font-size: 0.78rem;
     font-weight: 600;
     text-decoration: none;
   }
 
   .adviser-dashboard-link:hover {
-    color: var(--text);
+    color: var(--ad-verdigris-dark);
   }
 
   .adviser-dashboard-chip {
@@ -180,8 +184,8 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     min-width: 30px;
     padding: 5px 10px;
     border-radius: 999px;
-    background: #f3f4f6;
-    color: #4b5563;
+    background: #e4f0ee;
+    color: var(--ad-verdigris-dark);
     font-size: 0.74rem;
     font-weight: 700;
   }
@@ -201,7 +205,7 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     font-size: 0.74rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text3);
+    color: var(--ad-ink);
     text-align: left;
     font-weight: 600;
   }
@@ -211,7 +215,7 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     border-top: 1px solid var(--border);
     font-size: 0.84rem;
     vertical-align: middle;
-    color: var(--text);
+    color: var(--ad-ink);
   }
 
   .adviser-dashboard-table tr:first-child td {
@@ -219,17 +223,17 @@ $atRiskStudents = $dashboardData['at_risk_students'];
   }
 
   .adviser-dashboard-table tr:hover td {
-    background: #fafafa;
+    background: #ffffff;
   }
 
   .adviser-student-name {
     font-weight: 600;
-    color: var(--text);
+    color: var(--ad-ink);
   }
 
   .adviser-muted {
     font-size: 0.74rem;
-    color: #999;
+    color: #222;
   }
 
   .adviser-dashboard-pill {
@@ -244,23 +248,23 @@ $atRiskStudents = $dashboardData['at_risk_students'];
   }
 
   .adviser-dashboard-pill.is-danger {
-    background: #ffe5e2;
-    color: #d32f2f;
+    background: #dcebe9;
+    color: var(--ad-verdigris-dark);
   }
 
   .adviser-dashboard-pill.is-warning {
-    background: #fff0cf;
-    color: #d98309;
+    background: #e4f0ee;
+    color: var(--ad-verdigris-dark);
   }
 
   .adviser-dashboard-pill.is-success {
-    background: #ddf8eb;
-    color: #16855a;
+    background: #d2e8e6;
+    color: var(--ad-verdigris-dark);
   }
 
   .adviser-dashboard-pill.is-neutral {
-    background: #f4edf0;
-    color: #7b6570;
+    background: #edf5f4;
+    color: var(--ad-verdigris);
   }
 
   .adviser-dashboard-actions {
@@ -290,14 +294,14 @@ $atRiskStudents = $dashboardData['at_risk_students'];
   }
 
   .adviser-dashboard-btn.primary {
-    background: #111;
+    background: var(--ad-verdigris-dark);
     color: #fff;
     box-shadow: none;
   }
 
   .adviser-dashboard-btn.secondary {
     background: #fff;
-    color: var(--text);
+    color: var(--ad-ink);
     border-color: var(--border);
   }
 
@@ -316,7 +320,7 @@ $atRiskStudents = $dashboardData['at_risk_students'];
 
   .adviser-dashboard-risk-card.is-warning {
     background: #fff;
-    border-color: #fde68a;
+    border-color: #9cc7c3;
   }
 
   .adviser-dashboard-risk-top {
@@ -331,12 +335,12 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     margin: 0;
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--text);
+    color: var(--ad-ink);
   }
 
   .adviser-dashboard-risk-meta {
     margin: 0;
-    color: #6b7280;
+    color: var(--ad-ink);
     font-size: 0.78rem;
     line-height: 1.45;
   }
@@ -344,9 +348,9 @@ $atRiskStudents = $dashboardData['at_risk_students'];
   .adviser-dashboard-empty {
     padding: 18px;
     border-radius: 12px;
-    background: #fafafa;
+    background: #ffffff;
     border: 1px dashed var(--border);
-    color: #6b7280;
+    color: var(--ad-ink);
     font-size: 0.82rem;
   }
 
@@ -405,7 +409,7 @@ $atRiskStudents = $dashboardData['at_risk_students'];
 
   <div class="adviser-dashboard-stats">
     <div class="adviser-stat-card">
-      <span class="adviser-stat-icon" style="background:rgba(124,58,237,.10);color:#7c3aed;"><i class="fas fa-user-graduate"></i></span>
+      <span class="adviser-stat-icon" style="background:rgba(31,111,107,.14);color:#1f6f6b;"><i class="fas fa-user-graduate"></i></span>
       <div>
         <p class="adviser-stat-label">Assigned Students</p>
         <p class="adviser-stat-value"><?php echo (int)($stats['my_students'] ?? 0); ?></p>
@@ -413,7 +417,7 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     </div>
 
     <div class="adviser-stat-card">
-      <span class="adviser-stat-icon" style="background:rgba(22,163,74,.12);color:#149356;"><i class="fas fa-circle-check"></i></span>
+      <span class="adviser-stat-icon" style="background:rgba(43,138,132,.16);color:#1f6f6b;"><i class="fas fa-circle-check"></i></span>
       <div>
         <p class="adviser-stat-label">Placed Students</p>
         <p class="adviser-stat-value"><?php echo (int)($stats['placed_students'] ?? 0); ?></p>
@@ -421,7 +425,7 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     </div>
 
     <div class="adviser-stat-card">
-      <span class="adviser-stat-icon" style="background:rgba(245,158,11,.14);color:#dd8a04;"><i class="fas fa-triangle-exclamation"></i></span>
+      <span class="adviser-stat-icon" style="background:rgba(120,169,166,.18);color:#1f6f6b;"><i class="fas fa-triangle-exclamation"></i></span>
       <div>
         <p class="adviser-stat-label">At Risk</p>
         <p class="adviser-stat-value"><?php echo (int)($stats['at_risk_students'] ?? 0); ?></p>
@@ -429,7 +433,7 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     </div>
 
     <div class="adviser-stat-card">
-      <span class="adviser-stat-icon" style="background:rgba(14,165,233,.12);color:#0891b2;"><i class="fas fa-building"></i></span>
+      <span class="adviser-stat-icon" style="background:rgba(31,111,107,.14);color:#1f6f6b;"><i class="fas fa-building"></i></span>
       <div>
         <p class="adviser-stat-label">Partner Companies</p>
         <p class="adviser-stat-value"><?php echo (int)($stats['partner_companies'] ?? 0); ?></p>

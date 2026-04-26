@@ -215,7 +215,7 @@ if ($exportMode === 'csv' && $employerId > 0) {
       <div class="panel-card-header"><h3>Submit Evaluation</h3></div>
 
       <?php if ($errorMessage !== ''): ?>
-        <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#EF4444;padding:10px 12px;border-radius:8px;margin-bottom:14px;font-size:.82rem;">
+        <div style="background:rgba(18,179,172,.12);border:1px solid rgba(18,179,172,.3);color:#12b3ac;padding:10px 12px;border-radius:8px;margin-bottom:14px;font-size:.82rem;">
           <?php echo dashboard_escape($errorMessage); ?>
         </div>
       <?php endif; ?>
@@ -244,7 +244,7 @@ if ($exportMode === 'csv' && $employerId > 0) {
           <div class="form-group">
             <label class="form-label">Evaluation Period</label>
             <input type="hidden" name="period" value="Final">
-            <div class="form-input" style="display:flex;align-items:center;background:#f8fafc;color:#0f172a;font-weight:600;">Final</div>
+            <div class="form-input" style="display:flex;align-items:center;background:#ffffff;color:#0f172a;font-weight:600;">Final</div>
           </div>
         </div>
 
@@ -316,10 +316,10 @@ if ($exportMode === 'csv' && $employerId > 0) {
                   <td><?php echo dashboard_escape($row['intern']); ?></td>
                   <td><?php echo dashboard_escape($row['internship_title']); ?></td>
                   <td><?php echo dashboard_escape($row['period']); ?></td>
-                  <td><span style="color:#F59E0B"><i class="fas fa-star"></i> <?php echo number_format((float)$row['technical'], 1); ?></span></td>
-                  <td><span style="color:#F59E0B"><i class="fas fa-star"></i> <?php echo number_format((float)$row['communication'], 1); ?></span></td>
-                  <td><span style="color:#F59E0B"><i class="fas fa-star"></i> <?php echo number_format((float)$row['ethic'], 1); ?></span></td>
-                  <td><span style="font-weight:700;color:#10B981"><?php echo number_format((float)$row['overall'], 1); ?></span></td>
+                  <td><span style="color:#12b3ac"><i class="fas fa-star"></i> <?php echo number_format((float)$row['technical'], 1); ?></span></td>
+                  <td><span style="color:#12b3ac"><i class="fas fa-star"></i> <?php echo number_format((float)$row['communication'], 1); ?></span></td>
+                  <td><span style="color:#12b3ac"><i class="fas fa-star"></i> <?php echo number_format((float)$row['ethic'], 1); ?></span></td>
+                  <td><span style="font-weight:700;color:#12b3ac"><?php echo number_format((float)$row['overall'], 1); ?></span></td>
                   <td style="max-width:240px;"><?php echo dashboard_escape($feedbackText); ?></td>
                   <td><?php echo dashboard_escape($evaluatedDateLabel); ?></td>
                 </tr>
@@ -340,19 +340,19 @@ if ($exportMode === 'csv' && $employerId > 0) {
       <div class="panel-card-header"><h3>Eval Summary</h3></div>
       <div style="display:flex;flex-direction:column;gap:8px;font-size:.85rem">
         <div class="mini-row"><span>Total Evaluations</span><span style="font-weight:700"><?php echo (int)$summary['total_evaluations']; ?></span></div>
-        <div class="mini-row"><span>Average Rating</span><span style="font-weight:700;color:#F59E0B"><i class="fas fa-star"></i> <?php echo number_format((float)$summary['average_rating'], 1); ?></span></div>
-        <div class="mini-row"><span>Pending</span><span style="font-weight:700;color:#EF4444"><?php echo (int)$summary['pending']; ?></span></div>
+        <div class="mini-row"><span>Average Rating</span><span style="font-weight:700;color:#12b3ac"><i class="fas fa-star"></i> <?php echo number_format((float)$summary['average_rating'], 1); ?></span></div>
+        <div class="mini-row"><span>Pending</span><span style="font-weight:700;color:#12b3ac"><?php echo (int)$summary['pending']; ?></span></div>
       </div>
     </div>
 
     <div class="panel-card">
       <div class="panel-card-header"><h3>Rating Guide</h3></div>
       <div style="display:flex;flex-direction:column;gap:6px;font-size:.82rem">
-        <div class="mini-row"><span><i class="fas fa-star" style="color:#F59E0B"></i> 5</span><span>Outstanding</span></div>
-        <div class="mini-row"><span><i class="fas fa-star" style="color:#F59E0B"></i> 4</span><span>Very Good</span></div>
-        <div class="mini-row"><span><i class="fas fa-star" style="color:#F59E0B"></i> 3</span><span>Good</span></div>
-        <div class="mini-row"><span><i class="fas fa-star" style="color:#F59E0B"></i> 2</span><span>Fair</span></div>
-        <div class="mini-row"><span><i class="fas fa-star" style="color:#F59E0B"></i> 1</span><span>Needs Improvement</span></div>
+        <div class="mini-row"><span><i class="fas fa-star" style="color:#12b3ac"></i> 5</span><span>Outstanding</span></div>
+        <div class="mini-row"><span><i class="fas fa-star" style="color:#12b3ac"></i> 4</span><span>Very Good</span></div>
+        <div class="mini-row"><span><i class="fas fa-star" style="color:#12b3ac"></i> 3</span><span>Good</span></div>
+        <div class="mini-row"><span><i class="fas fa-star" style="color:#12b3ac"></i> 2</span><span>Fair</span></div>
+        <div class="mini-row"><span><i class="fas fa-star" style="color:#12b3ac"></i> 1</span><span>Needs Improvement</span></div>
       </div>
     </div>
   </div>
@@ -365,7 +365,7 @@ function setRating(groupId, rating, inputId) {
 
   var stars = starsWrap.querySelectorAll('.fa-star');
   stars.forEach(function(star, index) {
-    star.style.color = index < rating ? '#F59E0B' : '#ddd';
+    star.style.color = index < rating ? '#12b3ac' : '#ddd';
   });
 
   if (inputId) {

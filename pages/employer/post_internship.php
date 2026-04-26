@@ -227,7 +227,7 @@ function posting_duration_hours_label($durationWeeks): string {
   padding: 6px 4px;
   min-height: 34px;
   font-weight: 600;
-  color: #111827;
+  color: #050505;
 }
 
 .location-select-wrap .location-select:focus {
@@ -241,7 +241,7 @@ function posting_duration_hours_label($durationWeeks): string {
   border: 1px dashed #d6d6d6;
   background: #fffdf7;
   font-weight: 600;
-  color: #111827;
+  color: #050505;
 }
 
 .location-preview-input::placeholder {
@@ -296,7 +296,7 @@ function posting_duration_hours_label($durationWeeks): string {
 
 <!-- My Postings Card -->
 <div class="card" id="my-postings">
-  <h3 class="card-title"><i class="fa-solid fa-list" style="color:var(--dark,#1a1a1a);margin-right:6px;"></i> My Postings</h3>
+  <h3 class="card-title"><i class="fa-solid fa-list" style="color:var(--dark,#050505);margin-right:6px;"></i> My Postings</h3>
   <p style="font-size:12px;color:var(--grey,#888);margin-bottom:14px;">Select a posting on the left to view full details on the right.</p>
 
   <?php if (!empty($myPostings)): ?>
@@ -341,7 +341,7 @@ function posting_duration_hours_label($durationWeeks): string {
               <form method="post" action="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Delete this posting?');" style="margin:0;">
                 <input type="hidden" name="delete_posting_id" value="<?php echo $postingId; ?>">
                 <input type="hidden" name="postings_page" value="<?php echo $postingsPage; ?>">
-                <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#EF4444;"><i class="fas fa-trash"></i> Delete</button>
+                <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#12b3ac;"><i class="fas fa-trash"></i> Delete</button>
               </form>
             </div>
           </div>
@@ -366,7 +366,7 @@ function posting_duration_hours_label($durationWeeks): string {
 
         <div style="margin-top:12px;flex:1;display:flex;flex-direction:column;min-height:0;">
           <div style="font-weight:700;font-size:.8rem;margin-bottom:4px;">Description</div>
-          <div id="detailDescription" style="font-size:.82rem;color:#444;line-height:1.5;height:300px;overflow:auto;border:1px solid var(--border,#e8e0e0);border-radius:8px;padding:10px;background:#fafafa;"><?php echo e((string)($selectedPosting['description'] ?? 'No description provided.')); ?></div>
+          <div id="detailDescription" style="font-size:.82rem;color:#444;line-height:1.5;height:300px;overflow:auto;border:1px solid var(--border,#e8e0e0);border-radius:8px;padding:10px;background:#ffffff;"><?php echo e((string)($selectedPosting['description'] ?? 'No description provided.')); ?></div>
         </div>
 
         <div class="job-card-actions" style="margin-top:12px;">
@@ -384,7 +384,7 @@ function posting_duration_hours_label($durationWeeks): string {
           <form method="post" action="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Delete this posting?');" style="margin:0;display:inline-block;">
             <input type="hidden" name="delete_posting_id" id="detailDeletePostingId" value="<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>">
             <input type="hidden" name="postings_page" value="<?php echo $postingsPage; ?>">
-            <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#EF4444;"><i class="fas fa-trash"></i> Delete</button>
+            <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#12b3ac;"><i class="fas fa-trash"></i> Delete</button>
           </form>
         </div>
       </div>
@@ -568,7 +568,7 @@ function posting_duration_hours_label($durationWeeks): string {
 
   <div style="border:1px solid var(--border,#e8e0e0);border-radius:8px;max-height:360px;overflow-y:auto;">
     <!-- Header row -->
-    <div style="display:grid;grid-template-columns:32px 1fr 170px 100px;gap:10px;align-items:center;padding:10px 14px;background:var(--dark,#1a1a1a);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-radius:8px 8px 0 0;position:sticky;top:0;z-index:2;">
+    <div style="display:grid;grid-template-columns:32px 1fr 170px 100px;gap:10px;align-items:center;padding:10px 14px;background:var(--dark,#050505);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-radius:8px 8px 0 0;position:sticky;top:0;z-index:2;">
       <span></span>
       <span>Skill</span>
       <span>Level</span>

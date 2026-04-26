@@ -148,22 +148,22 @@ if (($_GET['export'] ?? '') === 'csv') {
 
   .monitoring-summary-icon.track {
     background: #e8f8f2;
-    color: #10b981;
+    color: #12b3ac;
   }
 
   .monitoring-summary-icon.completed {
     background: #e7f0ff;
-    color: #2563eb;
+    color: #12b3ac;
   }
 
   .monitoring-summary-icon.warning {
     background: #fff4e3;
-    color: #f59e0b;
+    color: #12b3ac;
   }
 
   .monitoring-summary-icon.risk {
     background: #fdecec;
-    color: #ef4444;
+    color: #12b3ac;
   }
 
   .monitoring-summary-label {
@@ -292,7 +292,7 @@ if (($_GET['export'] ?? '') === 'csv') {
 
   .monitoring-student-name {
     font-weight: 700;
-    color: #111827;
+    color: #050505;
     line-height: 1.15;
   }
 
@@ -326,22 +326,22 @@ if (($_GET['export'] ?? '') === 'csv') {
 
   .monitoring-status-ontrack {
     background: #e8f8f2;
-    color: #10b981;
+    color: #12b3ac;
   }
 
   .monitoring-status-completed {
     background: #e7f0ff;
-    color: #2563eb;
+    color: #12b3ac;
   }
 
   .monitoring-status-warning {
     background: #fff4e3;
-    color: #f59e0b;
+    color: #12b3ac;
   }
 
   .monitoring-status-risk {
     background: #fdecec;
-    color: #ef4444;
+    color: #12b3ac;
   }
 
   .monitoring-actions {
@@ -470,7 +470,7 @@ if (($_GET['export'] ?? '') === 'csv') {
   }
 
   .monitoring-modal-progress {
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     padding: 12px 14px;
@@ -547,7 +547,7 @@ if (($_GET['export'] ?? '') === 'csv') {
     padding: 3px 10px;
     border-radius: 999px;
     background: #f3efff;
-    color: #ef4444;
+    color: #12b3ac;
     font-size: .78rem;
     font-weight: 800;
   }
@@ -662,10 +662,10 @@ if (($_GET['export'] ?? '') === 'csv') {
   }
 </style>
 
-<div class="page-header">
-  <div>
-    <h2 class="page-title">OJT Monitoring</h2>
-    <p class="page-subtitle">Track student progress, activity, and risk levels during internship.</p>
+<div style="background:linear-gradient(90deg, #050505 0%, #12b3ac 40%, rgba(0, 0, 0, 0.38) 100%), url('/Skillhive/assets/media/element%203.png') right center / auto 100% no-repeat;border-radius:16px;padding:28px;margin-bottom:20px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0, 0, 0, 0.44);">
+  <div style="z-index:2;flex:1;">
+    <h2 style="font-size:1.8rem;font-weight:900;margin:0 0 12px 0;line-height:1.2;color:white;">OJT Monitoring</h2>
+    <p style="font-size:0.95rem;margin:0;line-height:1.6;color:#e0e0e0;">Track student progress, activity, and risk levels during internship.</p>
   </div>
 </div>
 
@@ -757,7 +757,7 @@ if (($_GET['export'] ?? '') === 'csv') {
         </thead>
         <tbody>
           <?php if (!empty($rows)): ?>
-            <?php $avatarColors = ['#3B82F6', '#F97316', '#14B8A6', '#7C3AED', '#8B5CF6', '#EC4899']; ?>
+            <?php $avatarColors = ['#12b3ac', '#F97316', '#14B8A6', '#12b3ac', '#12b3ac', '#EC4899']; ?>
             <?php foreach ($rows as $index => $row): ?>
               <?php
               $studentName = trim((string)($row['first_name'] ?? '') . ' ' . (string)($row['last_name'] ?? ''));

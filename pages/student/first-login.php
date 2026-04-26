@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($errors)) {
     margin-top: 14px;
     border: 1px solid #fecaca;
     background: #fff1f2;
-    color: #b91c1c;
+    color: #12b3ac;
     border-radius: 10px;
     padding: 10px 12px;
     font-size: 0.82rem;

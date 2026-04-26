@@ -185,13 +185,13 @@ if (!function_exists('adviser_students_avatar_gradient')) {
     function adviser_students_avatar_gradient($seed): string
     {
         $gradients = [
-            'linear-gradient(135deg,#4f46e5 0%,#3b82f6 100%)',
+            'linear-gradient(135deg,#12b3ac 0%,#12b3ac 100%)',
             'linear-gradient(135deg,#f97316 0%,#f43f5e 100%)',
             'linear-gradient(135deg,#14b8a6 0%,#22c55e 100%)',
-            'linear-gradient(135deg,#7c3aed 0%,#2563eb 100%)',
-            'linear-gradient(135deg,#ef4444 0%,#f59e0b 100%)',
-            'linear-gradient(135deg,#8b5cf6 0%,#6366f1 100%)',
-            'linear-gradient(135deg,#0ea5e9 0%,#3b82f6 100%)',
+            'linear-gradient(135deg,#12b3ac 0%,#12b3ac 100%)',
+            'linear-gradient(135deg,#12b3ac 0%,#12b3ac 100%)',
+            'linear-gradient(135deg,#12b3ac 0%,#2a8b8d 100%)',
+            'linear-gradient(135deg,#0ea5e9 0%,#12b3ac 100%)',
             'linear-gradient(135deg,#eab308 0%,#22c55e 100%)',
         ];
 

@@ -8,7 +8,7 @@ function marketplace_e(string $value): string
 function marketplace_status_badge(string $badgeStatus): string
 {
     return match ($badgeStatus) {
-        'Verified Partner' => '<span style="background:rgba(6,182,212,.1);color:#06B6D4;padding:2px 8px;border-radius:50px;font-size:.7rem;font-weight:700">Verified</span>',
+        'Verified Partner' => '<span style="background:rgba(19,120,115,.12);color:#138b84;padding:2px 8px;border-radius:50px;font-size:.7rem;font-weight:700">Verified</span>',
         'Top Employer'     => '<span style="background:rgba(245,158,11,.12);color:#D97706;padding:2px 8px;border-radius:50px;font-size:.7rem;font-weight:700">Top Employer</span>',
         default            => '',
     };
@@ -18,20 +18,19 @@ function marketplace_work_setup_style(string $workSetup): string
 {
     return match ($workSetup) {
         'On-site' => 'background:rgba(16,185,129,.1);color:#10B981;padding:2px 8px;border-radius:50px;font-size:.72rem',
-        'Remote'  => 'background:rgba(245,158,11,.1);color:#F59E0B;padding:2px 8px;border-radius:50px;font-size:.72rem',
-        default   => 'background:rgba(6,182,212,.1);color:#06B6D4;padding:2px 8px;border-radius:50px;font-size:.72rem',
+        default   => 'background:rgba(19,120,115,.12);color:#138b84;padding:2px 8px;border-radius:50px;font-size:.72rem',
     };
 }
 
 function marketplace_company_gradient(string $companyName): string
 {
     $gradients = [
-        'linear-gradient(135deg,#06B6D4,#10B981)',
-        'linear-gradient(135deg,#F59E0B,#EF4444)',
-        'linear-gradient(135deg,#10B981,#06B6D4)',
-        'linear-gradient(135deg,#111827,#374151)',
-        'linear-gradient(135deg,#4F46E5,#06B6D4)',
-        'linear-gradient(135deg,#EC4899,#F59E0B)',
+        'linear-gradient(135deg,#111827,#138b84)',
+        'linear-gradient(135deg,#050505,#138b84)',
+        'linear-gradient(135deg,#138b84,#10B981)',
+        'linear-gradient(135deg,#050505,#374151)',
+        'linear-gradient(135deg,#111827,#138b84)',
+        'linear-gradient(135deg,#050505,#138b84)',
     ];
     $index = abs(crc32(strtolower($companyName))) % count($gradients);
     return $gradients[$index];

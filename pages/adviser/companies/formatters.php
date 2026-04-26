@@ -51,11 +51,11 @@ if (!function_exists('adviser_companies_gradient')) {
     function adviser_companies_gradient(int $index): string
     {
         $palette = [
-            'linear-gradient(135deg,#06B6D4,#10B981)',
-            'linear-gradient(135deg,#6F42C1,#EC4899)',
-            'linear-gradient(135deg,#F59E0B,#EF4444)',
-            'linear-gradient(135deg,#10B981,#06B6D4)',
-            'linear-gradient(135deg,#3B82F6,#8B5CF6)',
+            'linear-gradient(135deg,#12b3ac,#12b3ac)',
+            'linear-gradient(135deg,#12b3ac,#EC4899)',
+            'linear-gradient(135deg,#12b3ac,#12b3ac)',
+            'linear-gradient(135deg,#12b3ac,#12b3ac)',
+            'linear-gradient(135deg,#12b3ac,#12b3ac)',
         ];
 
         return $palette[$index % count($palette)];

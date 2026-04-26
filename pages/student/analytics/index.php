@@ -42,9 +42,9 @@ $rejectedRate = $appliedCount > 0 ? (int) round(($rejectedCount / $appliedCount)
 $funnelRows = [
   ['label' => 'Applied', 'count' => $appliedCount, 'percent' => $appliedCount > 0 ? 100 : 0, 'color' => '#0EA5E9'],
   ['label' => 'Shortlisted', 'count' => $shortlistedCount, 'percent' => $shortlistedRate, 'color' => '#14B8A6'],
-  ['label' => 'Interview', 'count' => $interviewCount, 'percent' => $interviewRate, 'color' => '#F59E0B'],
+  ['label' => 'Interview', 'count' => $interviewCount, 'percent' => $interviewRate, 'color' => '#12b3ac'],
   ['label' => 'Accepted', 'count' => $acceptedCount, 'percent' => $acceptedRate, 'color' => '#22C55E'],
-  ['label' => 'Rejected', 'count' => $rejectedCount, 'percent' => $rejectedRate, 'color' => '#EF4444'],
+  ['label' => 'Rejected', 'count' => $rejectedCount, 'percent' => $rejectedRate, 'color' => '#12b3ac'],
 ];
 
 $classStandingText = $classTotal > 0 ? ('Top ' . $topPercent . '%') : 'N/A';
@@ -167,7 +167,7 @@ $classStandingText = $classTotal > 0 ? ('Top ' . $topPercent . '%') : 'N/A';
   }
 
   .analytics-kpi-card.is-certified::before {
-    background: #f59e0b;
+    background: #12b3ac;
   }
 
   .analytics-kpi-icon {
@@ -243,7 +243,7 @@ $classStandingText = $classTotal > 0 ? ('Top ' . $topPercent . '%') : 'N/A';
     border: 1px dashed #cbd5e1;
     border-radius: 12px;
     padding: 14px;
-    background: #f8fafc;
+    background: #ffffff;
   }
 
   .analytics-skill-list {
@@ -392,7 +392,7 @@ $classStandingText = $classTotal > 0 ? ('Top ' . $topPercent . '%') : 'N/A';
   }
 
   .analytics-metric-chip {
-    background: #f8fafc;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 10px;

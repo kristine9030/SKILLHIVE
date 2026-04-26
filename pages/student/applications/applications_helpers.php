@@ -46,12 +46,12 @@ function applications_progress_step(string $status): int
 function applications_company_gradient(string $companyName): string
 {
     $gradients = [
-        'linear-gradient(135deg,#06B6D4,#10B981)',
-        'linear-gradient(135deg,#F59E0B,#EF4444)',
-        'linear-gradient(135deg,#10B981,#06B6D4)',
-        'linear-gradient(135deg,#111827,#374151)',
-        'linear-gradient(135deg,#4F46E5,#06B6D4)',
-        'linear-gradient(135deg,#EC4899,#F59E0B)',
+        'linear-gradient(135deg,#12b3ac,#12b3ac)',
+        'linear-gradient(135deg,#12b3ac,#12b3ac)',
+        'linear-gradient(135deg,#12b3ac,#12b3ac)',
+        'linear-gradient(135deg,#050505,#374151)',
+        'linear-gradient(135deg,#12b3ac,#12b3ac)',
+        'linear-gradient(135deg,#EC4899,#12b3ac)',
     ];
     return $gradients[abs(crc32(strtolower($companyName))) % count($gradients)];
 }

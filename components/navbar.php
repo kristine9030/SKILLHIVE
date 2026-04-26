@@ -6,6 +6,17 @@
     <h1 class="topbar-title"><?php echo htmlspecialchars($pageTitle); ?></h1>
   </div>
   <div class="topbar-right">
+    <?php
+    $messagesLink = 'student/messaging';
+    if ($role === 'employer') {
+      $messagesLink = 'employer/messaging';
+    } elseif ($role === 'adviser') {
+      $messagesLink = 'adviser/messaging';
+    } elseif ($role === 'admin') {
+      $messagesLink = 'admin/messaging';
+    }
+    ?>
+
     <div class="topbar-search">
       <i class="fas fa-search"></i>
       <input type="text" placeholder="Search...">
@@ -31,7 +42,9 @@
       </div>
     </div>
 
-    <button class="topbar-btn" title="Messages"><i class="fas fa-comment-dots"></i></button>
+    <a class="topbar-btn" href="<?php echo $baseUrl; ?>/layout.php?page=<?php echo $messagesLink; ?>" title="Messages" aria-label="Messages">
+      <i class="fas fa-comment-dots"></i>
+    </a>
     
     <div class="topbar-profile-dropdown" id="topbarProfileWrap">
       <button class="topbar-user" id="topbarProfileToggle" type="button" aria-expanded="false" onclick="toggleTopbarProfile(event)">

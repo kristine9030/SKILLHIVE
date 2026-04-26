@@ -72,14 +72,14 @@ $pagedUsers = array_slice($users, $offset, $perPage);
 $totalPages = (int)ceil($totalUsers / $perPage);
 
 // Role colors
-$roleColors = ['student'=>'#06B6D4','employer'=>'#10B981','adviser'=>'#4F46E5','admin'=>'#EF4444'];
-$roleBg     = ['student'=>'rgba(6,182,212,.1)','employer'=>'rgba(16,185,129,.1)','adviser'=>'rgba(79,70,229,.1)','admin'=>'rgba(239,68,68,.1)'];
+$roleColors = ['student'=>'#12b3ac','employer'=>'#12b3ac','adviser'=>'#12b3ac','admin'=>'#12b3ac'];
+$roleBg     = ['student'=>'rgba(18,179,172,.12)','employer'=>'rgba(16,185,129,.1)','adviser'=>'rgba(18,179,172,.12)','admin'=>'rgba(239,68,68,.1)'];
 ?>
 
 <div class="page-header" style="margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
   <div>
     <h2 class="page-title" style="font-size:1.25rem;font-weight:800;color:#111;margin-bottom:4px">
-      <i class="fas fa-users" style="color:#4F46E5;margin-right:8px"></i>User Management
+      <i class="fas fa-users" style="color:#12b3ac;margin-right:8px"></i>User Management
     </h2>
     <p class="page-subtitle" style="color:#999;font-size:.85rem">Manage all platform users · <?= number_format($totalUsers) ?> total</p>
   </div>
@@ -129,7 +129,7 @@ $roleBg     = ['student'=>'rgba(6,182,212,.1)','employer'=>'rgba(16,185,129,.1)'
   <div style="overflow-x:auto">
   <table style="width:100%;border-collapse:collapse;min-width:700px">
     <thead>
-      <tr style="border-bottom:1.5px solid var(--border);background:#FAFAFA">
+      <tr style="border-bottom:1.5px solid var(--border);background:#ffffff">
         <th style="padding:12px 16px;text-align:left;font-size:.75rem;color:#999;font-weight:700;white-space:nowrap">#</th>
         <th style="padding:12px 16px;text-align:left;font-size:.75rem;color:#999;font-weight:700;white-space:nowrap">USER</th>
         <th style="padding:12px 16px;text-align:left;font-size:.75rem;color:#999;font-weight:700;white-space:nowrap">EMAIL</th>
@@ -145,13 +145,13 @@ $roleBg     = ['student'=>'rgba(6,182,212,.1)','employer'=>'rgba(16,185,129,.1)'
         $rb = $roleBg[$u['role']] ?? '#eee';
         // Status badge
         $statusLower = strtolower($u['status']);
-        $stColors=['active'=>'#10B981','pending'=>'#F59E0B','approved'=>'#10B981','rejected'=>'#EF4444','flagged'=>'#EF4444'];
-        $stBg=['active'=>'rgba(16,185,129,.1)','pending'=>'rgba(245,158,11,.1)','approved'=>'rgba(16,185,129,.1)','rejected'=>'rgba(239,68,68,.1)','flagged'=>'rgba(239,68,68,.1)'];
+        $stColors=['active'=>'#12b3ac','pending'=>'#12b3ac','approved'=>'#12b3ac','rejected'=>'#12b3ac','flagged'=>'#12b3ac'];
+        $stBg=['active'=>'rgba(16,185,129,.1)','pending'=>'rgba(18,179,172,.12)','approved'=>'rgba(16,185,129,.1)','rejected'=>'rgba(239,68,68,.1)','flagged'=>'rgba(239,68,68,.1)'];
         $sc = $stColors[$statusLower] ?? '#999';
         $sb = $stBg[$statusLower] ?? '#eee';
         $initials = strtoupper(substr($u['name'],0,1).(strpos($u['name'],' ')!==false ? substr($u['name'],strpos($u['name'],' ')+1,1) : ''));
       ?>
-      <tr style="border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='#FAFAFA'" onmouseout="this.style.background=''">
+      <tr style="border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='#ffffff'" onmouseout="this.style.background=''">
         <td style="padding:12px 16px;font-size:.8rem;color:#ccc"><?= $offset + $i + 1 ?></td>
         <td style="padding:12px 16px">
           <div style="display:flex;align-items:center;gap:10px">
@@ -177,7 +177,7 @@ $roleBg     = ['student'=>'rgba(6,182,212,.1)','employer'=>'rgba(16,185,129,.1)'
               <input type="hidden" name="user_id" value="<?= $u['uid'] ?>">
               <input type="hidden" name="user_role" value="<?= $u['role'] ?>">
               <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentUri) ?>">
-              <button type="submit" class="btn btn-ghost" style="font-size:.72rem;padding:4px 10px;color:#EF4444;border-color:#EF4444" onclick="return confirm('Delete this user permanently?')"><i class="fas fa-trash"></i></button>
+              <button type="submit" class="btn btn-ghost" style="font-size:.72rem;padding:4px 10px;color:#12b3ac;border-color:#12b3ac" onclick="return confirm('Delete this user permanently?')"><i class="fas fa-trash"></i></button>
             </form>
           </div>
         </td>
@@ -193,7 +193,7 @@ $roleBg     = ['student'=>'rgba(6,182,212,.1)','employer'=>'rgba(16,185,129,.1)'
     <?php for ($pg=1;$pg<=$totalPages;$pg++): 
       $pUrl='?'.http_build_query(['role'=>$filterRole,'status'=>$filterStatus,'q'=>$search,'p'=>$pg]);
     ?>
-    <a href="<?= htmlspecialchars($pUrl) ?>" style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:600;text-decoration:none;border:1.5px solid <?= $pg===$page_num?'#4F46E5':'var(--border)' ?>;background:<?= $pg===$page_num?'#4F46E5':'#fff' ?>;color:<?= $pg===$page_num?'#fff':'#555' ?>"><?= $pg ?></a>
+    <a href="<?= htmlspecialchars($pUrl) ?>" style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:600;text-decoration:none;border:1.5px solid <?= $pg===$page_num?'#12b3ac':'var(--border)' ?>;background:<?= $pg===$page_num?'#12b3ac':'#fff' ?>;color:<?= $pg===$page_num?'#fff':'#555' ?>"><?= $pg ?></a>
     <?php endfor; ?>
   </div>
   <?php endif; ?>

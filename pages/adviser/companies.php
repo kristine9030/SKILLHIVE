@@ -53,6 +53,10 @@ if ($adviserId > 0) {
 
 $selected = $pageData['selected'];
 $rows = $pageData['rows'];
+$moduleSettings = is_array($_SESSION['adviser_module_settings'] ?? null) ? $_SESSION['adviser_module_settings'] : [];
+$showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings)
+  ? (bool)$moduleSettings['show_companies_banner']
+  : true;
 
 if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
     header('Content-Type: text/csv; charset=UTF-8');
@@ -323,7 +327,7 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
     padding: 22px;
     border: 1px dashed var(--border);
     border-radius: 14px;
-    background: #fafafa;
+    background: #ffffff;
     color: #6b7280;
     font-size: 0.82rem;
   }
@@ -333,7 +337,7 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
     border-radius: 14px;
     border: 1px solid #fecaca;
     background: #fff1f2;
-    color: #b91c1c;
+    color: #12b3ac;
     font-size: 0.82rem;
     font-weight: 500;
   }
@@ -521,6 +525,15 @@ if (($adviserId > 0) && (($_GET['export'] ?? '') === 'csv')) {
 </style>
 
 <div class="adviser-companies-page">
+  <?php if ($showCompaniesBanner): ?>
+    <div style="background:linear-gradient(90deg, #050505 0%, #12b3ac 40%, rgba(0, 0, 0, 0.38) 100%), url('/Skillhive/assets/media/element%203.png') right center / auto 100% no-repeat;border-radius:16px;padding:28px;margin-bottom:20px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0, 0, 0, 0.44);">
+      <div style="z-index:2;flex:1;">
+        <h2 style="font-size:1.8rem;font-weight:900;margin:0 0 12px 0;line-height:1.2;color:white;">Partner Companies</h2>
+        <p style="font-size:0.95rem;margin:0;line-height:1.6;color:#e0e0e0;">Review partner company profiles, track MOA progress, and keep placement partners aligned with student internship requirements.</p>
+      </div>
+    </div>
+  <?php endif; ?>
+
   <?php if ($errorMessage !== ''): ?>
     <div class="adviser-companies-error">
       <?php echo adviser_companies_escape($errorMessage); ?>

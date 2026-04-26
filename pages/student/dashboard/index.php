@@ -188,8 +188,8 @@ $profileCompleteness = (int) round(($profileCompletedChecks / max(1, count($prof
 $profileDashArray = 220;
 $profileDashOffset = (int) round($profileDashArray * (1 - ($profileCompleteness / 100)));
 $profileScoreColor = $profileCompleteness >= 75
-  ? '#10B981'
-  : ($profileCompleteness >= 50 ? '#F59E0B' : '#EF4444');
+  ? '#12b3ac'
+  : ($profileCompleteness >= 50 ? '#12b3ac' : '#12b3ac');
 
 $recommendedStmt = $pdo->query(
   "SELECT
@@ -216,7 +216,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 ?>
 
 <!-- Welcome Banner -->
-<div style="background:linear-gradient(135deg, #0a0e27 0%, #162550 40%, #1a3a5c 70%, #0f2a45 100%);border-radius:16px;padding:32px;margin-bottom:24px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(10, 14, 39, 0.4), 0 0 1px rgba(255, 255, 255, 0.1) inset;">
+<div style="background:linear-gradient(135deg, #050505 0%, #050505 40%, #12b3ac 72%, #12b3ac 100%);border-radius:16px;padding:32px;margin-bottom:24px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(0, 0, 0, 0.46), 0 0 1px rgba(255, 255, 255, 0.1) inset;">
   <div style="z-index:2;flex:1;">
     <h2 style="font-size:1.8rem;font-weight:800;margin:0 0 12px 0;line-height:1.2;">Welcome back, <?php echo htmlspecialchars($firstName); ?>! 👋</h2>
     <p style="font-size:1rem;margin:0 0 16px 0;opacity:0.95;line-height:1.4;">You're <?php echo number_format((float)($student['internship_readiness_score'] ?? 0), 0); ?>% ready for internship opportunities. Keep improving your profile!</p>
@@ -297,9 +297,9 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
       <div class="job-feed">
       <?php
       $logoPalettes = [
-        'linear-gradient(135deg,#06B6D4,#10B981)',
-        'linear-gradient(135deg,#2563EB,#06B6D4)',
-        'linear-gradient(135deg,#22C55E,#06B6D4)',
+        'linear-gradient(135deg,#12b3ac,#12b3ac)',
+        'linear-gradient(135deg,#12b3ac,#12b3ac)',
+        'linear-gradient(135deg,#22C55E,#12b3ac)',
       ];
       ?>
       <?php if (empty($recommendedInternships)): ?>
@@ -371,8 +371,8 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
       <div class="panel-card-header"><h3>Profile Completeness</h3></div>
       <div style="display:flex;align-items:center;justify-content:center;margin-bottom:20px">
         <div style="position:relative;width:90px;height:90px">
-          <svg width="90" height="90"><circle cx="45" cy="45" r="35" stroke="#F0F0F0" stroke-width="6" fill="none"/><circle cx="45" cy="45" r="35" fill="none" stroke="#2C5AA0" stroke-width="6" stroke-linecap="round" stroke-dasharray="<?php echo (int) $profileDashArray; ?>" stroke-dashoffset="<?php echo (int) $profileDashOffset; ?>" transform="rotate(-90,45,45)"/></svg>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:800;font-size:1.1rem;background:linear-gradient(135deg, #0a0e27 0%, #162550 40%, #1a3a5c 70%, #0f2a45 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><?php echo (int) $profileCompleteness; ?>%</div>
+          <svg width="90" height="90"><circle cx="45" cy="45" r="35" stroke="#ffffff" stroke-width="6" fill="none"/><circle cx="45" cy="45" r="35" fill="none" stroke="#12b3ac" stroke-width="6" stroke-linecap="round" stroke-dasharray="<?php echo (int) $profileDashArray; ?>" stroke-dashoffset="<?php echo (int) $profileDashOffset; ?>" transform="rotate(-90,45,45)"/></svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:800;font-size:1.1rem;background:linear-gradient(135deg, #050505 0%, #050505 40%, #12b3ac 72%, #12b3ac 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><?php echo (int) $profileCompleteness; ?>%</div>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
@@ -380,7 +380,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
           <div class="mini-row">
             <span>
               <?php if (!empty($checkItem['complete'])): ?>
-                <i class="fas fa-check-circle" style="color:#10B981;margin-right:6px"></i><?php echo htmlspecialchars((string) $checkItem['label']); ?>
+                <i class="fas fa-check-circle" style="color:#12b3ac;margin-right:6px"></i><?php echo htmlspecialchars((string) $checkItem['label']); ?>
               <?php else: ?>
                 <i class="fas fa-circle" style="color:#ddd;margin-right:6px;font-size:.7rem"></i><span style="color:#999"><?php echo htmlspecialchars((string) $checkItem['label']); ?></span>
               <?php endif; ?>

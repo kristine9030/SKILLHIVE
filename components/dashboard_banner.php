@@ -9,6 +9,11 @@ $bannerGreeting = $bannerGreeting ?? 'Good afternoon';
 $bannerUserName = $bannerUserName ?? 'User';
 $bannerTitle = $bannerTitle ?? 'Keep up the pace';
 $bannerDescription = $bannerDescription ?? 'You\'re doing great! Keep pushing forward with your goals.';
+$bannerDescriptionHtml = $bannerDescriptionHtml ?? '';
+$bannerClass = trim((string)($bannerClass ?? ''));
+$bannerIsCompact = !empty($bannerIsCompact);
+$bannerShowGreeting = array_key_exists('bannerShowGreeting', get_defined_vars()) ? (bool)$bannerShowGreeting : true;
+$bannerShowMascot = array_key_exists('bannerShowMascot', get_defined_vars()) ? (bool)$bannerShowMascot : true;
 $bannerDaysText = $bannerDaysText ?? 'LAST 7 DAYS';
 $bannerStats = $bannerStats ?? [];
 
@@ -18,7 +23,7 @@ $beeMascotPath = $baseUrl . '/assets/media/Bee.png';
 
 <style>
   .dashboard-banner {
-    background: linear-gradient(135deg, #0a0e27 0%, #162550 40%, #1a3a5c 70%, #0f2a45 100%);
+    background: linear-gradient(135deg, #050505 0%, #050505 40%, #12b3ac 72%, #12b3ac 100%);
     border-radius: 16px;
     padding: 4px 16px;
     margin-bottom: 28px;
@@ -29,13 +34,39 @@ $beeMascotPath = $baseUrl . '/assets/media/Bee.png';
     position: relative;
     overflow: visible;
     color: white;
-    box-shadow: 0 12px 40px rgba(10, 14, 39, 0.4), 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24), 0 0 1px rgba(255, 255, 255, 0.1) inset;
     flex-direction: row-reverse;
     transition: box-shadow 0.3s ease;
   }
+
+  .dashboard-banner.dashboard-banner--compact {
+    padding: 12px 16px;
+    min-height: 0;
+    gap: 12px;
+  }
+
+  .dashboard-banner.dashboard-banner--compact .banner-content {
+    padding: 0;
+  }
+
+  .dashboard-banner.dashboard-banner--compact .banner-greeting {
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+
+  .dashboard-banner.dashboard-banner--compact .banner-user-name {
+    font-size: 24px;
+    margin-bottom: 2px;
+  }
+
+  .dashboard-banner.dashboard-banner--compact .banner-description {
+    font-size: 13px;
+    line-height: 1.45;
+    max-width: 100%;
+  }
   
   .dashboard-banner:hover {
-    box-shadow: 0 16px 50px rgba(10, 14, 39, 0.5), 0 0 1px rgba(255, 255, 255, 0.15) inset;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3), 0 0 1px rgba(255, 255, 255, 0.15) inset;
   }
 
   .dashboard-banner::before {
@@ -45,7 +76,7 @@ $beeMascotPath = $baseUrl . '/assets/media/Bee.png';
     right: -10%;
     width: 400px;
     height: 400px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(133, 233, 223, 0.15);
     border-radius: 50%;
     pointer-events: none;
   }
@@ -108,7 +139,7 @@ $beeMascotPath = $baseUrl . '/assets/media/Bee.png';
   .banner-emphasis {
     font-weight: 700;
     opacity: 1;
-    color: #fcd34d;
+    color: #baf4ee;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
 
@@ -202,18 +233,24 @@ $beeMascotPath = $baseUrl . '/assets/media/Bee.png';
   }
 </style>
 
-<div class="dashboard-banner">
+<div class="dashboard-banner<?php echo $bannerIsCompact ? ' dashboard-banner--compact' : ''; ?><?php echo $bannerClass !== '' ? ' ' . htmlspecialchars($bannerClass) : ''; ?>">
   <div class="banner-content">
-    <div class="banner-greeting"><?php echo htmlspecialchars($bannerGreeting); ?>, <span style="font-weight:600;"><?php echo htmlspecialchars($bannerUserName); ?></span>!</div>
+    <?php if ($bannerShowGreeting): ?>
+      <div class="banner-greeting"><?php echo htmlspecialchars($bannerGreeting); ?>, <span style="font-weight:600;"><?php echo htmlspecialchars($bannerUserName); ?></span>!</div>
+    <?php endif; ?>
     <div class="banner-user-name"><?php echo htmlspecialchars($bannerTitle); ?></div>
     <div class="banner-description">
-      Guide students through their journey, provide <span class="banner-emphasis">endorsements</span>, 
-      <span class="banner-emphasis">monitor progress</span>, and help them succeed in their 
-      <span class="banner-emphasis">internship placements</span>.
+      <?php if (trim((string)$bannerDescriptionHtml) !== ''): ?>
+        <?php echo $bannerDescriptionHtml; ?>
+      <?php else: ?>
+        <?php echo htmlspecialchars($bannerDescription); ?>
+      <?php endif; ?>
     </div>
   </div>
 
-  <div class="banner-mascot">
-    <img src="<?php echo htmlspecialchars($beeMascotPath); ?>" alt="SkillHive Bee Mascot">
-  </div>
+  <?php if ($bannerShowMascot): ?>
+    <div class="banner-mascot">
+      <img src="<?php echo htmlspecialchars($beeMascotPath); ?>" alt="SkillHive Bee Mascot">
+    </div>
+  <?php endif; ?>
 </div>

@@ -50,17 +50,17 @@ $monthly = $pdo->query("
 
 $maxMonthly = max(array_column($monthly,'cnt') ?: [1]);
 $statusPalette = [
-    'Accepted' => '#10b981',
-    'Pending' => '#f59e0b',
+    'Accepted' => '#12b3ac',
+    'Pending' => '#12b3ac',
     'Shortlisted' => '#0f766e',
-    'Interview Scheduled' => '#06b6d4',
-    'Rejected' => '#ef4444',
+    'Interview Scheduled' => '#12b3ac',
+    'Rejected' => '#12b3ac',
 ];
 $reportStats = [
-    ['label' => 'Total Applications', 'value' => (int) $totalApps, 'icon' => 'fa-paper-plane', 'accent' => '#111827', 'soft' => 'rgba(17,24,39,0.08)', 'note' => 'Across all internships and student profiles.'],
-    ['label' => 'Accepted', 'value' => (int) ($appsByStatus['Accepted'] ?? 0), 'icon' => 'fa-check-double', 'accent' => '#10b981', 'soft' => 'rgba(16,185,129,0.1)', 'note' => 'Successful placements that moved past selection.'],
-    ['label' => 'Active OJT', 'value' => (int) ($ojtStats['in_progress'] ?? 0), 'icon' => 'fa-clock', 'accent' => '#06b6d4', 'soft' => 'rgba(6,182,212,0.1)', 'note' => 'Students currently ongoing in their placements.'],
-    ['label' => 'Completed', 'value' => (int) ($ojtStats['completed'] ?? 0), 'icon' => 'fa-graduation-cap', 'accent' => '#4f46e5', 'soft' => 'rgba(79,70,229,0.1)', 'note' => 'Records marked complete in the OJT tracker.'],
+    ['label' => 'Total Applications', 'value' => (int) $totalApps, 'icon' => 'fa-paper-plane', 'accent' => '#050505', 'soft' => 'rgba(17,24,39,0.08)', 'note' => 'Across all internships and student profiles.'],
+    ['label' => 'Accepted', 'value' => (int) ($appsByStatus['Accepted'] ?? 0), 'icon' => 'fa-check-double', 'accent' => '#12b3ac', 'soft' => 'rgba(16,185,129,0.1)', 'note' => 'Successful placements that moved past selection.'],
+    ['label' => 'Active OJT', 'value' => (int) ($ojtStats['in_progress'] ?? 0), 'icon' => 'fa-clock', 'accent' => '#12b3ac', 'soft' => 'rgba(6,182,212,0.1)', 'note' => 'Students currently ongoing in their placements.'],
+    ['label' => 'Completed', 'value' => (int) ($ojtStats['completed'] ?? 0), 'icon' => 'fa-graduation-cap', 'accent' => '#12b3ac', 'soft' => 'rgba(15,103,101,0.12)', 'note' => 'Records marked complete in the OJT tracker.'],
 ];
 ?>
 

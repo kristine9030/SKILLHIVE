@@ -125,18 +125,18 @@ if (!function_exists('adviser_monitoring_progress_gradient')) {
     function adviser_monitoring_progress_gradient(string $statusLabel): string
     {
         if ($statusLabel === 'Completed') {
-            return 'linear-gradient(90deg,#1D4ED8,#2563EB)';
+            return 'linear-gradient(90deg,#12b3ac,#12b3ac)';
         }
 
         if ($statusLabel === 'On Track') {
-            return 'linear-gradient(90deg,#06B6D4,#10B981)';
+            return 'linear-gradient(90deg,#12b3ac,#12b3ac)';
         }
 
         if ($statusLabel === 'Warning') {
-            return 'linear-gradient(90deg,#F59E0B,#10B981)';
+            return 'linear-gradient(90deg,#12b3ac,#12b3ac)';
         }
 
-        return 'linear-gradient(90deg,#EF4444,#F59E0B)';
+        return 'linear-gradient(90deg,#12b3ac,#12b3ac)';
     }
 }
 

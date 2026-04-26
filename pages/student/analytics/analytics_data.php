@@ -103,32 +103,32 @@ function analytics_load_data(PDO $pdo, int $studentId): array
       'label' => 'First Application',
       'earned' => $statusCounts['Applied'] >= 1,
       'icon' => 'fas fa-medal',
-      'color' => '#F59E0B',
+      'color' => '#12b3ac',
     ],
     [
       'label' => 'Resume Pro',
       'earned' => !empty($student['resume_file']),
       'icon' => 'fas fa-medal',
-      'color' => '#F59E0B',
+      'color' => '#12b3ac',
     ],
     [
       'label' => '10 Applications',
       'earned' => $statusCounts['Applied'] >= 10,
       'icon' => 'fas fa-medal',
-      'color' => '#06B6D4',
+      'color' => '#12b3ac',
     ],
     [
       'label' => '100 OJT Hours',
       'earned' => $totalOjtHours >= 100,
       'icon' => 'fas fa-medal',
-      'color' => '#10B981',
+      'color' => '#12b3ac',
       'progress' => $totalOjtHours,
     ],
     [
       'label' => 'AI Match Master',
       'earned' => $avgCompatibility >= 75,
       'icon' => 'fas fa-medal',
-      'color' => '#10B981',
+      'color' => '#12b3ac',
     ],
   ];
 

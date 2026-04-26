@@ -115,18 +115,18 @@ include __DIR__ . '/../../components/dashboard_banner.php';
 ?>
 
 <?php if (!$isEmployerApproved): ?>
-  <div class="panel-card" style="margin-bottom:14px;border-left:4px solid #F59E0B;">
+  <div class="panel-card" style="margin-bottom:14px;border-left:4px solid #12b3ac;">
     <div style="font-size:.85rem;color:#666;">
-      <i class="fas fa-shield-halved" style="color:#F59E0B;margin-right:6px"></i>
+      <i class="fas fa-shield-halved" style="color:#12b3ac;margin-right:6px"></i>
       Your company is currently <strong><?php echo dashboard_escape($companyStatusLabel); ?></strong>. Posting, candidates, messaging, and evaluation modules unlock after admin approval.
     </div>
   </div>
 <?php endif; ?>
 
 <?php if ($dashboardLoadError !== null): ?>
-  <div class="panel-card" style="margin-bottom:14px;border-left:4px solid #F59E0B;">
+  <div class="panel-card" style="margin-bottom:14px;border-left:4px solid #12b3ac;">
     <div style="font-size:.85rem;color:#666;">
-      <i class="fas fa-triangle-exclamation" style="color:#F59E0B;margin-right:6px"></i>
+      <i class="fas fa-triangle-exclamation" style="color:#12b3ac;margin-right:6px"></i>
       <?php echo htmlspecialchars($dashboardLoadError, ENT_QUOTES, 'UTF-8'); ?>
     </div>
   </div>
@@ -134,20 +134,20 @@ include __DIR__ . '/../../components/dashboard_banner.php';
 
 <div class="stat-cards">
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(6,182,212,.1)"><i class="fas fa-briefcase" style="color:#06B6D4"></i></div>
+    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-briefcase" style="color:#12b3ac"></i></div>
     <div class="stat-card-info"><div class="stat-card-num"><?php echo (int)$stats['active_postings']; ?></div><div class="stat-card-label">Active Postings</div></div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-users" style="color:#10B981"></i></div>
+    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-users" style="color:#12b3ac"></i></div>
     <div class="stat-card-info"><div class="stat-card-num"><?php echo (int)$stats['total_applicants']; ?></div><div class="stat-card-label">Total Applicants</div></div>
     <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +<?php echo (int)$stats['week_applicants']; ?> this week</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(245,158,11,.1)"><i class="fas fa-calendar-check" style="color:#F59E0B"></i></div>
+    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-calendar-check" style="color:#12b3ac"></i></div>
     <div class="stat-card-info"><div class="stat-card-num"><?php echo (int)$stats['interviews']; ?></div><div class="stat-card-label">Interviews</div></div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-double" style="color:#10B981"></i></div>
+    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-double" style="color:#12b3ac"></i></div>
     <div class="stat-card-info"><div class="stat-card-num"><?php echo (int)$stats['hired']; ?></div><div class="stat-card-label">Hired</div></div>
   </div>
 </div>
@@ -293,7 +293,7 @@ include __DIR__ . '/../../components/dashboard_banner.php';
         <div class="mini-row"><span>Applications Received</span><span style="font-weight:700"><?php echo (int)$month['applications_received']; ?></span></div>
         <div class="mini-row"><span>Interviews Conducted</span><span style="font-weight:700"><?php echo (int)$month['interviews_conducted']; ?></span></div>
         <div class="mini-row"><span>Offers Extended</span><span style="font-weight:700"><?php echo (int)$month['offers_extended']; ?></span></div>
-        <div class="mini-row"><span>Acceptance Rate</span><span style="font-weight:700;color:#10B981"><?php echo (int)$month['acceptance_rate']; ?>%</span></div>
+        <div class="mini-row"><span>Acceptance Rate</span><span style="font-weight:700;color:#12b3ac"><?php echo (int)$month['acceptance_rate']; ?>%</span></div>
       </div>
     </div>
 
@@ -303,16 +303,16 @@ include __DIR__ . '/../../components/dashboard_banner.php';
         <?php if (!empty($upcomingInterviews)): ?>
           <?php foreach ($upcomingInterviews as $interview): ?>
             <?php
-            $dotColor = '#06B6D4';
+            $dotColor = '#12b3ac';
             $interviewStatusClass = dashboard_status_class($interview['interview_status'] ?? 'pending');
             if ($interviewStatusClass === 'status-interview') {
-              $dotColor = '#4F46E5';
+              $dotColor = '#12b3ac';
             } elseif ($interviewStatusClass === 'status-pending') {
-              $dotColor = '#F59E0B';
+              $dotColor = '#12b3ac';
             } elseif ($interviewStatusClass === 'status-accepted') {
-              $dotColor = '#10B981';
+              $dotColor = '#12b3ac';
             } elseif ($interviewStatusClass === 'status-rejected') {
-              $dotColor = '#EF4444';
+              $dotColor = '#12b3ac';
             }
             $first = (string)($interview['first_name'] ?? 'Candidate');
             $last = (string)($interview['last_name'] ?? '');
@@ -328,7 +328,7 @@ include __DIR__ . '/../../components/dashboard_banner.php';
           <?php endforeach; ?>
         <?php else: ?>
           <div class="timeline-item">
-            <div class="timeline-dot" style="background:#F59E0B"></div>
+            <div class="timeline-dot" style="background:#12b3ac"></div>
             <div class="timeline-content">
               <div style="font-weight:600;font-size:.85rem">No upcoming interviews</div>
               <div style="font-size:.75rem;color:#999">Schedule interviews from the candidates page.</div>

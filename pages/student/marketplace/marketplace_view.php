@@ -221,11 +221,11 @@ function marketplace_render(array $data): void
 .market-filter-title { font-size:.82rem; text-transform:uppercase; letter-spacing:.08em; color:#6b7280; margin-bottom:8px; font-weight:800; }
 .market-input, .market-select { width:100%; border:1px solid var(--mk-border); border-radius:10px; padding:10px 12px; font-size:.87rem; background:#fff; color:#0a0e27; font-weight:500; }
 .market-radio-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.market-radio-tile { border:1px solid var(--mk-border); background:#f9fafb; color:#6b7280; border-radius:10px; padding:10px 10px; font-size:.8rem; font-weight:700; text-align:center; cursor:pointer; transition:all .18s ease; }
+.market-radio-tile { border:1px solid var(--mk-border); background:#ffffff; color:#6b7280; border-radius:10px; padding:10px 10px; font-size:.8rem; font-weight:700; text-align:center; cursor:pointer; transition:all .18s ease; }
 .market-radio-tile.active { border-color:#162550; background:#162550; color:#ffffff; }
 .market-main-panel { min-width:0; }
 .market-hero {
-  background:linear-gradient(135deg, #0a0e27 0%, #162550 40%, #1a3a5c 70%, #0f2a45 100%);
+  background:linear-gradient(135deg, #050505 0%, #050505 40%, #12b3ac 72%, #12b3ac 100%);
   border:1px solid rgba(255, 255, 255, 0.1);
   border-radius:16px;
   padding:20px;
@@ -270,18 +270,18 @@ function marketplace_render(array $data): void
 .market-top-picks-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
 .market-top-picks-title { font-size:1.2rem; color:#0a0e27; font-weight:700; line-height:1.25; letter-spacing:.01em; }
 .market-top-picks-sub { font-size:.85rem; color:#4b5563; margin-top:3px; font-weight:500; }
-.market-top-picks-refresh { width:34px; height:34px; border-radius:999px; border:1px solid #d4dae7; background:#fff; color:#111827; cursor:pointer; }
+.market-top-picks-refresh { width:34px; height:34px; border-radius:999px; border:1px solid #d4dae7; background:#fff; color:#050505; cursor:pointer; }
 .market-picks-list { display:flex; flex-direction:column; gap:0; }
 .market-pick-item { display:grid; grid-template-columns:42px 1fr auto; gap:10px; align-items:center; padding:10px 10px; border:1px solid #e5e7ee; border-top: none; border-radius:12px; margin-bottom:8px; background:#ffffff; }
 .market-pick-item:first-child { border-top: none; }
 .market-pick-logo { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:.95rem; }
 .market-pick-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .market-pick-title { font-size:.92rem; font-weight:700; color:#0a0e27; line-height:1.2; }
-.market-pick-fit { font-size:.74rem; border-radius:999px; padding:3px 8px; background:#10b981; color:#fff; font-weight:700; white-space:nowrap; }
+.market-pick-fit { font-size:.74rem; border-radius:999px; padding:3px 8px; background:#12b3ac; color:#fff; font-weight:700; white-space:nowrap; }
 .market-pick-meta { color:#6b7280; font-size:.82rem; margin-top:2px; }
 .market-pick-hint { color:#162550; font-size:.78rem; margin-top:4px; font-weight:600; }
 .market-pick-reasons { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
-.market-pick-reason { font-size:.7rem; border:1px solid #d8dceb; background:#f9fafb; color:#6b7280; border-radius:999px; padding:3px 10px; font-weight:600; }
+.market-pick-reason { font-size:.7rem; border:1px solid #d8dceb; background:#ffffff; color:#6b7280; border-radius:999px; padding:3px 10px; font-weight:600; }
 .market-pick-actions { display:flex; align-items:center; gap:8px; }
 .market-pick-link { font-size:.75rem; text-decoration:none; color:#0a0e27; border:1px solid #d1d5db; border-radius:999px; padding:5px 12px; background:#fff; font-weight:700; }
 .market-pick-dismiss { width:26px; height:26px; border-radius:999px; border:1px solid #d5d9e2; background:#fff; color:#111; cursor:pointer; }
@@ -293,7 +293,7 @@ function marketplace_render(array $data): void
 .market-section { margin-top:14px; }
 .market-section-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
 .market-section-title { font-size:1.1rem; font-weight:800; color:#0a0e27; }
-.market-section-pill { font-size:.74rem; border-radius:999px; padding:4px 12px; border:1px solid #d1d5db; color:#6b7280; background:#f9fafb; font-weight:600; }
+.market-section-pill { font-size:.74rem; border-radius:999px; padding:4px 12px; border:1px solid #d1d5db; color:#6b7280; background:#ffffff; font-weight:600; }
 .market-toggle-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:10px 14px; border-radius:10px; border:1px solid #162550; background:#162550; color:#ffffff; font-size:.84rem; font-weight:800; text-decoration:none; box-shadow:none; }
 .market-toggle-btn:hover { filter:brightness(1.05); }
 .market-toggle-btn.off { background:#ffffff; border-color:#cfd4dc; color:#111111; box-shadow:none; }
@@ -322,7 +322,7 @@ function marketplace_render(array $data): void
 .market-results-copy { font-size:.84rem; color:#6b7280; }
 .market-detail-card { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:18px; margin-bottom:14px; }
 .market-detail-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
-.market-detail-title { font-size:1.05rem; font-weight:800; color:#111827; margin-bottom:5px; }
+.market-detail-title { font-size:1.05rem; font-weight:800; color:#050505; margin-bottom:5px; }
 .market-detail-sub { color:#6b7280; font-size:.83rem; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .market-detail-grid { display:grid; grid-template-columns:2fr 1.1fr; gap:14px; margin-top:12px; }
 .market-detail-box { border:1px solid #eef2f7; border-radius:12px; padding:12px; background:#fcfcfd; }
@@ -330,7 +330,7 @@ function marketplace_render(array $data): void
 .market-req-item { display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:.8rem; color:#374151; }
 .market-process { margin-top:8px; display:flex; flex-direction:column; gap:6px; font-size:.8rem; color:#374151; }
 .market-process-step { display:flex; gap:8px; align-items:flex-start; }
-.market-process-bullet { width:18px; height:18px; border-radius:50%; background:#111827; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:.68rem; flex-shrink:0; margin-top:1px; }
+.market-process-bullet { width:18px; height:18px; border-radius:50%; background:#050505; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:.68rem; flex-shrink:0; margin-top:1px; }
 .market-legal { display:flex; flex-direction:column; gap:8px; margin-top:10px; font-size:.79rem; color:#374151; }
 .market-legal label { display:flex; align-items:flex-start; gap:8px; }
 .market-legal input[type="checkbox"] { margin-top:2px; }
@@ -338,7 +338,7 @@ function marketplace_render(array $data): void
 .market-company-card { border:1px solid #e5e7eb; border-radius:12px; background:#fff; overflow:hidden; }
 .market-company-head { padding:14px 14px 10px; border-bottom:1px solid #f1f5f9; }
 .market-company-row { display:flex; align-items:center; gap:10px; }
-.market-company-logo { width:44px; height:44px; border-radius:10px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-weight:700; color:#111827; overflow:hidden; flex-shrink:0; }
+.market-company-logo { width:44px; height:44px; border-radius:10px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-weight:700; color:#050505; overflow:hidden; flex-shrink:0; }
 .market-company-logo img { width:100%; height:100%; object-fit:cover; }
 .market-company-body { padding:12px 14px 14px; color:#4b5563; font-size:.82rem; line-height:1.65; }
 .market-company-foot { border-top:1px solid #f1f5f9; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -347,7 +347,7 @@ function marketplace_render(array $data): void
 .market-modal { width:860px; max-width:96vw; max-height:92vh; background:#fff; border-radius:18px; overflow:hidden; box-shadow:0 30px 70px rgba(2,6,23,.35); display:flex; flex-direction:column; }
 .market-detail-overlay .market-modal { width:980px; }
 .market-modal-head { padding:14px 18px; border-bottom:1px solid #eef2f7; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
-.market-modal-title { font-size:1rem; font-weight:800; color:#111827; }
+.market-modal-title { font-size:1rem; font-weight:800; color:#050505; }
 .market-modal-sub { font-size:.76rem; color:#64748b; margin-top:2px; }
 .market-modal-body { padding:14px 18px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; }
 .market-modal-close { width:32px; height:32px; border:none; border-radius:999px; background:#f1f5f9; color:#334155; cursor:pointer; }
@@ -367,13 +367,13 @@ function marketplace_render(array $data): void
 .market-success-title { font-size:2rem; font-weight:800; color:#0f172a; }
 .market-success-sub { margin-top:8px; color:#64748b; font-size:.92rem; line-height:1.5; }
 .market-success-box { margin:0 24px 16px; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }
-.market-success-box-head { padding:12px 14px; background:#f8fafc; font-weight:700; color:#0f172a; }
+.market-success-box-head { padding:12px 14px; background:#ffffff; font-weight:700; color:#0f172a; }
 .market-success-box-body { padding:14px; }
 .market-success-actions { padding:0 24px 24px; display:flex; flex-direction:column; gap:10px; }
 .market-source-note { margin:6px 0 2px; font-size:.77rem; color:#475569; display:flex; align-items:center; gap:6px; }
 .market-pagination { display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-top:12px; }
 .market-pagination-copy { font-size:.76rem; color:#64748b; margin-right:2px; }
-.market-page-btn { text-decoration:none; border:1px solid #d1d5db; border-radius:10px; padding:6px 10px; font-size:.76rem; font-weight:700; color:#111827; background:#fff; }
+.market-page-btn { text-decoration:none; border:1px solid #d1d5db; border-radius:10px; padding:6px 10px; font-size:.76rem; font-weight:700; color:#050505; background:#fff; }
 .market-page-btn.disabled { opacity:.45; pointer-events:none; }
 .market-shell .btn.btn-primary { background:#111111 !important; border-color:#111111 !important; color:#ffffff !important; }
 .market-shell .btn.btn-primary:hover { background:#000000 !important; border-color:#000000 !important; }
@@ -522,7 +522,7 @@ function marketplace_render(array $data): void
                   $pickSetup = trim((string) ($pick['work_setup'] ?? 'On-site'));
                   $pickScore = $compatibilityScore($pick);
                   $pickDetailUrl = marketplace_detail_url($baseUrl, $currentFilters, (int) ($pick['internship_id'] ?? 0));
-                  $pickAccentPalette = ['#10b981', '#38bdf8', '#f59e0b', '#a78bfa', '#14b8a6', '#f97316'];
+                  $pickAccentPalette = ['#12b3ac', '#38bdf8', '#12b3ac', '#a78bfa', '#14b8a6', '#f97316'];
                   $pickAccent = $pickAccentPalette[abs(crc32(strtolower($pickCompany))) % count($pickAccentPalette)];
                   $pickSkills = array_values(array_filter(array_map('trim', explode(',', (string) ($pick['required_skills'] ?? '')))));
                   $pickRequiredCount = count($pickSkills);
@@ -677,9 +677,9 @@ function marketplace_render(array $data): void
       <div style="font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:6px">About the Job</div>
       <p style="font-size:.84rem;color:#475569;line-height:1.7;margin:0"><?php echo nl2br(marketplace_e((string) $detailListing['description'])); ?></p>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;color:#64748b;font-size:.79rem">
-        <span>Industry: <strong style="color:#111827"><?php echo marketplace_e((string) $detailListing['industry']); ?></strong></span>
-        <span>Allowance: <strong style="color:#111827">P<?php echo number_format((float) ($detailListing['allowance'] ?? 0), 0); ?>/mo</strong></span>
-        <span>Open Slots: <strong style="color:#111827"><?php echo (int) $detailListing['slots_available']; ?></strong></span>
+        <span>Industry: <strong style="color:#050505"><?php echo marketplace_e((string) $detailListing['industry']); ?></strong></span>
+        <span>Allowance: <strong style="color:#050505">P<?php echo number_format((float) ($detailListing['allowance'] ?? 0), 0); ?>/mo</strong></span>
+        <span>Open Slots: <strong style="color:#050505"><?php echo (int) $detailListing['slots_available']; ?></strong></span>
       </div>
     </div>
 
@@ -688,7 +688,7 @@ function marketplace_render(array $data): void
         <div style="font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:6px">Requirements</div>
         <div style="font-size:.78rem;color:#64748b;">
           <?php if ($detailCompatibility !== null): ?>
-            You match <strong style="color:#111827"><?php echo marketplace_e((string) $detailMatchCount); ?>/<?php echo marketplace_e((string) $detailRequiredCount); ?></strong> required skills (<?php echo marketplace_e((string) $detailCompatibility); ?>%).
+            You match <strong style="color:#050505"><?php echo marketplace_e((string) $detailMatchCount); ?>/<?php echo marketplace_e((string) $detailRequiredCount); ?></strong> required skills (<?php echo marketplace_e((string) $detailCompatibility); ?>%).
           <?php else: ?>
             No strict skill requirements were set by the company.
           <?php endif; ?>
@@ -705,10 +705,10 @@ function marketplace_render(array $data): void
                 $reqMatched   = isset($studentSkillNames[strtolower($reqSkill)]);
               ?>
               <div class="market-req-item">
-                <span><?php echo marketplace_e($reqSkill); ?> <?php if ($reqMandatory): ?><span style="color:#EF4444">(Required)</span><?php endif; ?></span>
+                <span><?php echo marketplace_e($reqSkill); ?> <?php if ($reqMandatory): ?><span style="color:#12b3ac">(Required)</span><?php endif; ?></span>
                 <span style="display:flex;gap:6px;align-items:center;white-space:nowrap">
                   <span style="font-size:.7rem;padding:2px 8px;border-radius:50px;background:#f1f5f9;color:#475569"><?php echo marketplace_e($reqLevel); ?></span>
-                  <span style="font-size:.7rem;padding:2px 8px;border-radius:50px;<?php echo $reqMatched ? 'background:rgba(16,185,129,.1);color:#10B981' : 'background:rgba(148,163,184,.15);color:#64748B'; ?>"><?php echo $reqMatched ? 'You have this' : 'Not in profile'; ?></span>
+                  <span style="font-size:.7rem;padding:2px 8px;border-radius:50px;<?php echo $reqMatched ? 'background:rgba(16,185,129,.1);color:#12b3ac' : 'background:rgba(148,163,184,.15);color:#64748B'; ?>"><?php echo $reqMatched ? 'You have this' : 'Not in profile'; ?></span>
                 </span>
               </div>
             <?php endforeach; ?>
@@ -729,7 +729,7 @@ function marketplace_render(array $data): void
     <div class="market-detail-box" style="margin-top:12px">
       <div style="font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:6px">Internship Application</div>
       <?php if ($detailApplied): ?>
-        <div style="font-size:.83rem;color:#10B981;margin-bottom:8px">You already applied for this internship.</div>
+        <div style="font-size:.83rem;color:#12b3ac;margin-bottom:8px">You already applied for this internship.</div>
         <a class="btn btn-ghost btn-sm" href="<?php echo marketplace_e($baseUrl); ?>/layout.php?page=student/applications">Go to Applications</a>
       <?php else: ?>
         <div style="font-size:.8rem;color:#64748b;margin-bottom:10px">Open the complete application modal to review university requirements and submit your internship application.</div>
@@ -759,14 +759,14 @@ function marketplace_render(array $data): void
               <?php endif; ?>
             </div>
             <div style="min-width:0;flex:1">
-              <div style="font-weight:700;font-size:.94rem;color:#111827"><?php echo marketplace_e($detailCompany); ?></div>
+              <div style="font-weight:700;font-size:.94rem;color:#050505"><?php echo marketplace_e($detailCompany); ?></div>
               <div style="font-size:.75rem;color:#6b7280;margin-top:2px"><?php echo marketplace_e((string) $detailListing['industry']); ?><?php echo $detailVerification !== '' ? ' · ' . marketplace_e($detailVerification) : ''; ?></div>
             </div>
           </div>
         </div>
         <div class="market-company-body">
           <?php if ($detailCompanyAddress !== ''): ?>
-            <div style="margin-bottom:6px"><strong style="color:#111827">Address:</strong> <?php echo marketplace_e($detailCompanyAddress); ?></div>
+            <div style="margin-bottom:6px"><strong style="color:#050505">Address:</strong> <?php echo marketplace_e($detailCompanyAddress); ?></div>
           <?php endif; ?>
           <div>This employer posted this opportunity in SkillHive and will review your submitted profile, resume, and cover letter based on the listed requirements.</div>
         </div>

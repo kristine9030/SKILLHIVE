@@ -81,11 +81,11 @@ if (!function_exists('adviser_evaluation_avatar_gradient')) {
     function adviser_evaluation_avatar_gradient(int $index): string
     {
         $palette = [
-            'linear-gradient(135deg,#4f46e5 0%,#3b82f6 100%)',
+            'linear-gradient(135deg,#12b3ac 0%,#12b3ac 100%)',
             'linear-gradient(135deg,#f97316 0%,#fb7185 100%)',
-            'linear-gradient(135deg,#14b8a6 0%,#10b981 100%)',
-            'linear-gradient(135deg,#7c3aed 0%,#9333ea 100%)',
-            'linear-gradient(135deg,#ef4444 0%,#f97316 100%)',
+            'linear-gradient(135deg,#14b8a6 0%,#12b3ac 100%)',
+            'linear-gradient(135deg,#12b3ac 0%,#12b3ac 100%)',
+            'linear-gradient(135deg,#12b3ac 0%,#f97316 100%)',
         ];
 
         return $palette[$index % count($palette)];

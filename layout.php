@@ -241,6 +241,34 @@ if (!$pageTitle) $pageTitle = 'Dashboard';
 <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileSidebar()"></div>
 
 <script>
+var SIDEBAR_COLLAPSED_KEY = 'skillhiveSidebarCollapsed';
+
+function applySidebarState() {
+    var sidebar = document.querySelector('.sidebar');
+    var overlay = document.getElementById('mobileOverlay');
+    var isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+    if (!sidebar) {
+        return;
+    }
+
+    if (isMobile) {
+        sidebar.classList.remove('collapsed');
+        if (overlay) {
+            overlay.classList.toggle('active', sidebar.classList.contains('open'));
+        }
+        return;
+    }
+
+    sidebar.classList.remove('open');
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
+
+    var savedCollapsed = window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1';
+    sidebar.classList.toggle('collapsed', savedCollapsed);
+}
+
 function toggleSidebar() {
     var sidebar = document.querySelector('.sidebar');
     var overlay = document.getElementById('mobileOverlay');
@@ -257,7 +285,8 @@ function toggleSidebar() {
         return;
     }
 
-    sidebar.classList.toggle('collapsed');
+    var isCollapsed = sidebar.classList.toggle('collapsed');
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, isCollapsed ? '1' : '0');
 }
 
 function closeMobileSidebar() {
@@ -511,9 +540,6 @@ document.addEventListener('keydown', function (event) {
 });
 
 window.addEventListener('resize', function () {
-    if (!window.matchMedia('(max-width: 768px)').matches) {
-        closeMobileSidebar();
-    }
     closeTopbarProfile();
     closeTopbarNotifications();
 });
@@ -549,6 +575,7 @@ if (topbarMarkAllButton) {
 
 refreshTopbarUnreadCount();
 loadTopbarNotifications();
+applySidebarState();
 window.setInterval(refreshTopbarUnreadCount, 15000);
 
 // Auto-dismiss flash toast

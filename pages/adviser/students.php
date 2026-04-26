@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
   .adv-company { margin:0; font-size:.96rem; font-weight:700; color:var(--text); }
   .adv-hours { font-size:.98rem; font-weight:700; color:var(--text); }
   .adv-req { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .adv-req-count { font-size:.94rem; font-weight:700; color:#ef4444; }
+  .adv-req-count { font-size:.94rem; font-weight:700; color:#12b3ac; }
   .adv-req-count.is-success { color:#16a34a; }
   .adv-req-link { padding:0; border:0; background:transparent; color:#dc2626; font-size:.86rem; font-weight:700; text-decoration:underline; cursor:pointer; }
   .adv-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -147,23 +147,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
   .adv-modal-overlay.open { display:flex; }
   .adv-add-modal { width:min(520px,100%); background:#fff; border-radius:24px; box-shadow:0 24px 70px rgba(15,23,42,.26); padding:26px 28px; border:1px solid rgba(229,231,235,.9); }
   .adv-add-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:18px; }
-  .adv-add-title { margin:0; font-size:1rem; font-weight:800; color:#111827; }
+  .adv-add-title { margin:0; font-size:1rem; font-weight:800; color:#050505; }
   .adv-add-close { width:36px; height:36px; border:0; background:transparent; color:#a1a1aa; font-size:1.55rem; line-height:1; cursor:pointer; }
-  .adv-add-error { margin-bottom:14px; padding:12px 14px; border-radius:14px; border:1px solid #fecaca; background:#fff1f2; color:#b91c1c; font-size:.82rem; }
+  .adv-add-error { margin-bottom:14px; padding:12px 14px; border-radius:14px; border:1px solid #fecaca; background:#fff1f2; color:#12b3ac; font-size:.82rem; }
   .adv-add-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 16px; }
   .adv-add-field { display:flex; flex-direction:column; gap:8px; }
   .adv-add-field.full { grid-column:1 / -1; }
   .adv-add-label { font-size:.82rem; font-weight:700; color:#27272a; }
-  .adv-add-input, .adv-add-select { width:100%; height:42px; border:1px solid #e5e7eb; border-radius:14px; background:#fff; padding:0 14px; font-size:.91rem; color:#111827; outline:0; }
-  .adv-add-input[readonly] { background:#f9fafb; color:#4b5563; cursor:default; }
+  .adv-add-input, .adv-add-select { width:100%; height:42px; border:1px solid #e5e7eb; border-radius:14px; background:#fff; padding:0 14px; font-size:.91rem; color:#050505; outline:0; }
+  .adv-add-input[readonly] { background:#ffffff; color:#4b5563; cursor:default; }
   .adv-add-input::placeholder { color:#a1a1aa; }
-  .adv-add-input:focus, .adv-add-select:focus { border-color:#111827; box-shadow:0 0 0 3px rgba(17,24,39,.05); }
+  .adv-add-input:focus, .adv-add-select:focus { border-color:#050505; box-shadow:0 0 0 3px rgba(17,24,39,.05); }
   .adv-add-help { min-height:16px; font-size:.74rem; color:#dc2626; }
   .adv-add-actions { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:18px; }
   .adv-add-modal.is-wide { width:min(680px,100%); }
-  .adv-bulk-note { margin-top:10px; padding:10px 12px; border-radius:12px; background:#f8fafc; border:1px solid #e2e8f0; color:#334155; font-size:.8rem; line-height:1.5; }
-  .adv-bulk-summary { margin-bottom:12px; padding:12px 14px; border-radius:14px; border:1px solid #bfdbfe; background:#eff6ff; color:#1e3a8a; font-size:.82rem; }
-  .adv-bulk-summary strong { color:#1d4ed8; }
+  .adv-bulk-note { margin-top:10px; padding:10px 12px; border-radius:12px; background:#ffffff; border:1px solid #e2e8f0; color:#334155; font-size:.8rem; line-height:1.5; }
+  .adv-bulk-summary { margin-bottom:12px; padding:12px 14px; border-radius:14px; border:1px solid #bfdbfe; background:#eff6ff; color:#12b3ac; font-size:.82rem; }
+  .adv-bulk-summary strong { color:#12b3ac; }
   .adv-bulk-list { margin:10px 0 0; padding-left:18px; max-height:170px; overflow:auto; color:#7f1d1d; font-size:.79rem; line-height:1.45; }
   .adv-bulk-list.is-warning { color:#92400e; }
   @media (max-width:640px) { .adv-search, .adv-select, .adv-btn { width:100%; max-width:none; } }
@@ -172,7 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
 
 <div class="adv-students">
   <!-- Adviser Students Banner -->
-  <div style="background:linear-gradient(90deg, #0d1b2e 0%, #1a2f4a 40%, rgba(13, 27, 46, 0.3) 100%), url('/Skillhive/assets/media/element%203.png') right center / auto 100% no-repeat;border-radius:16px;padding:28px;margin-bottom:20px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(13, 27, 46, 0.4);">
+  <div style="background:linear-gradient(90deg, #050505 0%, #12b3ac 40%, rgba(0, 0, 0, 0.38) 100%), url('/Skillhive/assets/media/element%203.png') right center / auto 100% no-repeat;border-radius:16px;padding:28px;margin-bottom:20px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0, 0, 0, 0.44);">
     <div style="z-index:2;flex:1;">
       <h2 style="font-size:1.8rem;font-weight:900;margin:0 0 12px 0;line-height:1.2;color:white;">Empower Your Students</h2>
       <p style="font-size:0.95rem;margin:0;line-height:1.6;color:#e0e0e0;">Guide students through their journey, provide endorsements, monitor progress, and help them succeed in their internship placements.</p>
@@ -430,7 +430,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
       </div>
       <div class="adv-bulk-note" style="margin-top:8px;">
         Need a sample file?
-        <a href="<?php echo $baseUrl; ?>/assets/templates/adviser_students_bulk_template.csv" download style="font-weight:700;color:#1d4ed8;text-decoration:underline;">Download CSV template</a>
+        <a href="<?php echo $baseUrl; ?>/assets/templates/adviser_students_bulk_template.csv" download style="font-weight:700;color:#12b3ac;text-decoration:underline;">Download CSV template</a>
       </div>
 
       <div class="adv-add-actions">
@@ -445,7 +445,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
   <div style="background:#fff;width:720px;max-width:100%;border-radius:22px;box-shadow:0 20px 40px rgba(0,0,0,.2);padding:24px;max-height:90vh;overflow:auto;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:16px;">
       <div>
-        <h2 id="requirementsTitle" style="font-size:1.05rem;font-weight:700;margin:0;color:#111827;">Student - Local OJT Requirements Checklist</h2>
+        <h2 id="requirementsTitle" style="font-size:1.05rem;font-weight:700;margin:0;color:#050505;">Student - Local OJT Requirements Checklist</h2>
         <p id="requirementsSubtitle" style="font-size:.82rem;color:#6b7280;margin:4px 0 0;">Program - Company</p>
       </div>
       <button type="button" onclick="closeRequirementsModal()" style="width:38px;height:38px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;color:#9ca3af;font-size:1.2rem;cursor:pointer;line-height:1;">&times;</button>
@@ -453,7 +453,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
 
     <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px;">
       <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:14px;padding:14px;text-align:center;">
-        <p id="requirementsSubmitted" style="font-size:1.5rem;font-weight:700;color:#4f46e5;margin:0;">0</p>
+        <p id="requirementsSubmitted" style="font-size:1.5rem;font-weight:700;color:#12b3ac;margin:0;">0</p>
         <p style="font-size:.75rem;color:#6b7280;margin:4px 0 0;">Submitted</p>
       </div>
       <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:14px;text-align:center;">
@@ -467,7 +467,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
     </div>
 
     <div style="width:100%;background:#e5e7eb;height:8px;border-radius:999px;margin-bottom:20px;overflow:hidden;">
-      <div id="requirementsProgressBar" style="height:8px;border-radius:999px;background:linear-gradient(90deg,#ef4444,#22c55e);width:0;"></div>
+      <div id="requirementsProgressBar" style="height:8px;border-radius:999px;background:linear-gradient(90deg,#12b3ac,#22c55e);width:0;"></div>
     </div>
 
     <div id="requirementsChecklist" style="display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto;padding-right:4px;"></div>
@@ -630,7 +630,7 @@ function renderRequirementsChecklist(phases) {
             var canToggleItem = item.can_toggle !== false;
             var boxBorder = isSubmitted ? '#bbf7d0' : '#e5e7eb';
             var boxBg = isSubmitted ? '#f0fdf4' : '#fff';
-            var statusColor = isSubmitted ? '#16a34a' : '#ef4444';
+            var statusColor = isSubmitted ? '#16a34a' : '#12b3ac';
             var statusText = item.status || (isSubmitted ? 'Submitted' : 'Pending');
             var dateText = item.date_label ? item.date_label : statusText;
             var requirementId = Number(item.requirement_id || 0);
@@ -639,10 +639,10 @@ function renderRequirementsChecklist(phases) {
             html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid ' + boxBorder + ';background:' + boxBg + ';border-radius:14px;padding:12px 14px;">';
             html += '<div style="display:flex;align-items:center;gap:10px;">';
             html += '<input type="checkbox" class="js-requirement-checkbox" data-requirement-id="' + requirementId + '" data-requirement-key="' + escapeHtml(requirementKey) + '" ' + (isSubmitted ? 'checked ' : '') + (canToggleItem ? '' : 'disabled ') + 'style="width:18px;height:18px;' + (canToggleItem ? 'cursor:pointer;' : 'cursor:default;') + (isSubmitted ? 'accent-color:#22c55e;' : '') + '">';
-            html += '<p style="font-size:.85rem;margin:0;color:#111827;">' + escapeHtml(item.name || 'Requirement') + '</p>';
+            html += '<p style="font-size:.85rem;margin:0;color:#050505;">' + escapeHtml(item.name || 'Requirement') + '</p>';
             html += '</div>';
             html += '<div style="display:flex;align-items:center;gap:8px;font-size:.72rem;flex-wrap:wrap;justify-content:flex-end;">';
-            html += '<span style="background:#e0e7ff;color:#4f46e5;padding:4px 8px;border-radius:999px;font-weight:700;">' + escapeHtml(item.phase || phaseName) + '</span>';
+            html += '<span style="background:#e0e7ff;color:#12b3ac;padding:4px 8px;border-radius:999px;font-weight:700;">' + escapeHtml(item.phase || phaseName) + '</span>';
             html += '<span style="color:' + statusColor + ';font-weight:600;">' + escapeHtml(dateText) + '</span>';
             html += '</div>';
             html += '</div>';
@@ -789,13 +789,13 @@ function setRequirementsLoadingState() {
 function setRequirementsErrorState() {
     var container = document.getElementById('requirementsChecklist');
     if (!container) return;
-    container.innerHTML = '<div style="border:1px solid #fecaca;background:#fff1f2;border-radius:14px;padding:14px;color:#b91c1c;font-size:.82rem;">Unable to load requirements right now.</div>';
+    container.innerHTML = '<div style="border:1px solid #fecaca;background:#fff1f2;border-radius:14px;padding:14px;color:#12b3ac;font-size:.82rem;">Unable to load requirements right now.</div>';
 }
 
 function setRequirementsErrorStateWithMessage(message) {
     var container = document.getElementById('requirementsChecklist');
     if (!container) return;
-    container.innerHTML = '<div style="border:1px solid #fecaca;background:#fff1f2;border-radius:14px;padding:14px;color:#b91c1c;font-size:.82rem;">' + escapeHtml(message || 'Unable to load requirements right now.') + '</div>';
+    container.innerHTML = '<div style="border:1px solid #fecaca;background:#fff1f2;border-radius:14px;padding:14px;color:#12b3ac;font-size:.82rem;">' + escapeHtml(message || 'Unable to load requirements right now.') + '</div>';
 }
 
 function openRequirementsModal(button) {

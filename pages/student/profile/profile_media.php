@@ -96,15 +96,15 @@ function profile_handle_media(PDO $pdo, int $userId, array &$profileErrors, stri
         $gradient = trim((string) ($_POST['cover_gradient'] ?? ''));
         $allowedGradients = [
             'linear-gradient(135deg,#FDE047 0%,#38BDF8 100%)',
-            'linear-gradient(135deg,#1D4ED8 0%,#22D3EE 100%)',
+            'linear-gradient(135deg,#12b3ac 0%,#22D3EE 100%)',
             'linear-gradient(135deg,#059669 0%,#34D399 100%)',
-            'linear-gradient(135deg,#EF4444 0%,#F59E0B 100%)',
-            'linear-gradient(135deg,#4338CA 0%,#6366F1 100%)',
+            'linear-gradient(135deg,#12b3ac 0%,#12b3ac 100%)',
+            'linear-gradient(135deg,#4338CA 0%,#2a8b8d 100%)',
             'linear-gradient(135deg,#0EA5E9 0%,#38BDF8 100%)',
             'linear-gradient(135deg,#A21CAF 0%,#C084FC 100%)',
-            'linear-gradient(135deg,#9333EA 0%,#3B82F6 100%)',
+            'linear-gradient(135deg,#12b3ac 0%,#12b3ac 100%)',
             'linear-gradient(135deg,#16A34A 0%,#86EFAC 100%)',
-            'linear-gradient(135deg,#111827 0%,#9CA3AF 100%)',
+            'linear-gradient(135deg,#050505 0%,#9CA3AF 100%)',
         ];
 
         if ($gradient !== '' && !array_key_exists('cover_photo', $updates)) {

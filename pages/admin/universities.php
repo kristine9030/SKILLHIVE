@@ -16,18 +16,18 @@ $ojtDomains = $pdo->query("SELECT SUBSTRING_INDEX(s.email, '@', -1) AS domain, C
     ->fetchAll(PDO::FETCH_KEY_PAIR);
 
 $seedThemes = [
-    'batstateu' => ['name' => 'Batangas State University', 'abbr' => 'BatStateU', 'color' => '#D10000', 'gradA' => '#B91C1C', 'gradB' => '#EF4444', 'gradC' => '#FCA5A5', 'region' => 'Region IV-A (CALABARZON)', 'domains' => ['g.batstate-u.edu.ph', 'batstateu.edu.ph']],
-    'pup' => ['name' => 'Polytechnic University of the Philippines', 'abbr' => 'PUP', 'color' => '#1D3A8A', 'gradA' => '#1E3A8A', 'gradB' => '#3B82F6', 'gradC' => '#93C5FD', 'region' => 'NCR', 'domains' => ['pup.edu.ph']],
+    'batstateu' => ['name' => 'Batangas State University', 'abbr' => 'BatStateU', 'color' => '#D10000', 'gradA' => '#12b3ac', 'gradB' => '#12b3ac', 'gradC' => '#FCA5A5', 'region' => 'Region IV-A (CALABARZON)', 'domains' => ['g.batstate-u.edu.ph', 'batstateu.edu.ph']],
+    'pup' => ['name' => 'Polytechnic University of the Philippines', 'abbr' => 'PUP', 'color' => '#12b3ac', 'gradA' => '#12b3ac', 'gradB' => '#12b3ac', 'gradC' => '#9ee7e1', 'region' => 'NCR', 'domains' => ['pup.edu.ph']],
     'uplb' => ['name' => 'University of the Philippines Los Banos', 'abbr' => 'UPLB', 'color' => '#15803D', 'gradA' => '#14532D', 'gradB' => '#22C55E', 'gradC' => '#86EFAC', 'region' => 'Region IV-A (CALABARZON)', 'domains' => ['uplb.edu.ph']],
     'tip' => ['name' => 'Technological Institute of the Philippines', 'abbr' => 'TIP', 'color' => '#7C2D12', 'gradA' => '#7C2D12', 'gradB' => '#EA580C', 'gradC' => '#FDBA74', 'region' => 'NCR', 'domains' => ['tip.edu.ph']],
-    'dlsu' => ['name' => 'De La Salle University', 'abbr' => 'DLSU', 'color' => '#065F46', 'gradA' => '#064E3B', 'gradB' => '#10B981', 'gradC' => '#6EE7B7', 'region' => 'NCR', 'domains' => ['dlsu.edu.ph']],
-    'ateneo' => ['name' => 'Ateneo de Manila University', 'abbr' => 'ADMU', 'color' => '#1E40AF', 'gradA' => '#1E3A8A', 'gradB' => '#3B82F6', 'gradC' => '#BFDBFE', 'region' => 'NCR', 'domains' => ['admu.edu.ph']],
-    'ust' => ['name' => 'University of Santo Tomas', 'abbr' => 'UST', 'color' => '#B45309', 'gradA' => '#92400E', 'gradB' => '#F59E0B', 'gradC' => '#FDE68A', 'region' => 'NCR', 'domains' => ['ust.edu.ph']],
+    'dlsu' => ['name' => 'De La Salle University', 'abbr' => 'DLSU', 'color' => '#065F46', 'gradA' => '#064E3B', 'gradB' => '#12b3ac', 'gradC' => '#6EE7B7', 'region' => 'NCR', 'domains' => ['dlsu.edu.ph']],
+    'ateneo' => ['name' => 'Ateneo de Manila University', 'abbr' => 'ADMU', 'color' => '#12b3ac', 'gradA' => '#12b3ac', 'gradB' => '#12b3ac', 'gradC' => '#bfe7e4', 'region' => 'NCR', 'domains' => ['admu.edu.ph']],
+    'ust' => ['name' => 'University of Santo Tomas', 'abbr' => 'UST', 'color' => '#B45309', 'gradA' => '#92400E', 'gradB' => '#12b3ac', 'gradC' => '#FDE68A', 'region' => 'NCR', 'domains' => ['ust.edu.ph']],
     'mapua' => ['name' => 'Mapua University', 'abbr' => 'Mapua', 'color' => '#9F1239', 'gradA' => '#881337', 'gradB' => '#F43F5E', 'gradC' => '#FDA4AF', 'region' => 'NCR', 'domains' => ['mapua.edu.ph']],
     'feu' => ['name' => 'Far Eastern University', 'abbr' => 'FEU', 'color' => '#166534', 'gradA' => '#14532D', 'gradB' => '#16A34A', 'gradC' => '#BBF7D0', 'region' => 'NCR', 'domains' => ['feu.edu.ph']],
-    'neu' => ['name' => 'New Era University', 'abbr' => 'NEU', 'color' => '#1D4ED8', 'gradA' => '#1E3A8A', 'gradB' => '#2563EB', 'gradC' => '#BFDBFE', 'region' => 'NCR', 'domains' => ['neu.edu.ph']],
+    'neu' => ['name' => 'New Era University', 'abbr' => 'NEU', 'color' => '#12b3ac', 'gradA' => '#12b3ac', 'gradB' => '#12b3ac', 'gradC' => '#bfe7e4', 'region' => 'NCR', 'domains' => ['neu.edu.ph']],
     'bulsu' => ['name' => 'Bulacan State University', 'abbr' => 'BulSU', 'color' => '#0369A1', 'gradA' => '#0C4A6E', 'gradB' => '#0284C7', 'gradC' => '#BAE6FD', 'region' => 'Region III', 'domains' => ['bulsu.edu.ph']],
-    'pnu' => ['name' => 'Philippine Normal University', 'abbr' => 'PNU', 'color' => '#6B21A8', 'gradA' => '#581C87', 'gradB' => '#9333EA', 'gradC' => '#E9D5FF', 'region' => 'NCR', 'domains' => ['pnu.edu.ph']],
+    'pnu' => ['name' => 'Philippine Normal University', 'abbr' => 'PNU', 'color' => '#6B21A8', 'gradA' => '#581C87', 'gradB' => '#12b3ac', 'gradC' => '#E9D5FF', 'region' => 'NCR', 'domains' => ['pnu.edu.ph']],
 ];
 
 $seedUniversities = [];
@@ -83,7 +83,7 @@ sort($regions);
   </section>
 
   <section class="admin-stat-grid">
-    <article class="admin-stat-card" style="--admin-accent:#111827;--admin-accent-soft:rgba(17,24,39,0.08)">
+    <article class="admin-stat-card" style="--admin-accent:#050505;--admin-accent-soft:rgba(17,24,39,0.08)">
       <div class="admin-stat-top">
         <div class="admin-stat-label">Tracked Universities</div>
         <div class="admin-stat-icon"><i class="fas fa-university"></i></div>
@@ -91,7 +91,7 @@ sort($regions);
       <div class="admin-stat-value"><?= number_format(count($seedUniversities)) ?></div>
       <div class="admin-stat-note">Preset registry modeled from the reference design, with live campus counts layered in.</div>
     </article>
-    <article class="admin-stat-card" style="--admin-accent:#06b6d4;--admin-accent-soft:rgba(6,182,212,0.1)">
+    <article class="admin-stat-card" style="--admin-accent:#12b3ac;--admin-accent-soft:rgba(6,182,212,0.1)">
       <div class="admin-stat-top">
         <div class="admin-stat-label">Linked Students</div>
         <div class="admin-stat-icon"><i class="fas fa-user-graduate"></i></div>
@@ -99,7 +99,7 @@ sort($regions);
       <div class="admin-stat-value"><?= number_format($totalStudents) ?></div>
       <div class="admin-stat-note">Students grouped by university email domains currently stored in the system.</div>
     </article>
-    <article class="admin-stat-card" style="--admin-accent:#4f46e5;--admin-accent-soft:rgba(79,70,229,0.1)">
+    <article class="admin-stat-card" style="--admin-accent:#12b3ac;--admin-accent-soft:rgba(15,103,101,0.12)">
       <div class="admin-stat-top">
         <div class="admin-stat-label">Linked Advisers</div>
         <div class="admin-stat-icon"><i class="fas fa-chalkboard-user"></i></div>
@@ -107,7 +107,7 @@ sort($regions);
       <div class="admin-stat-value"><?= number_format($totalAdvisers) ?></div>
       <div class="admin-stat-note">Advisers are inferred from the existing internship adviser table domains.</div>
     </article>
-    <article class="admin-stat-card" style="--admin-accent:#10b981;--admin-accent-soft:rgba(16,185,129,0.1)">
+    <article class="admin-stat-card" style="--admin-accent:#12b3ac;--admin-accent-soft:rgba(16,185,129,0.1)">
       <div class="admin-stat-top">
         <div class="admin-stat-label">Active OJT</div>
         <div class="admin-stat-icon"><i class="fas fa-briefcase"></i></div>
@@ -177,12 +177,12 @@ sort($regions);
           <input class="form-input" id="univModalColorHex" value="#D10000" placeholder="#D10000">
         </div>
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" onclick="setUniversityColor('#D10000')" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#B91C1C,#EF4444);border:2px solid #fff;box-shadow:0 0 0 2px #D10000;cursor:pointer" title="BatStateU Red"></button>
-          <button type="button" onclick="setUniversityColor('#1D3A8A')" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1E3A8A,#3B82F6);border:2px solid #fff;box-shadow:0 0 0 2px #1D3A8A;cursor:pointer" title="PUP Blue"></button>
+          <button type="button" onclick="setUniversityColor('#D10000')" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#12b3ac,#12b3ac);border:2px solid #fff;box-shadow:0 0 0 2px #D10000;cursor:pointer" title="BatStateU Red"></button>
+          <button type="button" onclick="setUniversityColor('#12b3ac')" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#12b3ac,#12b3ac);border:2px solid #fff;box-shadow:0 0 0 2px #12b3ac;cursor:pointer" title="PUP Blue"></button>
           <button type="button" onclick="setUniversityColor('#15803D')" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#14532D,#22C55E);border:2px solid #fff;box-shadow:0 0 0 2px #15803D;cursor:pointer" title="UPLB Green"></button>
           <button type="button" onclick="setUniversityColor('#7C2D12')" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7C2D12,#EA580C);border:2px solid #fff;box-shadow:0 0 0 2px #7C2D12;cursor:pointer" title="TIP Orange"></button>
-          <button type="button" onclick="setUniversityColor('#065F46')" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#064E3B,#10B981);border:2px solid #fff;box-shadow:0 0 0 2px #065F46;cursor:pointer" title="DLSU Green"></button>
-          <button type="button" onclick="setUniversityColor('#6B21A8')" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#581C87,#9333EA);border:2px solid #fff;box-shadow:0 0 0 2px #6B21A8;cursor:pointer" title="PNU Purple"></button>
+          <button type="button" onclick="setUniversityColor('#065F46')" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#064E3B,#12b3ac);border:2px solid #fff;box-shadow:0 0 0 2px #065F46;cursor:pointer" title="DLSU Green"></button>
+          <button type="button" onclick="setUniversityColor('#6B21A8')" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#581C87,#12b3ac);border:2px solid #fff;box-shadow:0 0 0 2px #6B21A8;cursor:pointer" title="PNU Purple"></button>
         </div>
       </div>
       <div class="form-group">

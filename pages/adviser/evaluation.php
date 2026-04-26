@@ -183,6 +183,11 @@ $criteriaConfig = [
     'goal_achievement' => 'Goal Achievement',
     'overall_cooperation' => 'Overall Cooperation',
 ];
+
+$moduleSettings = is_array($_SESSION['adviser_module_settings'] ?? null) ? $_SESSION['adviser_module_settings'] : [];
+$showEvaluationBanner = array_key_exists('show_evaluation_banner', $moduleSettings)
+  ? (bool)$moduleSettings['show_evaluation_banner']
+  : true;
 ?>
 <style>
   .adviser-evaluation-page {
@@ -243,7 +248,7 @@ $criteriaConfig = [
   .adviser-evaluation-message.is-error {
     border: 1px solid #fecaca;
     background: #fff1f2;
-    color: #b91c1c;
+    color: #12b3ac;
   }
 
   .adviser-evaluation-content {
@@ -366,7 +371,7 @@ $criteriaConfig = [
   .adviser-evaluation-star.is-active {
     background: #fff4e5;
     border-color: #f2b766;
-    color: #f59e0b;
+    color: #12b3ac;
   }
 
   .adviser-evaluation-check {
@@ -490,11 +495,11 @@ $criteriaConfig = [
   }
 
   .adviser-evaluation-stat-value.is-success {
-    color: #10b981;
+    color: #12b3ac;
   }
 
   .adviser-evaluation-stat-value.is-warning {
-    color: #f59e0b;
+    color: #12b3ac;
   }
 
   .adviser-evaluation-stat-value.is-danger {
@@ -585,7 +590,7 @@ $criteriaConfig = [
   }
 
   .adviser-evaluation-table tr:hover td {
-    background: #fafafa;
+    background: #ffffff;
   }
 
   .adviser-evaluation-student-cell {
@@ -648,7 +653,7 @@ $criteriaConfig = [
     padding: 18px;
     border-radius: 14px;
     border: 1px dashed var(--border);
-    background: #fafafa;
+    background: #ffffff;
     color: #6b7280;
     font-size: 0.82rem;
   }
@@ -694,6 +699,15 @@ $criteriaConfig = [
 </style>
 
 <div class="adviser-evaluation-page">
+  <?php if ($showEvaluationBanner): ?>
+    <div style="background:linear-gradient(90deg, #050505 0%, #12b3ac 40%, rgba(0, 0, 0, 0.38) 100%), url('/Skillhive/assets/media/element%203.png') right center / auto 100% no-repeat;border-radius:16px;padding:28px;margin-bottom:20px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0, 0, 0, 0.44);">
+      <div style="z-index:2;flex:1;">
+        <h2 style="font-size:1.8rem;font-weight:900;margin:0 0 12px 0;line-height:1.2;color:white;">Student Evaluation</h2>
+        <p style="font-size:0.95rem;margin:0;line-height:1.6;color:#e0e0e0;">Submit fair and consistent evaluations, track grading history, and document each student's internship performance clearly.</p>
+      </div>
+    </div>
+  <?php endif; ?>
+
   <nav class="adviser-evaluation-tabs" aria-label="Evaluation sections">
     <a class="adviser-evaluation-tab <?php echo $currentTab === 'submit' ? 'is-active' : ''; ?>" href="<?php echo $baseUrl; ?>/layout.php?<?php echo adviser_evaluation_escape($tabSubmitQuery); ?>" data-evaluation-tab="submit">
       Submit Evaluation

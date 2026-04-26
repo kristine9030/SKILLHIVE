@@ -529,14 +529,14 @@ function journal_send_entry_email(array $ojt_record, array $entry, string $recip
     // Build HTML email
     $html = "<html><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>";
     $html .= "<div style='max-width: 600px; margin: 0 auto;'>";
-    $html .= "<h2 style='color: #0891B2; border-bottom: 2px solid #0891B2; padding-bottom: 10px;'>OJT Journal Entry</h2>";
+    $html .= "<h2 style='color: #12b3ac; border-bottom: 2px solid #12b3ac; padding-bottom: 10px;'>OJT Journal Entry</h2>";
     
     $html .= "<p><strong>Student:</strong> " . htmlspecialchars($student_name) . "</p>";
     $html .= "<p><strong>Date:</strong> " . date('F j, Y', strtotime($entry['entry_date'])) . "</p>";
     $html .= "<p><strong>Company/Department:</strong> " . htmlspecialchars($entry['company_department'] ?? '') . "</p>";
     
     if (!empty($entry['tasks_accomplished'])) {
-        $html .= "<h3 style='color: #0891B2; margin-top: 20px;'>Tasks Accomplished</h3><ul>";
+        $html .= "<h3 style='color: #12b3ac; margin-top: 20px;'>Tasks Accomplished</h3><ul>";
         foreach ($entry['tasks_accomplished'] as $task) {
             $html .= "<li>" . htmlspecialchars($task) . "</li>";
         }
@@ -544,7 +544,7 @@ function journal_send_entry_email(array $ojt_record, array $entry, string $recip
     }
     
     if (!empty($entry['skills_applied_learned'])) {
-        $html .= "<h3 style='color: #0891B2; margin-top: 20px;'>Skills Applied/Learned</h3><ul>";
+        $html .= "<h3 style='color: #12b3ac; margin-top: 20px;'>Skills Applied/Learned</h3><ul>";
         foreach ($entry['skills_applied_learned'] as $skill) {
             $html .= "<li>" . htmlspecialchars($skill) . "</li>";
         }
@@ -552,7 +552,7 @@ function journal_send_entry_email(array $ojt_record, array $entry, string $recip
     }
     
     if (!empty($entry['challenges_encountered'])) {
-        $html .= "<h3 style='color: #0891B2; margin-top: 20px;'>Challenges Encountered</h3><ul>";
+        $html .= "<h3 style='color: #12b3ac; margin-top: 20px;'>Challenges Encountered</h3><ul>";
         foreach ($entry['challenges_encountered'] as $challenge) {
             $html .= "<li>" . htmlspecialchars($challenge) . "</li>";
         }
@@ -560,7 +560,7 @@ function journal_send_entry_email(array $ojt_record, array $entry, string $recip
     }
     
     if (!empty($entry['solutions_actions_taken'])) {
-        $html .= "<h3 style='color: #0891B2; margin-top: 20px;'>Solutions/Actions Taken</h3><ul>";
+        $html .= "<h3 style='color: #12b3ac; margin-top: 20px;'>Solutions/Actions Taken</h3><ul>";
         foreach ($entry['solutions_actions_taken'] as $solution) {
             $html .= "<li>" . htmlspecialchars($solution) . "</li>";
         }
@@ -568,7 +568,7 @@ function journal_send_entry_email(array $ojt_record, array $entry, string $recip
     }
     
     if (!empty($entry['key_learnings_insights'])) {
-        $html .= "<h3 style='color: #0891B2; margin-top: 20px;'>Key Learnings/Insights</h3><ul>";
+        $html .= "<h3 style='color: #12b3ac; margin-top: 20px;'>Key Learnings/Insights</h3><ul>";
         foreach ($entry['key_learnings_insights'] as $insight) {
             $html .= "<li>" . htmlspecialchars($insight) . "</li>";
         }
@@ -576,7 +576,7 @@ function journal_send_entry_email(array $ojt_record, array $entry, string $recip
     }
     
     if (!empty($entry['reflection'])) {
-        $html .= "<h3 style='color: #0891B2; margin-top: 20px;'>Reflection</h3>";
+        $html .= "<h3 style='color: #12b3ac; margin-top: 20px;'>Reflection</h3>";
         $html .= "<p>" . nl2br(htmlspecialchars($entry['reflection'])) . "</p>";
     }
     
@@ -682,7 +682,7 @@ function journal_send_report_email(array $ojt_record, array $report, string $rec
     // Build HTML email
     $html = "<html><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>";
     $html .= "<div style='max-width: 800px; margin: 0 auto;'>";
-    $html .= "<h1 style='color: #0891B2; border-bottom: 3px solid #0891B2; padding-bottom: 15px;'>Internship Final Report</h1>";
+    $html .= "<h1 style='color: #12b3ac; border-bottom: 3px solid #12b3ac; padding-bottom: 15px;'>Internship Final Report</h1>";
     
     $html .= "<p><strong>Student:</strong> " . htmlspecialchars($student_name) . "</p>";
     $html .= "<p><strong>Generated:</strong> " . date('F j, Y H:i:s') . "</p>";
@@ -697,37 +697,37 @@ function journal_send_report_email(array $ojt_record, array $report, string $rec
     
     // Report sections
     if (!empty($report['internship_overview'])) {
-        $html .= "<h2 style='color: #0891B2; margin-top: 30px;'>Internship Overview</h2>";
+        $html .= "<h2 style='color: #12b3ac; margin-top: 30px;'>Internship Overview</h2>";
         $html .= "<p>" . nl2br(htmlspecialchars($report['internship_overview'])) . "</p>";
     }
     
     if (!empty($report['key_responsibilities'])) {
-        $html .= "<h2 style='color: #0891B2; margin-top: 30px;'>Key Responsibilities</h2>";
+        $html .= "<h2 style='color: #12b3ac; margin-top: 30px;'>Key Responsibilities</h2>";
         $html .= "<p>" . nl2br(htmlspecialchars($report['key_responsibilities'])) . "</p>";
     }
     
     if (!empty($report['skills_developed'])) {
-        $html .= "<h2 style='color: #0891B2; margin-top: 30px;'>Skills Developed</h2>";
+        $html .= "<h2 style='color: #12b3ac; margin-top: 30px;'>Skills Developed</h2>";
         $html .= "<p>" . nl2br(htmlspecialchars($report['skills_developed'])) . "</p>";
     }
     
     if (!empty($report['challenges_resolutions'])) {
-        $html .= "<h2 style='color: #0891B2; margin-top: 30px;'>Challenges and Resolutions</h2>";
+        $html .= "<h2 style='color: #12b3ac; margin-top: 30px;'>Challenges and Resolutions</h2>";
         $html .= "<p>" . nl2br(htmlspecialchars($report['challenges_resolutions'])) . "</p>";
     }
     
     if (!empty($report['contributions_achievements'])) {
-        $html .= "<h2 style='color: #0891B2; margin-top: 30px;'>Major Contributions and Achievements</h2>";
+        $html .= "<h2 style='color: #12b3ac; margin-top: 30px;'>Major Contributions and Achievements</h2>";
         $html .= "<p>" . nl2br(htmlspecialchars($report['contributions_achievements'])) . "</p>";
     }
     
     if (!empty($report['personal_professional_growth'])) {
-        $html .= "<h2 style='color: #0891B2; margin-top: 30px;'>Personal and Professional Growth</h2>";
+        $html .= "<h2 style='color: #12b3ac; margin-top: 30px;'>Personal and Professional Growth</h2>";
         $html .= "<p>" . nl2br(htmlspecialchars($report['personal_professional_growth'])) . "</p>";
     }
     
     if (!empty($report['conclusion_reflection'])) {
-        $html .= "<h2 style='color: #0891B2; margin-top: 30px;'>Conclusion and Overall Reflection</h2>";
+        $html .= "<h2 style='color: #12b3ac; margin-top: 30px;'>Conclusion and Overall Reflection</h2>";
         $html .= "<p>" . nl2br(htmlspecialchars($report['conclusion_reflection'])) . "</p>";
     }
     
