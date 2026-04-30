@@ -55,6 +55,8 @@ if (!function_exists('adviser_companies_get_rows')) {
                 OR COALESCE(e.industry, "") LIKE :search
                 OR COALESCE(e.company_address, "") LIKE :search
                 OR COALESCE(e.website_url, "") LIKE :search
+                OR COALESCE(e.email, "") LIKE :search
+                OR COALESCE(e.contact_number, "") LIKE :search
             )';
             $params[':search'] = '%' . $search . '%';
         }

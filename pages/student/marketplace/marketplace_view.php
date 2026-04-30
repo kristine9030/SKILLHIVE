@@ -224,67 +224,113 @@ function marketplace_render(array $data): void
 .market-radio-tile { border:1px solid var(--mk-border); background:#ffffff; color:#6b7280; border-radius:10px; padding:10px 10px; font-size:.8rem; font-weight:700; text-align:center; cursor:pointer; transition:all .18s ease; }
 .market-radio-tile.active { border-color:#162550; background:#162550; color:#ffffff; }
 .market-main-panel { min-width:0; }
-.market-hero {
-  background:linear-gradient(135deg, #050505 0%, #050505 40%, #12b3ac 72%, #12b3ac 100%);
-  border:1px solid rgba(255, 255, 255, 0.1);
-  border-radius:16px;
-  padding:20px;
-  margin-bottom:12px;
-  position:relative;
-  overflow:hidden;
+.market-header {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin-bottom:16px;
 }
-.market-hero::after {
-  content:"";
-  position:absolute;
-  inset:0;
-  background-image:
-    radial-gradient(circle at 84% 28%, rgba(255,255,255,.9) 0 2px, transparent 3px),
-    radial-gradient(circle at 76% 40%, rgba(255,255,255,.7) 0 2px, transparent 3px),
-    radial-gradient(circle at 90% 44%, rgba(255,255,255,.65) 0 2px, transparent 3px);
-  pointer-events:none;
-}
-.market-hero h2 {
+.market-header-title {
+  font-size:1.8rem;
+  font-weight:800;
+  color:#0a0e27;
   margin:0;
-  font-family:'Poppins',sans-serif;
-  font-size:2rem;
-  line-height:1.2;
-  color:#ffffff;
-  font-weight:600;
-  letter-spacing:-0.01em;
-  word-break: break-word;
 }
-.market-hero p {
-  margin:6px 0 0;
-  max-width:100%;
-  color:#ffffff;
+.market-header-sub {
   font-size:.95rem;
+  color:#6b7280;
+  margin:0;
   font-weight:500;
-  opacity:0.95;
+}
+.market-header-controls {
+  display:flex;
+  gap:12px;
+  align-items:flex-end;
+  justify-content:space-between;
+}
+.market-header-search {
+  flex:1;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  max-width:600px;
+}
+.market-header-right {
+  display:flex;
+  gap:12px;
+  align-items:flex-end;
+}
+.market-sort-control {
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width:180px;
+}
+.market-sort-label {
+  font-size:.75rem;
+  font-weight:600;
+  color:#6b7280;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.market-sort-select {
+  border:1px solid var(--mk-border);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:.87rem;
+  background:#fff;
+  color:#0a0e27;
+  font-weight:500;
+  cursor:pointer;
+}
+.market-view-options {
+  display:flex;
+  gap:6px;
+}
+.market-view-btn {
+  width:38px;
+  height:38px;
+  border:1px solid var(--mk-border);
+  border-radius:10px;
+  background:#fff;
+  color:#6b7280;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:.95rem;
+  transition:all .18s ease;
+}
+.market-view-btn.active {
+  border-color:#162550;
+  background:#162550;
+  color:#ffffff;
 }
 .market-search-row { display:grid; grid-template-columns:1fr 110px; gap:10px; margin-bottom:10px; }
-.market-search-wrap { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--mk-border); border-radius:12px; padding:0 12px; }
+.market-search-wrap { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--mk-border); border-radius:12px; padding:0 12px; height:42px; }
 .market-search-wrap i { color:#8d93a7; }
-.market-search-wrap input { border:none; outline:none; width:100%; padding:11px 0; background:transparent; font-size:.88rem; }
-.market-action-btn { border:none; border-radius:12px; background:#111111; color:#ffffff; font-weight:700; font-size:.86rem; cursor:pointer; }
+.market-search-wrap input { border:none; outline:none; width:100%; padding:0; background:transparent; font-size:.88rem; height:100%; }
+.market-action-btn { border:none; border-radius:12px; background:#111111; color:#ffffff; font-weight:700; font-size:.86rem; cursor:pointer; padding:10px 20px; white-space:nowrap; transition:all .18s ease; }
+.market-action-btn:hover { background:#000000; }
 .market-top-picks { border:1px solid #e4e6ef; border-radius:16px; background:linear-gradient(120deg,#ffffff 0%,#f2f8ff 45%,#e8f3ff 100%); padding:14px; margin:8px 0 12px; }
 .market-top-picks-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
 .market-top-picks-title { font-size:1.2rem; color:#0a0e27; font-weight:700; line-height:1.25; letter-spacing:.01em; }
 .market-top-picks-sub { font-size:.85rem; color:#4b5563; margin-top:3px; font-weight:500; }
 .market-top-picks-refresh { width:34px; height:34px; border-radius:999px; border:1px solid #d4dae7; background:#fff; color:#050505; cursor:pointer; }
 .market-picks-list { display:flex; flex-direction:column; gap:0; }
-.market-pick-item { display:grid; grid-template-columns:42px 1fr auto; gap:10px; align-items:center; padding:10px 10px; border:1px solid #e5e7ee; border-top: none; border-radius:12px; margin-bottom:8px; background:#ffffff; }
+.market-pick-item { display:grid; grid-template-columns:52px 1fr auto; gap:12px; align-items:center; padding:12px 12px; border:1px solid #e5e7ee; border-top: none; border-radius:12px; margin-bottom:8px; background:#ffffff; }
 .market-pick-item:first-child { border-top: none; }
-.market-pick-logo { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:.95rem; }
+.market-pick-logo { width:52px; height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:1.1rem; flex-shrink:0; }
 .market-pick-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.market-pick-title { font-size:.92rem; font-weight:700; color:#0a0e27; line-height:1.2; }
+.market-pick-title { font-size:.92rem; font-weight:600; color:#0a0e27; line-height:1.2; }
 .market-pick-fit { font-size:.74rem; border-radius:999px; padding:3px 8px; background:#12b3ac; color:#fff; font-weight:700; white-space:nowrap; }
-.market-pick-meta { color:#6b7280; font-size:.82rem; margin-top:2px; }
+.market-pick-meta { color:#6b7280; font-size:.82rem; margin-top:3px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .market-pick-hint { color:#162550; font-size:.78rem; margin-top:4px; font-weight:600; }
 .market-pick-reasons { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
 .market-pick-reason { font-size:.7rem; border:1px solid #d8dceb; background:#ffffff; color:#6b7280; border-radius:999px; padding:3px 10px; font-weight:600; }
 .market-pick-actions { display:flex; align-items:center; gap:8px; }
-.market-pick-link { font-size:.75rem; text-decoration:none; color:#0a0e27; border:1px solid #d1d5db; border-radius:999px; padding:5px 12px; background:#fff; font-weight:700; }
-.market-pick-dismiss { width:26px; height:26px; border-radius:999px; border:1px solid #d5d9e2; background:#fff; color:#111; cursor:pointer; }
+.market-pick-link { font-size:.75rem; text-decoration:none; color:#fff; border:1px solid #111; border-radius:999px; padding:5px 12px; background:#111; font-weight:700; }
+.market-pick-dismiss { width:26px; height:26px; border-radius:999px; border:1px solid #111; background:#111; color:#fff; cursor:pointer; }
 .market-pick-item.hidden { display:none; }
 .market-top-picks-empty { display:none; font-size:.8rem; color:#6b7280; padding:8px 0 2px; }
 .market-top-picks-empty.show { display:block; }
@@ -299,6 +345,7 @@ function marketplace_render(array $data): void
 .market-toggle-btn.off { background:#ffffff; border-color:#cfd4dc; color:#111111; box-shadow:none; }
 .market-external-hint { margin-top:8px; font-size:.76rem; color:#6b7280; font-weight:500; }
 .market-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
+.market-grid.list-view { grid-template-columns:1fr; }
 .market-card { background:#fff; border:1px solid var(--mk-border); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:9px; }
 .market-card-head { display:flex; justify-content:space-between; gap:10px; }
 .market-card-row { display:flex; gap:10px; min-width:0; }
@@ -393,21 +440,9 @@ function marketplace_render(array $data): void
   <form method="get" action="<?php echo marketplace_e($baseUrl); ?>/layout.php" id="marketFilterForm">
     <input type="hidden" name="page" value="student/marketplace">
 
-    <div class="market-hero">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;position:relative;z-index:2;">
-        <div style="flex:1;">
-          <h2>Find your dream internship here</h2>
-          <p>Explore opportunities from SkillHive partner employers and verified external API listings in one place.</p>
-        </div>
-      </div>
-      <div style="position:absolute;top:50%;right:20px;transform:translateY(-50%);z-index:1;width:180px;height:180px;">
-        <img src="/SkillHive/assets/media/Marketplace.png" alt="Marketplace" style="width:100%;height:100%;object-fit:contain;">
-      </div>
-    </div>
-
     <div class="market-layout">
       <aside class="market-filter-panel">
-        <div class="market-filter-head">Filter</div>
+        <div class="market-filter-head">Filters</div>
 
         <div class="market-filter-group" style="margin-top:0;padding-top:0;border-top:none">
           <div class="market-filter-title">Category</div>
@@ -467,19 +502,7 @@ function marketplace_render(array $data): void
         </div>
 
         <input type="hidden" name="include_external" value="<?php echo $showExternal ? '1' : '0'; ?>">
-  <input type="hidden" name="external_page" value="1">
-
-        <div class="market-filter-group">
-          <div class="market-filter-title">Sort</div>
-          <select class="market-select" name="sort">
-            <option value="latest" <?php echo $sortFilter === 'latest' ? 'selected' : ''; ?>>Latest first</option>
-            <option value="bestmatch" <?php echo $sortFilter === 'bestmatch' ? 'selected' : ''; ?>>Best match</option>
-            <option value="allowance_high" <?php echo $sortFilter === 'allowance_high' ? 'selected' : ''; ?>>Allowance: High to Low</option>
-            <option value="allowance_low" <?php echo $sortFilter === 'allowance_low' ? 'selected' : ''; ?>>Allowance: Low to High</option>
-            <option value="title_az" <?php echo $sortFilter === 'title_az' ? 'selected' : ''; ?>>Title: A to Z</option>
-            <option value="title_za" <?php echo $sortFilter === 'title_za' ? 'selected' : ''; ?>>Title: Z to A</option>
-          </select>
-        </div>
+        <input type="hidden" name="external_page" value="1">
 
         <div class="market-filter-group" style="border-top:none;padding-top:8px;margin-top:6px;">
           <a href="<?php echo marketplace_e($toggleExternalUrl); ?>" class="market-toggle-btn<?php echo $showExternal ? '' : ' off'; ?>" style="width:100%;">
@@ -494,13 +517,38 @@ function marketplace_render(array $data): void
       </aside>
 
       <div class="market-main-panel">
-        <div class="market-search-row">
-          <div class="market-search-wrap">
-            <i class="fas fa-search"></i>
-            <input type="text" name="q" placeholder="Search your internship" value="<?php echo marketplace_e($currentFilters['q']); ?>">
+        <header class="market-header">
+          <div>
+            <h1 class="market-header-title">Find Your Dream Internship</h1>
+            <p class="market-header-sub">Explore opportunities from SkillHive partner employers and verified external API listings in one place.</p>
           </div>
-          <button type="submit" class="market-action-btn">Search</button>
-        </div>
+          <div class="market-header-controls">
+            <div class="market-header-search">
+              <div class="market-search-wrap" style="flex:1;">
+                <i class="fas fa-search"></i>
+                <input type="text" name="q" placeholder="Search internships, companies, skills..." value="<?php echo marketplace_e($currentFilters['q']); ?>">
+              </div>
+              <button type="submit" class="market-action-btn">Search</button>
+            </div>
+            <div class="market-header-right">
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:150px;">
+                <label style="font-size:.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Sort</label>
+                <select class="market-sort-select" name="sort" onchange="document.getElementById('marketFilterForm').submit();">
+                  <option value="latest" <?php echo $sortFilter === 'latest' ? 'selected' : ''; ?>>Latest first</option>
+                  <option value="bestmatch" <?php echo $sortFilter === 'bestmatch' ? 'selected' : ''; ?>>Best match</option>
+                  <option value="allowance_high" <?php echo $sortFilter === 'allowance_high' ? 'selected' : ''; ?>>Allowance: High to Low</option>
+                  <option value="allowance_low" <?php echo $sortFilter === 'allowance_low' ? 'selected' : ''; ?>>Allowance: Low to High</option>
+                  <option value="title_az" <?php echo $sortFilter === 'title_az' ? 'selected' : ''; ?>>Title: A to Z</option>
+                  <option value="title_za" <?php echo $sortFilter === 'title_za' ? 'selected' : ''; ?>>Title: Z to A</option>
+                </select>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button type="button" class="market-view-btn active" title="Grid view" onclick="setViewMode('grid'); return false;"><i class="fas fa-th"></i></button>
+                <button type="button" class="market-view-btn" title="List view" onclick="setViewMode('list'); return false;"><i class="fas fa-list"></i></button>
+              </div>
+            </div>
+          </div>
+        </header>
 
         <?php if ($topPicks): ?>
           <section class="market-top-picks" id="topPicksCard">
@@ -561,8 +609,7 @@ function marketplace_render(array $data): void
                       <div class="market-pick-title"><?php echo marketplace_e($pickTitle); ?></div>
                       <span class="market-pick-fit"><?php echo (int) $pickScore; ?>% fit</span>
                     </div>
-                    <div class="market-pick-meta"><?php echo marketplace_e($pickCompany); ?> · <?php echo marketplace_e($pickLocation); ?> (<?php echo marketplace_e($pickSetup); ?>)</div>
-                    <div class="market-pick-hint">Match strength: <?php echo (int) $pickScore; ?>%</div>
+                    <div class="market-pick-meta"><i class="fas fa-building" style="color:#162550;margin-right:4px;"></i><?php echo marketplace_e($pickCompany); ?> · <i class="fas fa-map-marker-alt" style="color:#162550;margin-right:4px;margin-left:6px;"></i><?php echo marketplace_e($pickLocation); ?></div>
                     <div class="market-pick-reasons">
                       <?php foreach (array_slice($pickReasons, 0, 3) as $reason): ?>
                         <span class="market-pick-reason"><?php echo marketplace_e((string) $reason); ?></span>
@@ -1032,6 +1079,23 @@ if (successModal) {
   successModal.classList.add('open');
 }
 <?php endif; ?>
+
+function setViewMode(mode) {
+  var grid = document.querySelector('.market-grid');
+  var viewBtns = document.querySelectorAll('.market-view-btn');
+  
+  viewBtns.forEach(function(btn) {
+    btn.classList.remove('active');
+  });
+  
+  if (mode === 'list') {
+    grid.classList.add('list-view');
+    document.querySelectorAll('.market-view-btn')[1].classList.add('active');
+  } else {
+    grid.classList.remove('list-view');
+    document.querySelectorAll('.market-view-btn')[0].classList.add('active');
+  }
+}
 </script>
 
     <?php

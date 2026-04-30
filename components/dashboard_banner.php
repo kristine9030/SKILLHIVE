@@ -18,12 +18,15 @@ $bannerDaysText = $bannerDaysText ?? 'LAST 7 DAYS';
 $bannerStats = $bannerStats ?? [];
 
 $baseUrl = $baseUrl ?? '/SkillHive';
-$beeMascotPath = $baseUrl . '/assets/media/Bee.png';
+$beeMascotPath = $baseUrl . '/assets/media/skillhive-logo.png';
 ?>
 
 <style>
   .dashboard-banner {
-    background: linear-gradient(135deg, #050505 0%, #050505 40%, #12b3ac 72%, #12b3ac 100%);
+    background:
+      radial-gradient(95% 70% at 26% 44%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.1) 18%, rgba(255, 255, 255, 0) 48%),
+      radial-gradient(120% 160% at 92% 14%, rgba(37, 168, 158, 0.56) 0%, rgba(9, 22, 24, 0) 46%),
+      linear-gradient(135deg, #010101 0%, #020202 62%, #0a1f1e 82%, #0f4e49 100%);
     border-radius: 16px;
     padding: 4px 16px;
     margin-bottom: 28px;
@@ -76,7 +79,7 @@ $beeMascotPath = $baseUrl . '/assets/media/Bee.png';
     right: -10%;
     width: 400px;
     height: 400px;
-    background: rgba(133, 233, 223, 0.15);
+    background: rgba(84, 220, 208, 0.11);
     border-radius: 50%;
     pointer-events: none;
   }
@@ -93,7 +96,7 @@ $beeMascotPath = $baseUrl . '/assets/media/Bee.png';
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    opacity: 0.3;
+    opacity: 0.26;
     pointer-events: none;
   }
 
@@ -250,7 +253,7 @@ $beeMascotPath = $baseUrl . '/assets/media/Bee.png';
 
   <?php if ($bannerShowMascot): ?>
     <div class="banner-mascot">
-      <img src="<?php echo htmlspecialchars($beeMascotPath); ?>" alt="SkillHive Bee Mascot">
+      <img src="<?php echo htmlspecialchars($beeMascotPath); ?>" alt="SkillHive Logo">
     </div>
   <?php endif; ?>
 </div>

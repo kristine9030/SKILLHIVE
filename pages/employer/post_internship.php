@@ -174,221 +174,771 @@ function posting_duration_hours_label($durationWeeks): string {
      ═══════════════════════════════════════════ -->
 
 <style>
-.location-dropdown-shell {
-  border: 1px solid var(--border,#e8e0e0);
-  background: linear-gradient(180deg, #fcfcfd 0%, #f7f7f9 100%);
+/* Modern color variables */
+:root {
+  --primary: #138b84;
+  --primary-light: #12a89f;
+  --secondary: #10B981;
+  --border-light: #e5e7eb;
+  --bg-light: #f9fafb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+}
+
+/* Modern page wrapper */
+.posting-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Section header styling */
+.section-header {
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.section-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.section-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+}
+
+.section-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Modern postings grid */
+.postings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.posting-card {
+  background: #fff;
+  border: 2px solid var(--border-light);
   border-radius: 14px;
-  padding: 12px;
+  padding: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.posting-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.posting-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 12px 32px rgba(19, 139, 132, 0.12);
+  transform: translateY(-2px);
+}
+
+.posting-card:hover::before {
+  transform: scaleX(1);
+}
+
+.posting-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.posting-card-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-primary);
+  flex: 1;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.posting-card-meta {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
 }
 
-.location-dependent-group {
-  margin-top: 0;
-}
-
-.location-select-wrap {
+.posting-card-stat {
   display: flex;
   align-items: center;
-  gap: 10px;
-  border: 1px solid #dadde5;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.posting-card-stat i {
+  color: var(--primary);
+  width: 16px;
+  text-align: center;
+}
+
+.posting-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.posting-card-btn {
+  flex: 1;
+  min-width: 70px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.posting-card-btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff;
+}
+
+.posting-card-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(19, 139, 132, 0.3);
+}
+
+.posting-card-btn-secondary {
+  background: var(--bg-light);
+  color: var(--text-primary);
+  border: 2px solid var(--border-light);
+}
+
+.posting-card-btn-secondary:hover {
+  background: var(--text-primary);
+  color: #fff;
+  border-color: var(--text-primary);
+}
+
+/* Modern form styling */
+.form-section {
   background: #fff;
-  border-radius: 11px;
-  padding: 6px 10px;
-  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  border-radius: 14px;
+  border: 1px solid var(--border-light);
+  padding: 28px;
+  margin-bottom: 28px;
 }
 
-.location-select-wrap:focus-within {
-  border-color: var(--red,#8b0000);
-  box-shadow: 0 0 0 3px rgba(139,0,0,.08);
+.form-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text-primary);
 }
 
-.location-select-wrap.is-disabled {
-  background: #f3f4f6;
-  border-style: dashed;
-  border-color: #d7d9dd;
-  opacity: .85;
+.form-section-subtitle {
+  margin: 0 0 24px 0;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
-.location-select-tag {
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.form-label-required {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.form-control-wrapper {
+  position: relative;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border-light);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(19, 139, 132, 0.08);
+}
+
+.form-control:hover:not(:focus) {
+  border-color: var(--primary);
+}
+
+.form-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* Modern location selector */
+.location-selector {
+  border: 1px solid var(--border-light);
+  background: linear-gradient(135deg, #fafbfc 0%, #f0f9f8 100%);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.location-select-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 2px solid #e5e7eb;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: all 0.3s ease;
+}
+
+.location-select-row:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(19, 139, 132, 0.08);
+  background: #fafbfc;
+}
+
+.location-select-row.disabled {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+  opacity: 0.6;
+}
+
+.location-label {
   min-width: 72px;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .6px;
+  letter-spacing: 0.5px;
   color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.location-select-wrap .location-select {
+.location-label::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.location-select-row select {
   border: none;
   background: transparent;
-  box-shadow: none;
-  padding: 6px 4px;
-  min-height: 34px;
-  font-weight: 600;
-  color: #050505;
+  padding: 8px 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+  cursor: pointer;
 }
 
-.location-select-wrap .location-select:focus {
-  border: none;
-  box-shadow: none;
+.location-select-row select:focus {
   outline: none;
 }
 
-.location-preview-input {
-  margin-top: 6px;
-  border: 1px dashed #d6d6d6;
-  background: #fffdf7;
-  font-weight: 600;
-  color: #050505;
+.location-preview {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f0f9f8;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
 }
 
-.location-preview-input::placeholder {
+.location-preview:focus {
+  border-color: var(--primary);
+  background: #fff;
+}
+
+.location-help {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.location-help i {
+  color: var(--primary);
+  font-size: 12px;
+}
+
+/* Modern currency input */
+.currency-input-wrapper {
+  display: flex;
+  align-items: center;
+  border: 2px solid var(--border-light);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 14px;
+  transition: all 0.3s ease;
+}
+
+.currency-input-wrapper:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(19, 139, 132, 0.08);
+}
+
+.currency-symbol {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+.currency-input-wrapper input {
+  border: none;
+  padding: 12px 8px;
+  font-size: 14px;
+  flex: 1;
+  background: transparent;
+}
+
+.currency-input-wrapper input:focus {
+  outline: none;
+}
+
+/* Modern skills table */
+.skills-container {
+  border: 2px solid var(--border-light);
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+}
+
+.skills-header {
+  background: linear-gradient(135deg, var(--text-primary), #1f2937);
+  color: #fff;
+  padding: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: grid;
+  grid-template-columns: 50px 1fr 150px 100px;
+  gap: 12px;
+  align-items: center;
+  sticky: top;
+  z-index: 10;
+}
+
+.skills-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.skills-row {
+  display: grid;
+  grid-template-columns: 50px 1fr 150px 100px;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-light);
+  transition: background 0.2s ease;
+}
+
+.skills-row:hover {
+  background: var(--bg-light);
+}
+
+.skills-row:nth-child(even) {
+  background: #fafbfc;
+}
+
+.skills-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.skills-row select {
+  padding: 8px 10px;
+  font-size: 12px;
+  border: 2px solid var(--border-light);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.skills-row select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.skills-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #f0f9f8;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.skills-info i {
+  color: var(--primary);
+  font-size: 14px;
+}
+
+/* Modern buttons */
+.btn-modern {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(19, 139, 132, 0.3);
+}
+
+.btn-secondary {
+  background: var(--bg-light);
+  color: var(--text-primary);
+  border: 2px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+  background: var(--text-primary);
+  color: #fff;
+  border-color: var(--text-primary);
+}
+
+.btn-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+/* Empty state styling */
+.empty-state {
+  text-align: center;
+  padding: 48px 32px;
+  border: 2px dashed var(--border-light);
+  border-radius: 12px;
+  background: var(--bg-light);
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  color: #d1d5db;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.empty-state-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.empty-state-text {
+  font-size: 13px;
   color: #9ca3af;
+  margin: 0;
+}
+
+/* Error styling */
+.error-alert {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(255, 107, 107, 0.04));
+  border: 2px solid rgba(239, 68, 68, 0.15);
+  color: #c41c3b;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 28px;
+  font-size: 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.error-alert i {
+  margin-top: 2px;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.error-alert strong {
+  font-size: 14px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.error-alert ul {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+/* Pagination styling */
+.pagination-wrapper {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  align-items: center;
+}
+
+.pagination-btn {
+  padding: 8px 12px;
+  border: 2px solid var(--border-light);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pagination-btn:hover {
+  background: var(--text-primary);
+  color: #fff;
+  border-color: var(--text-primary);
+}
+
+.pagination-btn-active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.pagination-ellipsis {
+  padding: 6px 8px;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
-.location-help-text {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin-top: 4px;
-  font-size: 11px;
-  color: #6b7280;
-  line-height: 1.4;
-}
-
-.location-help-text i {
-  margin-top: 2px;
-  color: #9ca3af;
-}
-
 @media (max-width: 900px) {
-  .location-select-wrap {
-    padding: 8px 10px;
+  .postings-grid {
+    grid-template-columns: 1fr;
   }
 
-  .location-select-tag {
-    min-width: 66px;
-    font-size: 10px;
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .skills-header,
+  .skills-row {
+    grid-template-columns: 40px 1fr 120px 80px;
+    gap: 8px;
   }
 }
 </style>
 
 <!-- Page Header -->
-<div class="page-header">
-  <h1 class="page-title"><i class="fa-solid fa-plus-circle" style="color:var(--red);"></i> Post New Internship</h1>
-  <p class="page-sub">Fill in the details below to create a new internship listing for students.</p>
-</div>
+<div class="posting-container">
+  <div class="page-header" style="margin-bottom: 32px;">
+    <div>
+      <h1 class="page-title" style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+        <span class="section-header-icon">
+          <i class="fa-solid fa-briefcase"></i>
+        </span>
+        Post New Internship
+      </h1>
+      <p class="page-sub">Create and manage internship listings to attract qualified student candidates</p>
+    </div>
+  </div>
 
-<!-- Errors -->
-<?php if (!empty($errors)): ?>
-<div style="background:rgba(178,34,34,.06);border:1px solid rgba(178,34,34,.18);color:#8b0000;padding:14px 18px;border-radius:8px;margin-bottom:18px;font-size:13px;">
-  <strong><i class="fa-solid fa-triangle-exclamation"></i> Please fix the following:</strong>
-  <ul style="margin:8px 0 0 18px;line-height:1.8;">
-    <?php foreach ($errors as $err): ?>
-      <li><?php echo e($err); ?></li>
-    <?php endforeach; ?>
-  </ul>
-</div>
-<?php endif; ?>
+  <!-- Errors -->
+  <?php if (!empty($errors)): ?>
+  <div class="error-alert">
+    <div>
+      <i class="fa-solid fa-circle-exclamation"></i>
+    </div>
+    <div style="flex: 1;">
+      <strong>Please fix the following errors:</strong>
+      <ul>
+        <?php foreach ($errors as $err): ?>
+          <li><?php echo e($err); ?></li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+  </div>
+  <?php endif; ?>
 
-<!-- My Postings Card -->
-<div class="card" id="my-postings">
-  <h3 class="card-title"><i class="fa-solid fa-list" style="color:var(--dark,#050505);margin-right:6px;"></i> My Postings</h3>
-  <p style="font-size:12px;color:var(--grey,#888);margin-bottom:14px;">Select a posting on the left to view full details on the right.</p>
+  <!-- My Postings Section -->
+  <div class="section-header" id="my-postings">
+    <h2>
+      <i class="fa-solid fa-list"></i>
+      My Internship Postings
+    </h2>
+    <p>Manage and track your active internship listings</p>
+  </div>
 
   <?php if (!empty($myPostings)): ?>
-    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start;">
-      <div style="display:flex;flex-direction:column;gap:10px;max-height:520px;overflow:auto;padding-right:2px;">
-        <?php foreach ($myPostings as $posting): ?>
-          <?php
-          $postingId = (int)($posting['internship_id'] ?? 0);
-          $isActivePosting = $selectedPosting !== null && (int)($selectedPosting['internship_id'] ?? 0) === $postingId;
-          $cardBorder = $isActivePosting ? '2px solid var(--red,#8b0000)' : '1px solid var(--border,#e8e0e0)';
-          $cardBg = $isActivePosting ? 'rgba(139,0,0,.04)' : '#fff';
-          ?>
-          <div data-posting-card-wrap="1" style="border:<?php echo $cardBorder; ?>;background:<?php echo $cardBg; ?>;border-radius:10px;padding:10px;">
-            <button
-              type="button"
-              data-posting-card="1"
-              data-active="<?php echo $isActivePosting ? '1' : '0'; ?>"
-              data-id="<?php echo $postingId; ?>"
-              data-title="<?php echo e((string)($posting['title'] ?? 'Untitled Internship')); ?>"
-              data-description="<?php echo e((string)($posting['description'] ?? '')); ?>"
-              data-status="<?php echo e((string)($posting['status'] ?? 'pending')); ?>"
-              data-posted="<?php echo e((string)($posting['posted_at'] ?? '')); ?>"
-              data-location="<?php echo e((string)($posting['location'] ?? 'N/A')); ?>"
-              data-duration-hours="<?php echo max((defined('SKILLHIVE_REQUIRED_OJT_HOURS') ? (int)SKILLHIVE_REQUIRED_OJT_HOURS : 500), max(0, (int)($posting['duration_weeks'] ?? 0)) * 40); ?>"
-              data-applicants="<?php echo (int)($posting['applicants_count'] ?? 0); ?>"
-              data-work-setup="<?php echo e((string)($posting['work_setup'] ?? 'N/A')); ?>"
-              data-allowance="<?php echo number_format((float)($posting['allowance'] ?? 0), 2, '.', ''); ?>"
-              data-slots="<?php echo (int)($posting['slots_available'] ?? 0); ?>"
-              onclick="selectPostingCard(this)"
-              style="text-align:left;border:none;background:transparent;padding:0;cursor:pointer;width:100%;">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-                <div style="font-weight:700;font-size:.9rem;"><?php echo e((string)($posting['title'] ?? 'Untitled Internship')); ?></div>
-                <span class="status-pill <?php echo dashboard_status_class((string)($posting['status'] ?? 'pending')); ?>"><?php echo e(dashboard_status_label((string)($posting['status'] ?? 'pending'))); ?></span>
-              </div>
-              <div style="font-size:.76rem;color:#777;margin-top:4px;"><?php echo e(dashboard_time_ago((string)($posting['posted_at'] ?? ''))); ?></div>
-              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.76rem;color:#555;">
-                <span><i class="fas fa-users"></i> <?php echo (int)($posting['applicants_count'] ?? 0); ?></span>
-                <span><i class="fas fa-map-marker-alt"></i> <?php echo e((string)($posting['location'] ?? 'N/A')); ?></span>
-              </div>
-            </button>
-            <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-              <form method="post" action="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Delete this posting?');" style="margin:0;">
-                <input type="hidden" name="delete_posting_id" value="<?php echo $postingId; ?>">
-                <input type="hidden" name="postings_page" value="<?php echo $postingsPage; ?>">
-                <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#12b3ac;"><i class="fas fa-trash"></i> Delete</button>
-              </form>
-            </div>
+  <div class="postings-grid">
+    <?php foreach ($myPostings as $posting): ?>
+      <?php
+      $postingId = (int)($posting['internship_id'] ?? 0);
+      $title = (string)($posting['title'] ?? 'Untitled Internship');
+      $status = (string)($posting['status'] ?? 'pending');
+      $location = (string)($posting['location'] ?? 'N/A');
+      $applicants = (int)($posting['applicants_count'] ?? 0);
+      $slots = (int)($posting['slots_available'] ?? 0);
+      $allowance = (float)($posting['allowance'] ?? 0);
+      $description = (string)($posting['description'] ?? 'No description provided.');
+      $postedAt = (string)($posting['posted_at'] ?? '');
+      $workSetup = (string)($posting['work_setup'] ?? 'N/A');
+      $duration = max((defined('SKILLHIVE_REQUIRED_OJT_HOURS') ? (int)SKILLHIVE_REQUIRED_OJT_HOURS : 500), max(0, (int)($posting['duration_weeks'] ?? 0)) * 40);
+      ?>
+      <div class="posting-card">
+        <div class="posting-card-header">
+          <h3 class="posting-card-title"><?php echo e($title); ?></h3>
+          <span class="status-pill <?php echo dashboard_status_class($status); ?>">
+            <?php echo e(dashboard_status_label($status)); ?>
+          </span>
+        </div>
+
+        <div class="posting-card-meta">
+          <div class="posting-card-stat">
+            <i class="fas fa-map-marker-alt"></i>
+            <span><?php echo e($location); ?></span>
           </div>
-        <?php endforeach; ?>
-      </div>
-
-      <div id="postingDetailPanel" style="border:1px solid var(--border,#e8e0e0);border-radius:10px;padding:12px;background:#fff;height:498px;display:flex;flex-direction:column;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-          <h4 id="detailTitle" style="margin:0;font-size:1rem;"><?php echo e((string)($selectedPosting['title'] ?? 'Untitled Internship')); ?></h4>
-          <span id="detailStatus" class="status-pill <?php echo dashboard_status_class((string)($selectedPosting['status'] ?? 'pending')); ?>"><?php echo e(dashboard_status_label((string)($selectedPosting['status'] ?? 'pending'))); ?></span>
-        </div>
-        <div id="detailPosted" style="font-size:.78rem;color:#777;margin-top:4px;"><?php echo e(dashboard_time_ago((string)($selectedPosting['posted_at'] ?? ''))); ?></div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;font-size:.8rem;">
-          <div><strong>Location:</strong> <span id="detailLocation"><?php echo e((string)($selectedPosting['location'] ?? 'N/A')); ?></span></div>
-          <div><strong>Duration:</strong> <span id="detailDuration"><?php echo e(posting_duration_hours_label((int)($selectedPosting['duration_weeks'] ?? 0))); ?></span></div>
-          <div><strong>Work Setup:</strong> <span id="detailWorkSetup"><?php echo e((string)($selectedPosting['work_setup'] ?? 'N/A')); ?></span></div>
-          <div><strong>Applicants:</strong> <span id="detailApplicants"><?php echo (int)($selectedPosting['applicants_count'] ?? 0); ?></span></div>
-          <div><strong>Allowance:</strong> <span id="detailAllowance">₱<?php echo number_format((float)($selectedPosting['allowance'] ?? 0), 2); ?></span></div>
-          <div><strong>Slots:</strong> <span id="detailSlots"><?php echo (int)($selectedPosting['slots_available'] ?? 0); ?></span></div>
+          <div class="posting-card-stat">
+            <i class="fas fa-users"></i>
+            <span><?php echo $applicants; ?> applicant<?php echo $applicants !== 1 ? 's' : ''; ?></span>
+          </div>
+          <div class="posting-card-stat">
+            <i class="fas fa-chair"></i>
+            <span><?php echo $slots; ?> slot<?php echo $slots !== 1 ? 's' : ''; ?> available</span>
+          </div>
+          <div class="posting-card-stat">
+            <i class="fas fa-peso-sign"></i>
+            <span>₱<?php echo number_format($allowance, 2); ?> allowance</span>
+          </div>
         </div>
 
-        <div style="margin-top:12px;flex:1;display:flex;flex-direction:column;min-height:0;">
-          <div style="font-weight:700;font-size:.8rem;margin-bottom:4px;">Description</div>
-          <div id="detailDescription" style="font-size:.82rem;color:#444;line-height:1.5;height:300px;overflow:auto;border:1px solid var(--border,#e8e0e0);border-radius:8px;padding:10px;background:#ffffff;"><?php echo e((string)($selectedPosting['description'] ?? 'No description provided.')); ?></div>
+        <div style="margin-bottom: 16px; font-size: 12px; color: #6b7280;">
+          <i class="fas fa-clock"></i>
+          Posted <?php echo e(dashboard_time_ago($postedAt)); ?>
         </div>
 
-        <div class="job-card-actions" style="margin-top:12px;">
-          <a id="detailApplicantsLink" href="/SkillHive/layout.php?page=employer/candidates&position=<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>" class="btn btn-ghost btn-sm">View Applicants</a>
-          <?php $selectedDetailStatus = strtolower((string)($selectedPosting['status'] ?? 'open')); ?>
-          <form method="post" action="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" style="margin:0;display:inline-flex;align-items:center;gap:6px;">
-            <input type="hidden" name="edit_posting_id" id="detailEditPostingId" value="<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>">
+        <p style="margin: 0 0 16px 0; font-size: 13px; line-height: 1.5; color: #555; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+          <?php echo e($description); ?>
+        </p>
+
+        <div class="posting-card-actions">
+          <a href="/SkillHive/layout.php?page=employer/candidates&position=<?php echo $postingId; ?>" class="posting-card-btn posting-card-btn-primary">
+            <i class="fas fa-eye"></i> View Apps
+          </a>
+          <form method="post" action="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>" style="flex: 1;">
+            <input type="hidden" name="edit_posting_id" value="<?php echo $postingId; ?>">
             <input type="hidden" name="postings_page" value="<?php echo $postingsPage; ?>">
-            <select name="edit_status" id="detailEditStatus" class="form-control" style="padding:5px 8px;font-size:12px;min-width:112px;">
-              <option value="Open" <?php echo ($selectedDetailStatus === 'closed') ? '' : 'selected'; ?>>Open</option>
-              <option value="Closed" <?php echo ($selectedDetailStatus === 'closed') ? 'selected' : ''; ?>>Closed</option>
+            <select name="edit_status" class="posting-card-btn posting-card-btn-secondary" style="padding: 8px 10px; width: 100%; border: 2px solid var(--border-light); border-radius: 8px; font-size: 12px;">
+              <option value="Open" <?php echo (strtolower($status) === 'closed') ? '' : 'selected'; ?>>Open</option>
+              <option value="Closed" <?php echo (strtolower($status) === 'closed') ? 'selected' : ''; ?>>Closed</option>
             </select>
-            <button type="submit" class="btn btn-ghost btn-sm"><i class="fas fa-pen"></i> Edit</button>
           </form>
-          <form method="post" action="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Delete this posting?');" style="margin:0;display:inline-block;">
-            <input type="hidden" name="delete_posting_id" id="detailDeletePostingId" value="<?php echo (int)($selectedPosting['internship_id'] ?? 0); ?>">
+          <form method="post" action="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsPage; ?>#my-postings" onsubmit="return confirm('Are you sure you want to delete this posting? This action cannot be undone.');" style="flex: 1;">
+            <input type="hidden" name="delete_posting_id" value="<?php echo $postingId; ?>">
             <input type="hidden" name="postings_page" value="<?php echo $postingsPage; ?>">
-            <button type="submit" class="btn btn-sm" style="background:rgba(239,68,68,.1);color:#12b3ac;"><i class="fas fa-trash"></i> Delete</button>
+            <button type="submit" class="posting-card-btn posting-card-btn-secondary" style="width: 100%; background: rgba(239, 68, 68, 0.08); color: #c41c3b; border: 2px solid rgba(239, 68, 68, 0.2);">
+              <i class="fas fa-trash"></i> Delete
+            </button>
           </form>
         </div>
       </div>
-    </div>
+    <?php endforeach; ?>
+  </div>
 
     <?php if ($postingsTotalPages > 1): ?>
       <?php
@@ -402,47 +952,49 @@ function posting_duration_hours_label($durationWeeks): string {
         }
       }
       ?>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
+      <div class="pagination-wrapper">
         <?php if ($postingsPage > 1): ?>
-          <a class="btn btn-ghost btn-sm" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo ($postingsPage - 1); ?>">Previous</a>
+          <a class="pagination-btn" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo ($postingsPage - 1); ?>">
+            <i class="fas fa-chevron-left"></i> Previous
+          </a>
         <?php endif; ?>
 
         <?php if ($startPage > 1): ?>
-          <a class="btn btn-ghost btn-sm" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=1">1</a>
+          <a class="pagination-btn" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=1">1</a>
           <?php if ($startPage > 2): ?>
-            <span style="padding:6px 4px;color:#999;">...</span>
+            <span class="pagination-ellipsis">…</span>
           <?php endif; ?>
         <?php endif; ?>
 
         <?php for ($pageNum = $startPage; $pageNum <= $endPage; $pageNum++): ?>
           <?php if ($pageNum === $postingsPage): ?>
-            <span class="btn btn-red btn-sm" style="pointer-events:none;"><?php echo $pageNum; ?></span>
+            <span class="pagination-btn pagination-btn-active"><?php echo $pageNum; ?></span>
           <?php else: ?>
-            <a class="btn btn-ghost btn-sm" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $pageNum; ?>"><?php echo $pageNum; ?></a>
+            <a class="pagination-btn" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $pageNum; ?>"><?php echo $pageNum; ?></a>
           <?php endif; ?>
         <?php endfor; ?>
 
         <?php if ($endPage < $postingsTotalPages): ?>
           <?php if ($endPage < ($postingsTotalPages - 1)): ?>
-            <span style="padding:6px 4px;color:#999;">...</span>
+            <span class="pagination-ellipsis">…</span>
           <?php endif; ?>
-          <a class="btn btn-ghost btn-sm" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsTotalPages; ?>"><?php echo $postingsTotalPages; ?></a>
+          <a class="pagination-btn" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo $postingsTotalPages; ?>"><?php echo $postingsTotalPages; ?></a>
         <?php endif; ?>
 
         <?php if ($postingsPage < $postingsTotalPages): ?>
-          <a class="btn btn-ghost btn-sm" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo ($postingsPage + 1); ?>">Next</a>
+          <a class="pagination-btn" href="/SkillHive/layout.php?page=employer/post_internship&postings_page=<?php echo ($postingsPage + 1); ?>">
+            Next <i class="fas fa-chevron-right"></i>
+          </a>
         <?php endif; ?>
       </div>
     <?php endif; ?>
   <?php else: ?>
-    <div class="job-card" style="margin-bottom:0;">
-      <div class="job-card-header">
-        <div class="job-card-info">
-          <div class="job-card-title">No postings yet</div>
-          <div class="job-card-company">Create your first internship posting using the form above.</div>
-        </div>
-        <span class="status-pill status-pending">Pending</span>
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i class="fas fa-inbox"></i>
       </div>
+      <div class="empty-state-title">No internship postings yet</div>
+      <p class="empty-state-text">Start by creating your first internship posting using the form below</p>
     </div>
   <?php endif; ?>
 </div>
@@ -488,42 +1040,127 @@ function posting_duration_hours_label($durationWeeks): string {
       <div class="form-group">
         <label class="form-label">Duration (hours) <span style="color:var(--red);">*</span></label>
         <input class="form-control" type="number" min="500" step="1" name="duration_hours" placeholder="e.g. 500" value="<?php echo oldVal($old, 'duration_hours', '500'); ?>" required>
-        <div style="font-size:11px;color:var(--grey,#888);margin-top:6px;">Default is 500 hours. You can change this value before posting.</div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Allowance (₱) <span style="color:var(--red);">*</span></label>
-        <input class="form-control" type="number" min="0" step="0.01" name="allowance" placeholder="e.g. 5000" value="<?php echo oldVal($old, 'allowance'); ?>" required>
-      </div>
-    </div>
+  <!-- Create New Posting Section -->
+  <div class="section-header" style="margin-top: 40px;">
+    <h2>
+      <i class="fa-solid fa-plus-circle"></i>
+      Create New Posting
+    </h2>
+    <p>Add a new internship listing to attract qualified candidates</p>
+  </div>
 
-    <!-- Row: Location + Slots -->
-    <div class="form-row">
+  <!-- Internship Details Form -->
+  <div class="form-section">
+    <h3 class="form-section-title">
+      <i class="fa-solid fa-briefcase"></i>
+      Internship Details
+    </h3>
+    <p class="form-section-subtitle">Fill in the basic information about your internship position</p>
+
+    <form method="post" action="/SkillHive/layout.php?page=employer/post_internship" id="internshipForm">
+      <!-- Row: Title + Work Setup -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">
+            Position Title
+            <span class="form-label-required">*</span>
+          </label>
+          <input class="form-control" type="text" name="title" placeholder="e.g., Web Developer Intern, UX Designer Intern" value="<?php echo oldVal($old, 'title'); ?>" required>
+          <span class="form-hint">A clear, descriptive title helps attract the right candidates</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">
+            Work Setup
+            <span class="form-label-required">*</span>
+          </label>
+          <select class="form-control" name="work_setup" required>
+            <option value="">— Select work arrangement —</option>
+            <?php foreach ($allowedWorkSetup as $w): ?>
+              <option value="<?php echo e($w); ?>" <?php echo (oldVal($old,'work_setup') === $w ? 'selected' : ''); ?>>
+                <?php echo e($w); ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+      </div>
+
+      <!-- Description -->
       <div class="form-group">
-        <label class="form-label">Location <span style="color:var(--red);">*</span></label>
-        <div class="location-dropdown-shell">
-          <div class="location-select-wrap" id="postingRegionWrap">
-            <span class="location-select-tag">Region</span>
-            <select class="form-control location-select" id="postingRegionSelect" name="region_id" data-old-value="<?php echo oldVal($old, 'region_id'); ?>">
-              <option value="">-- Select Region --</option>
+        <label class="form-label">
+          Job Description
+          <span class="form-label-required">*</span>
+        </label>
+        <textarea class="form-control" name="description" rows="6" placeholder="Describe the role, key responsibilities, and what the intern will learn. Be detailed and engaging!" required><?php echo oldVal($old, 'description'); ?></textarea>
+        <span class="form-hint">Well-written descriptions attract more qualified applicants</span>
+      </div>
+
+      <!-- Row: Duration + Allowance + Slots -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">
+            Duration (hours)
+            <span class="form-label-required">*</span>
+          </label>
+          <input class="form-control" type="number" min="500" step="1" name="duration_hours" placeholder="e.g., 500" value="<?php echo oldVal($old, 'duration_hours', '500'); ?>" required>
+          <span class="form-hint">Minimum 500 hours. Typically 40 hours/week</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">
+            Monthly Allowance
+            <span class="form-label-required">*</span>
+          </label>
+          <div class="currency-input-wrapper">
+            <span class="currency-symbol">₱</span>
+            <input type="number" min="0" step="0.01" name="allowance" placeholder="e.g., 5000" value="<?php echo oldVal($old, 'allowance'); ?>" required>
+          </div>
+          <span class="form-hint">This is the monthly stipend offered to interns</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">
+            Slots Available
+            <span class="form-label-required">*</span>
+          </label>
+          <input class="form-control" type="number" min="1" placeholder="e.g., 3" name="slots_available" value="<?php echo oldVal($old, 'slots_available'); ?>" required>
+          <span class="form-hint">How many interns do you want to hire?</span>
+        </div>
+      </div>
+
+      <!-- Location Selection -->
+      <div class="form-group">
+        <label class="form-label">
+          Work Location
+          <span class="form-label-required">*</span>
+        </label>
+        <div class="location-selector">
+          <div class="location-select-row" id="postingRegionWrap">
+            <span class="location-label">Region</span>
+            <select class="form-control" id="postingRegionSelect" name="region_id" data-old-value="<?php echo oldVal($old, 'region_id'); ?>">
+              <option value="">Select region…</option>
             </select>
           </div>
 
-          <div id="postingProvinceContainer" class="location-dependent-group">
-            <div class="location-select-wrap is-disabled" id="postingProvinceWrap">
-              <span class="location-select-tag">Province</span>
-              <select class="form-control location-select" id="postingProvinceSelect" name="province_id" data-old-value="<?php echo oldVal($old, 'province_id'); ?>" disabled>
-                <option value="">-- Select Region First --</option>
+          <div id="postingProvinceContainer">
+            <div class="location-select-row disabled" id="postingProvinceWrap">
+              <span class="location-label">Province</span>
+              <select class="form-control" id="postingProvinceSelect" name="province_id" data-old-value="<?php echo oldVal($old, 'province_id'); ?>" disabled>
+                <option value="">Select province…</option>
               </select>
             </div>
           </div>
 
-          <div id="postingCityContainer" class="location-dependent-group">
-            <div class="location-select-wrap is-disabled" id="postingCityWrap">
-              <span class="location-select-tag">City</span>
-              <select class="form-control location-select" id="postingCitySelect" name="city_id" data-old-value="<?php echo oldVal($old, 'city_id'); ?>" disabled>
-                <option value="">-- Select Province First --</option>
+          <div id="postingCityContainer">
+            <div class="location-select-row disabled" id="postingCityWrap">
+              <span class="location-label">City</span>
+              <select class="form-control" id="postingCitySelect" name="city_id" data-old-value="<?php echo oldVal($old, 'city_id'); ?>" disabled>
+                <option value="">Select city…</option>
               </select>
             </div>
+          </div>
+
+          <input class="location-preview" type="text" id="postingLocationPreview" placeholder="Your selected location will appear here" value="<?php echo oldVal($old, 'location'); ?>" readonly>
+          <div class="location-help">
+            <i class="fas fa-info-circle"></i>
+            <span>Using Philippine PSGC database for accurate location data</span>
           </div>
         </div>
 
@@ -531,110 +1168,104 @@ function posting_duration_hours_label($durationWeeks): string {
         <input type="hidden" id="postingProvinceName" name="province_name" value="<?php echo oldVal($old, 'province_name'); ?>">
         <input type="hidden" id="postingCityName" name="city_name" value="<?php echo oldVal($old, 'city_name'); ?>">
         <input type="hidden" id="postingLocationValue" name="location" value="<?php echo oldVal($old, 'location'); ?>">
-
-        <input class="form-control location-preview-input" type="text" id="postingLocationPreview" placeholder="Selected location will appear here" value="<?php echo oldVal($old, 'location'); ?>" readonly>
-        <div id="postingLocationHelp" class="location-help-text"><i class="fas fa-circle-info"></i><span>Data source: PSGC API (Region, Province, City/Municipality).</span></div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Slots Available <span style="color:var(--red);">*</span></label>
-        <input class="form-control" type="number" min="1" name="slots_available" placeholder="e.g. 5" value="<?php echo oldVal($old, 'slots_available'); ?>" required>
+
+      <!-- Status -->
+      <div class="form-group" style="max-width: 300px;">
+        <label class="form-label">
+          Initial Status
+          <span class="form-label-required">*</span>
+        </label>
+        <select class="form-control" name="status" required>
+          <?php foreach ($allowedStatus as $s): ?>
+            <option value="<?php echo e($s); ?>" <?php echo (oldVal($old,'status','Open') === $s ? 'selected' : ''); ?>>
+              <?php echo e($s); ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+        <span class="form-hint">You can change this status anytime</span>
       </div>
-    </div>
-
-    <!-- Status -->
-    <div class="form-group" style="max-width:320px;">
-      <label class="form-label">Status <span style="color:var(--red);">*</span></label>
-      <select class="form-control" name="status" required>
-        <?php foreach ($allowedStatus as $s): ?>
-          <option value="<?php echo e($s); ?>" <?php echo (oldVal($old,'status','Open') === $s ? 'selected' : ''); ?>>
-            <?php echo e($s); ?>
-          </option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-
-  </form>
-</div>
-
-<!-- Skills Card -->
-<div class="card mt">
-  <h3 class="card-title"><i class="fa-solid fa-list-check" style="color:var(--gold,#c9a84c);margin-right:6px;"></i> Required Skills</h3>
-  <p style="font-size:12px;color:var(--grey,#888);margin-bottom:14px;">Check the skills needed, set the proficiency level, and mark mandatory ones.</p>
-
-  <!-- Search filter for skills -->
-  <div class="form-group" style="max-width:360px;margin-bottom:14px;">
-    <input class="form-control" type="text" id="skillSearch" placeholder="🔍  Search skills…" oninput="filterSkills()">
+    </form>
   </div>
 
-  <div style="border:1px solid var(--border,#e8e0e0);border-radius:8px;max-height:360px;overflow-y:auto;">
-    <!-- Header row -->
-    <div style="display:grid;grid-template-columns:32px 1fr 170px 100px;gap:10px;align-items:center;padding:10px 14px;background:var(--dark,#050505);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-radius:8px 8px 0 0;position:sticky;top:0;z-index:2;">
-      <span></span>
-      <span>Skill</span>
-      <span>Level</span>
-      <span>Mandatory</span>
+  <!-- Required Skills Section -->
+  <div class="form-section">
+    <h3 class="form-section-title">
+      <i class="fa-solid fa-list-check"></i>
+      Required Skills
+    </h3>
+    <p class="form-section-subtitle">Select the skills candidates should have. Mark mandatory skills that are essential for the role</p>
+
+    <!-- Skills Search -->
+    <div class="form-group" style="max-width: 400px; margin-bottom: 20px;">
+      <input class="form-control" type="text" id="skillSearch" placeholder="🔍  Search skills…" oninput="filterSkills()">
+      <span class="form-hint">Type to filter the skills list below</span>
     </div>
 
-    <?php if (empty($skills)): ?>
-      <div style="padding:24px;text-align:center;color:var(--grey,#888);font-size:13px;">
-        <i class="fa-solid fa-circle-exclamation"></i> No skills found in the database. Please seed the <code>skill</code> table first.
+    <!-- Skills Table -->
+    <div class="skills-container">
+      <div class="skills-header">
+        <span></span>
+        <span>Skill Name</span>
+        <span>Proficiency Level</span>
+        <span>Mandatory</span>
       </div>
-    <?php endif; ?>
+      <div class="skills-body">
+        <?php if (empty($skills)): ?>
+          <div style="padding: 32px 24px; text-align: center; color: var(--text-secondary);">
+            <i class="fas fa-exclamation-circle" style="font-size: 24px; margin-bottom: 12px; display: block; color: #d1d5db;"></i>
+            <div style="font-weight: 600; margin-bottom: 4px;">No skills available</div>
+            <div style="font-size: 12px;">Please ensure the skills database is populated</div>
+          </div>
+        <?php endif; ?>
 
-    <?php foreach ($skills as $idx => $skill):
-      $sid     = (int)$skill['skill_id'];
-      $checked = isset($_POST['skills']) && in_array((string)$sid, array_map('strval', $_POST['skills'] ?? []), true);
-      $bgRow   = ($idx % 2 === 0) ? 'background:rgba(0,0,0,.015);' : '';
-    ?>
-    <div class="skill-entry" style="display:grid;grid-template-columns:32px 1fr 170px 100px;gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border,#e8e0e0);<?php echo $bgRow; ?>" data-name="<?php echo e(strtolower($skill['skill_name'])); ?>">
-      <input type="checkbox" form="internshipForm" name="skills[]" value="<?php echo $sid; ?>"
-             style="width:16px;height:16px;accent-color:var(--red,#8b0000);cursor:pointer;"
-             <?php echo $checked ? 'checked' : ''; ?>>
-      <span style="font-size:13px;font-weight:500;"><?php echo e($skill['skill_name']); ?></span>
-      <select form="internshipForm" name="skill_level[<?php echo $sid; ?>]" class="form-control" style="padding:6px 8px;font-size:12px;">
-        <?php foreach ($allowedLevels as $lvl): ?>
-          <?php $sel = (($_POST['skill_level'][$sid] ?? 'Beginner') === $lvl) ? 'selected' : ''; ?>
-          <option value="<?php echo e($lvl); ?>" <?php echo $sel; ?>><?php echo e($lvl); ?></option>
+        <?php foreach ($skills as $idx => $skill):
+          $sid = (int)$skill['skill_id'];
+          $checked = isset($_POST['skills']) && in_array((string)$sid, array_map('strval', $_POST['skills'] ?? []), true);
+        ?>
+        <div class="skills-row" data-name="<?php echo e(strtolower($skill['skill_name'])); ?>">
+          <input type="checkbox" form="internshipForm" name="skills[]" value="<?php echo $sid; ?>" <?php echo $checked ? 'checked' : ''; ?>>
+          <div style="font-weight: 500; color: var(--text-primary);"><?php echo e($skill['skill_name']); ?></div>
+          <select form="internshipForm" name="skill_level[<?php echo $sid; ?>]" class="form-control">
+            <?php foreach ($allowedLevels as $lvl): ?>
+              <?php $sel = (($_POST['skill_level'][$sid] ?? 'Beginner') === $lvl) ? 'selected' : ''; ?>
+              <option value="<?php echo e($lvl); ?>" <?php echo $sel; ?>><?php echo e($lvl); ?></option>
+            <?php endforeach; ?>
+          </select>
+          <label style="display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <input type="checkbox" form="internshipForm" name="skill_mandatory[<?php echo $sid; ?>]" value="1" <?php echo isset($_POST['skill_mandatory'][$sid]) ? 'checked' : ''; ?>>
+          </label>
+        </div>
         <?php endforeach; ?>
-      </select>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:500;color:var(--grey,#888);">
-        <input type="checkbox" form="internshipForm" name="skill_mandatory[<?php echo $sid; ?>]" value="1"
-               style="accent-color:var(--gold,#c9a84c);"
-               <?php echo isset($_POST['skill_mandatory'][$sid]) ? 'checked' : ''; ?>>
-        Yes
-      </label>
+      </div>
     </div>
-    <?php endforeach; ?>
+
+    <div class="skills-info">
+      <i class="fas fa-lightbulb"></i>
+      <span>Tip: Mark skills as "Mandatory" if they are essential for the role. Other skills are considered "Nice to have"</span>
+    </div>
   </div>
 
-  <!-- Actions (inside skills card but submitting the form above) -->
-  <div style="display:flex;gap:10px;margin-top:18px;">
-    <button type="submit" form="internshipForm" class="btn btn-red btn-lg">
-      <i class="fa-solid fa-rocket"></i> &nbsp;Create Internship
+  <!-- Form Actions -->
+  <div class="btn-actions">
+    <button type="submit" form="internshipForm" class="btn-modern btn-primary">
+      <i class="fa-solid fa-rocket"></i>
+      Post Internship
     </button>
-    <a href="/SkillHive/layout.php?page=employer/dashboard" class="btn btn-dark btn-lg">
-      <i class="fa-solid fa-xmark"></i> &nbsp;Cancel
+    <a href="/SkillHive/layout.php?page=employer/dashboard" class="btn-modern btn-secondary">
+      <i class="fa-solid fa-arrow-left"></i>
+      Cancel
     </a>
   </div>
 </div>
 
-<!-- Hidden form tag that wraps everything via "form" attribute -->
+<!-- Hidden form wrapper for form attribute reference -->
 <form id="internshipForm" method="post" action="/SkillHive/layout.php?page=employer/post_internship" style="display:none;"></form>
 
-<!-- Re-associate all inputs in the first card to internshipForm -->
+<!-- Initialize form field associations -->
 <script>
-  // Attach all inputs/selects/textareas inside .card forms to the single internshipForm
-  document.querySelectorAll('.card input, .card select, .card textarea').forEach(el => {
-    const parentForm = el.closest('form');
-    const isActionFormField = parentForm && (
-      parentForm.querySelector('input[name="delete_posting_id"]') ||
-      parentForm.querySelector('input[name="edit_posting_id"]')
-    );
-
-    if (isActionFormField) {
-      return;
-    }
-
+  // Attach all inputs/selects/textareas inside form sections to the internshipForm
+  document.querySelectorAll('.form-section input, .form-section select, .form-section textarea').forEach(el => {
     if (!el.hasAttribute('form') && el.name) {
       el.setAttribute('form', 'internshipForm');
     }
