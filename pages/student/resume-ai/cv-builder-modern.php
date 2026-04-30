@@ -1,4 +1,3 @@
-
 <div class="cv-hero" style="background:linear-gradient(135deg,#0a0e27 0%,#162550 40%,#1a3a5c 70%,#0f2a45 100%);border-radius:16px;padding:18px 20px 18px 20px;margin-bottom:16px;display:flex;align-items:center;gap:18px;position:relative;overflow:hidden;">
   <div style="flex:1;z-index:2;">
     <h2 style="margin:0;font-size:1.5rem;line-height:1.2;color:#fff;font-weight:600;letter-spacing:-0.01em;">Build your professional CV</h2>
@@ -315,7 +314,31 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
   <div class="cv-preview-pane">
     <div class="cv-preview-header">
       <span id="previewPageLabel">Page 1 of 1</span>
-      <button type="button" class="cv-preview-zoom" id="zoomBtn">100%</button>
+      <div class="cv-preview-controls">
+        <div class="cv-preview-control-group">
+          <label class="cv-ctrl-label">Size</label>
+          <select id="pageSizeSelect" class="cv-page-size-select">
+            <option value="a4" selected>A4 (8.27 × 11.69 in)</option>
+            <option value="letter">Letter (8.5 × 11 in)</option>
+            <option value="legal">Legal (8.5 × 14 in)</option>
+            <option value="short">Short (8.5 × 11 in)</option>
+          </select>
+        </div>
+        <div class="cv-preview-control-group">
+          <label class="cv-ctrl-label">Font</label>
+          <button type="button" class="cv-ctrl-btn" id="fontDecBtn">&#8722;</button>
+          <span class="cv-ctrl-val" id="fontSizeLabel">10px</span>
+          <button type="button" class="cv-ctrl-btn" id="fontIncBtn">+</button>
+        </div>
+        <div class="cv-preview-control-group">
+          <label class="cv-ctrl-label">Margin</label>
+          <button type="button" class="cv-ctrl-btn" id="marginDecBtn">&#8722;</button>
+          <span class="cv-ctrl-val" id="marginLabel">34px</span>
+          <button type="button" class="cv-ctrl-btn" id="marginIncBtn">+</button>
+        </div>
+        <button type="button" class="cv-preview-zoom" id="zoomBtn">100%</button>
+        <button type="button" class="cv-ctrl-reset" id="resetLayoutBtn" title="Reset font &amp; margins">&#8635;</button>
+      </div>
     </div>
     <div class="cv-preview-container">
       <div class="cv-preview-paper" id="cvPreview">
@@ -779,6 +802,89 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
   color: #6b7280;
 }
 
+.cv-page-size-select {
+  border: none;
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  padding: 0 2px;
+  outline: none;
+  font-family: inherit;
+}
+
+.cv-page-size-select:focus {
+  outline: none;
+}
+
+.cv-preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cv-preview-control-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 3px 6px;
+}
+
+.cv-ctrl-label {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  font-weight: 600;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+
+.cv-ctrl-btn {
+  background: none;
+  border: none;
+  color: #374151;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 3px;
+  line-height: 1;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+
+.cv-ctrl-btn:hover {
+  background: #f3f4f6;
+}
+
+.cv-ctrl-val {
+  font-size: 0.75rem;
+  color: #374151;
+  font-weight: 600;
+  min-width: 30px;
+  text-align: center;
+}
+
+.cv-ctrl-reset {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  color: #9ca3af;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 3px 7px;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+}
+
+.cv-ctrl-reset:hover {
+  color: #374151;
+  background: #f3f4f6;
+}
+
 .cv-preview-zoom {
   background: white;
   border: 1px solid #d1d5db;
@@ -1069,6 +1175,14 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
     saveStatus: document.getElementById('cvSaveStatus'),
     zoomBtn: document.getElementById('zoomBtn'),
     cvPreview: document.getElementById('cvPreview'),
+    fontDecBtn: document.getElementById('fontDecBtn'),
+    fontIncBtn: document.getElementById('fontIncBtn'),
+    fontSizeLabel: document.getElementById('fontSizeLabel'),
+    marginDecBtn: document.getElementById('marginDecBtn'),
+    marginIncBtn: document.getElementById('marginIncBtn'),
+    marginLabel: document.getElementById('marginLabel'),
+    resetLayoutBtn: document.getElementById('resetLayoutBtn'),
+    pageSizeSelect: document.getElementById('pageSizeSelect'),
     detailsCardTitle: document.getElementById('detailsCardTitle'),
     bioCardTitle: document.getElementById('bioCardTitle'),
     skillsCardTitle: document.getElementById('skillsCardTitle'),
@@ -1244,6 +1358,10 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
   let saveInFlight = false;
   let queuedSave = false;
   let zoomLevel = 100;
+  let cvFontSize = 10;
+  let cvMargin = 34;
+  var CV_FONT_MIN = 7, CV_FONT_MAX = 16, CV_FONT_DEFAULT = 10;
+  var CV_MARGIN_MIN = 10, CV_MARGIN_MAX = 60, CV_MARGIN_DEFAULT = 34;
 
   function setSaveStatus(message, tone) {
     if (!ui.saveStatus) {
@@ -1887,6 +2005,52 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
     scheduleAutoSave();
   }
 
+  var PAGE_SIZES = {
+    a4:     { label: 'A4',     ratio: '8.27/11.69', maxW: 600, pdfW: 210.1, pdfH: 296.9, fmt: 'a4' },
+    letter: { label: 'Letter', ratio: '8.5/11',     maxW: 620, pdfW: 215.9, pdfH: 279.4, fmt: 'letter' },
+    legal:  { label: 'Legal',  ratio: '8.5/14',     maxW: 620, pdfW: 215.9, pdfH: 355.6, fmt: 'legal' },
+    short:  { label: 'Short',  ratio: '8.5/11',     maxW: 620, pdfW: 215.9, pdfH: 279.4, fmt: 'letter' }
+  };
+  var currentPageSize = 'a4';
+
+  function applyPageSize(sizeKey) {
+    var sz = PAGE_SIZES[sizeKey] || PAGE_SIZES['a4'];
+    currentPageSize = sizeKey;
+    ui.cvPreview.style.aspectRatio = sz.ratio;
+    ui.cvPreview.style.maxWidth = sz.maxW + 'px';
+    if (ui.pageSizeSelect) ui.pageSizeSelect.value = sizeKey;
+  }
+
+  function applyFontAndMargin() {
+    ui.cvPreview.style.fontSize = cvFontSize + 'px';
+    ui.cvPreview.style.padding = cvMargin + 'px ' + Math.round(cvMargin * 1.06) + 'px';
+    if (ui.fontSizeLabel) ui.fontSizeLabel.textContent = cvFontSize + 'px';
+    if (ui.marginLabel) ui.marginLabel.textContent = cvMargin + 'px';
+  }
+
+  function handleFontInc() {
+    if (cvFontSize < CV_FONT_MAX) { cvFontSize += 1; applyFontAndMargin(); }
+  }
+
+  function handleFontDec() {
+    if (cvFontSize > CV_FONT_MIN) { cvFontSize -= 1; applyFontAndMargin(); }
+  }
+
+  function handleMarginInc() {
+    if (cvMargin < CV_MARGIN_MAX) { cvMargin += 4; applyFontAndMargin(); }
+  }
+
+  function handleMarginDec() {
+    if (cvMargin > CV_MARGIN_MIN) { cvMargin -= 4; applyFontAndMargin(); }
+  }
+
+  function handleResetLayout() {
+    cvFontSize = CV_FONT_DEFAULT;
+    cvMargin = CV_MARGIN_DEFAULT;
+    applyFontAndMargin();
+    applyPageSize('a4');
+  }
+
   function handleZoomToggle() {
     zoomLevel = zoomLevel >= 120 ? 90 : zoomLevel + 10;
     const scale = zoomLevel / 100;
@@ -1897,55 +2061,113 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
   function handleDownloadPdf() {
     saveCv(false);
 
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
-    if (!printWindow) {
-      setSaveStatus('Enable pop-ups to allow PDF download.', 'error');
-      return;
+    var btn = ui.downloadPdfBtn;
+    var originalText = btn ? btn.textContent : '';
+    if (btn) {
+      btn.textContent = 'Generating PDF…';
+      btn.disabled = true;
     }
 
-    const previewHtml = ui.cvPreview.outerHTML;
-    const printStyles = [
-      'body { margin: 0; padding: 20px; background: #fff; font-family: "Times New Roman", Times, serif; }',
-      '.cv-preview-paper { margin: 0 auto; max-width: 794px; box-shadow: none; border: 1px solid #d1d5db; padding: 34px 36px; color: #1f2937; line-height: 1.42; }',
-      '.cv-preview-header-section { margin-bottom: 16px; }',
-      '.cv-preview-profile { display: flex; gap: 14px; align-items: center; margin-bottom: 10px; }',
-      '.cv-preview-pic { width: 72px; height: 72px; border-radius: 6px; object-fit: cover; }',
-      '.cv-preview-info h1 { margin: 0; font-size: 2.25rem; line-height: 1.05; }',
-      '.cv-preview-info p { margin: 4px 0 0; font-size: 0.73rem; }',
-      '.cv-preview-contact-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr); gap: 22px; font-size: 0.73rem; }',
-      '.cv-preview-contact-col { display: flex; flex-direction: column; gap: 3px; }',
-      '.cv-preview-contact-col-right { padding-top: 3px; }',
-      '.cv-preview-contact-label { margin: 0; font-weight: 700; }',
-      '.cv-preview-contact-strong { margin: 0; font-weight: 700; }',
-      '.cv-preview-inline { margin: 0; line-height: 1.36; }',
-      '.cv-preview-section { margin-bottom: 16px; }',
-      '.cv-preview-section h2 { margin: 0 0 8px; font-size: 0.85rem; font-weight: 700; border-bottom: 1px solid #cfd5db; padding-bottom: 3px; }',
-      '.cv-preview-summary-section h2 { display: none; }',
-      '.cv-preview-entry-row { display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 12px; align-items: start; }',
-      '.cv-preview-entry-date { font-size: 0.72rem; font-weight: 700; line-height: 1.38; }',
-      '.cv-preview-entry-body { display: flex; flex-direction: column; gap: 3px; }',
-      '.cv-preview-entry-title { margin: 0; font-size: 0.76rem; font-weight: 700; line-height: 1.35; }',
-      '.cv-preview-entry-subtitle { margin: 0; font-size: 0.72rem; font-style: italic; line-height: 1.4; }',
-      '.cv-preview-entry-meta, .cv-preview-skill-tag { margin: 0; font-size: 0.72rem; line-height: 1.45; white-space: pre-wrap; }',
-      '@media (max-width: 680px) { .cv-preview-contact-grid, .cv-preview-entry-row { grid-template-columns: 1fr; } }'
-    ].join('');
+    // Dynamically load html2canvas and jsPDF from CDN, then capture only the cv-preview-paper element
+    function loadScript(src, cb) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = cb;
+      s.onerror = function() {
+        setSaveStatus('Failed to load PDF library. Check your connection.', 'error');
+        if (btn) { btn.textContent = originalText; btn.disabled = false; }
+      };
+      document.head.appendChild(s);
+    }
 
-    printWindow.document.open();
-    printWindow.document.write(
-      '<!doctype html>'
-      + '<html><head><meta charset="utf-8"><title>CV</title><style>' + printStyles + '</style></head>'
-      + '<body>' + previewHtml + '</body></html>'
-    );
-    printWindow.document.close();
+    function doCapture() {
+      var paper = ui.cvPreview;
+      if (!paper) {
+        setSaveStatus('CV preview not found.', 'error');
+        if (btn) { btn.textContent = originalText; btn.disabled = false; }
+        return;
+      }
 
-    printWindow.focus();
-    printWindow.onafterprint = function() {
-      printWindow.close();
-    };
+      // Temporarily reset any zoom transform so the capture is at 1:1
+      var prevTransform = paper.style.transform;
+      paper.style.transform = 'none';
 
-    window.setTimeout(function() {
-      printWindow.print();
-    }, 250);
+      html2canvas(paper, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      }).then(function(canvas) {
+        paper.style.transform = prevTransform;
+
+        var imgData = canvas.toDataURL('image/png');
+        // Use selected page size dimensions
+        var sz = PAGE_SIZES[currentPageSize] || PAGE_SIZES['a4'];
+        var pdfW = sz.pdfW;
+        var pdfH = sz.pdfH;
+        var canvasW = canvas.width;
+        var canvasH = canvas.height;
+        var ratio = pdfW / (canvasW / 2);
+        var imgH = (canvasH / 2) * ratio;
+
+        // eslint-disable-next-line new-cap
+        var pdf = new window.jspdf.jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: sz.fmt
+        });
+
+        var pageHeightPx = (pdfH / ratio);
+        var totalPages = Math.ceil((canvasH / 2) / pageHeightPx);
+
+        for (var page = 0; page < totalPages; page++) {
+          if (page > 0) { pdf.addPage(); }
+          var srcY = page * pageHeightPx * 2; // back to canvas scale
+          var sliceH = Math.min(pageHeightPx * 2, canvasH - srcY);
+
+          var pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvasW;
+          pageCanvas.height = sliceH;
+          var ctx = pageCanvas.getContext('2d');
+          ctx.drawImage(canvas, 0, srcY, canvasW, sliceH, 0, 0, canvasW, sliceH);
+
+          var pageImgData = pageCanvas.toDataURL('image/png');
+          var sliceHmm = (sliceH / 2) * ratio;
+          pdf.addImage(pageImgData, 'PNG', 0, 0, pdfW, sliceHmm);
+        }
+
+        var firstName = (state.firstName || '').trim();
+        var lastName = (state.lastName || '').trim();
+        var filename = (firstName || lastName)
+          ? (firstName + (lastName ? '_' + lastName : '') + '_CV.pdf').replace(/\s+/g, '_')
+          : 'CV.pdf';
+
+        pdf.save(filename);
+
+        if (btn) { btn.textContent = originalText; btn.disabled = false; }
+        setSaveStatus('PDF downloaded!', 'success');
+      }).catch(function(err) {
+        paper.style.transform = prevTransform;
+        setSaveStatus('PDF generation failed. Try again.', 'error');
+        if (btn) { btn.textContent = originalText; btn.disabled = false; }
+      });
+    }
+
+    // Load libraries sequentially if not already present
+    if (window.html2canvas && window.jspdf) {
+      doCapture();
+    } else if (window.html2canvas) {
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', doCapture);
+    } else {
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function() {
+        if (window.jspdf) {
+          doCapture();
+        } else {
+          loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', doCapture);
+        }
+      });
+    }
   }
 
   function bindBaseFormEvents() {
@@ -2076,6 +2298,17 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
     if (ui.zoomBtn) {
       ui.zoomBtn.addEventListener('click', handleZoomToggle);
     }
+
+    if (ui.fontIncBtn) ui.fontIncBtn.addEventListener('click', handleFontInc);
+    if (ui.fontDecBtn) ui.fontDecBtn.addEventListener('click', handleFontDec);
+    if (ui.marginIncBtn) ui.marginIncBtn.addEventListener('click', handleMarginInc);
+    if (ui.marginDecBtn) ui.marginDecBtn.addEventListener('click', handleMarginDec);
+    if (ui.resetLayoutBtn) ui.resetLayoutBtn.addEventListener('click', handleResetLayout);
+    if (ui.pageSizeSelect) {
+      ui.pageSizeSelect.addEventListener('change', function() {
+        applyPageSize(ui.pageSizeSelect.value);
+      });
+    }
   }
 
   function escapeHtml(value) {
@@ -2090,6 +2323,8 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
   async function init() {
     applyStateToForm();
     applyLanguage();
+    applyPageSize('a4');
+    applyFontAndMargin();
     renderSkillsList();
     renderExperienceList();
     updatePreview();
