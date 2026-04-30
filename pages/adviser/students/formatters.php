@@ -181,6 +181,38 @@ if (!function_exists('adviser_students_year_level_label')) {
     }
 }
 
+if (!function_exists('adviser_students_track_prefix')) {
+    function adviser_students_track_prefix(?string $track): string
+    {
+        $normalized = strtolower(trim((string)($track ?? '')));
+        if ($normalized === 'business analytics') {
+            return 'BA';
+        }
+
+        if ($normalized === 'networking') {
+            return 'NT';
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('adviser_students_section_label')) {
+    function adviser_students_section_label(?string $track, ?string $section): string
+    {
+        $cleanSection = strtoupper(trim((string)($section ?? '')));
+        $cleanSection = preg_replace('/\s+/', '', $cleanSection);
+        $cleanSection = $cleanSection !== null ? $cleanSection : '';
+
+        if ($cleanSection === '') {
+            return 'Unassigned';
+        }
+
+        $prefix = adviser_students_track_prefix($track);
+        return $prefix !== '' ? ($prefix . ' ' . $cleanSection) : $cleanSection;
+    }
+}
+
 if (!function_exists('adviser_students_avatar_gradient')) {
     function adviser_students_avatar_gradient($seed): string
     {

@@ -21,6 +21,8 @@ if (!function_exists('adviser_monitoring_get_rows')) {
                 o.start_date AS ojt_start_date,
                 o.created_at AS ojt_created_at,
                 i.title AS internship_title,
+                i.location AS internship_location,
+                i.work_setup AS internship_work_setup,
                 e.company_name,
                 dl.log_date AS latest_log_date,
                 dl.accomplishment AS latest_accomplishment
@@ -186,5 +188,84 @@ if (!function_exists('adviser_monitoring_get_recent_logs_by_record')) {
         }
 
         return $grouped;
+    }
+}
+
+if (!function_exists('adviser_monitoring_get_map_students')) {
+    function adviser_monitoring_get_map_students(PDO $pdo, int $adviserId): array
+    {
+        $sql = '
+            SELECT DISTINCT
+                a.application_id,
+                s.student_id,
+                s.student_number,
+                s.first_name,
+                s.last_name,
+                s.program,
+                s.year_level,
+                o.record_id,
+                o.hours_required,
+                o.hours_completed,
+                o.completion_status AS ojt_status,
+                i.internship_id,
+                i.title AS internship_title,
+                i.location AS internship_location,
+                e.company_name
+            FROM adviser_assignment aa
+            INNER JOIN student s ON s.student_id = aa.student_id
+            INNER JOIN application a ON a.student_id = s.student_id
+                AND COALESCE(NULLIF(TRIM(a.status), ""), "") = "Accepted"
+            INNER JOIN internship i ON i.internship_id = a.internship_id
+            LEFT JOIN employer e ON e.employer_id = i.employer_id
+            LEFT JOIN (
+                SELECT o1.*
+                FROM ojt_record o1
+                INNER JOIN (
+                    SELECT student_id, internship_id, MAX(record_id) AS max_record_id
+                    FROM ojt_record
+                    GROUP BY student_id, internship_id
+                ) latest ON latest.max_record_id = o1.record_id
+            ) o ON o.student_id = s.student_id
+                AND o.internship_id = a.internship_id
+            WHERE aa.adviser_id = :adviser_id
+              AND COALESCE(NULLIF(TRIM(aa.status), ""), "Active") = "Active"
+              AND TRIM(COALESCE(i.location, "")) <> ""
+            ORDER BY i.location ASC, e.company_name ASC, s.last_name ASC, s.first_name ASC';
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':adviser_id' => $adviserId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $mapped = [];
+        foreach ($rows as $row) {
+            $studentName = trim((string)($row['first_name'] ?? '') . ' ' . (string)($row['last_name'] ?? ''));
+            $hasOjtRecord = (int)($row['record_id'] ?? 0) > 0;
+            $hoursCompleted = (float)($row['hours_completed'] ?? 0);
+            $hoursRequired = (float)($row['hours_required'] ?? 0);
+            $hoursLabel = $hasOjtRecord
+                ? ((int)round($hoursCompleted) . '/' . (int)round($hoursRequired) . ' hrs')
+                : 'No OJT record yet';
+
+            $mapped[] = [
+                'application_id' => (int)($row['application_id'] ?? 0),
+                'student_id' => (int)($row['student_id'] ?? 0),
+                'student_number' => trim((string)($row['student_number'] ?? '')),
+                'student_name' => $studentName !== '' ? $studentName : 'Unnamed Student',
+                'program' => trim((string)($row['program'] ?? '')),
+                'year_level' => (int)($row['year_level'] ?? 0),
+                'record_id' => (int)($row['record_id'] ?? 0),
+                'hours_required' => $hoursRequired,
+                'hours_completed' => $hoursCompleted,
+                'hours_label' => $hoursLabel,
+                'progress_percent' => $hasOjtRecord ? adviser_monitoring_progress_percent($hoursCompleted, $hoursRequired) : 0,
+                'ojt_status' => trim((string)($row['ojt_status'] ?? '')),
+                'internship_id' => (int)($row['internship_id'] ?? 0),
+                'internship_title' => trim((string)($row['internship_title'] ?? 'Internship')),
+                'location' => trim((string)($row['internship_location'] ?? '')),
+                'company_name' => trim((string)($row['company_name'] ?? 'No company listed')),
+            ];
+        }
+
+        return $mapped;
     }
 }

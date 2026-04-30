@@ -36,6 +36,7 @@ $bulkImportSummaryMessage = '';
 $shouldOpenBulkImportModal = false;
 $staticProgramLabel = adviser_students_static_program_label();
 $staticDepartmentLabel = adviser_students_static_department_label();
+$trackOptions = adviser_students_track_options();
 $postAction = (string)($_POST['action'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'add_student') {
@@ -185,17 +186,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
     <div class="adv-toolbar-left">
       <label class="adv-search" aria-label="Search students">
         <i class="fas fa-search"></i>
-        <input type="text" name="search" placeholder="Search students..." value="<?php echo adviser_students_escape($selected['search'] ?? ''); ?>">
+        <input id="advStudentSearchInput" type="text" name="search" placeholder="Search students..." value="<?php echo adviser_students_escape($selected['search'] ?? ''); ?>">
       </label>
 
-      <select class="adv-select" name="department" aria-label="Filter by department">
+      <select id="advStudentSectionFilter" class="adv-select" name="department" aria-label="Filter by section">
         <option value="">All Section</option>
         <?php foreach (($filterOptions['departments'] ?? []) as $departmentOption): ?>
           <option value="<?php echo adviser_students_escape($departmentOption); ?>" <?php echo ($selected['department'] ?? '') === $departmentOption ? 'selected' : ''; ?>><?php echo adviser_students_escape($departmentOption); ?></option>
         <?php endforeach; ?>
       </select>
 
-      <select class="adv-select" name="status" aria-label="Filter by status">
+      <select id="advStudentStatusFilter" class="adv-select" name="status" aria-label="Filter by status">
         <option value="">All Status</option>
         <?php foreach (($filterOptions['statuses'] ?? []) as $statusOption): ?>
           <option value="<?php echo adviser_students_escape($statusOption); ?>" <?php echo ($selected['status'] ?? '') === $statusOption ? 'selected' : ''; ?>><?php echo adviser_students_escape($statusOption); ?></option>
@@ -215,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
         <thead>
           <tr>
             <th>Student</th>
-            <th>Department</th>
+            <th>Section</th>
             <th>Company / MOA</th>
             <th>OJT Hours</th>
             <th>Requirements</th>
@@ -236,7 +237,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
               if ($academicYearLabel === '') {
                 $academicYearLabel = adviser_students_year_level_label($row['year_level'] ?? '');
               }
+              $trackLabel = trim((string)($row['track'] ?? ''));
+              $sectionLabel = trim((string)($row['section'] ?? ''));
+              $sectionDisplay = adviser_students_section_label($trackLabel, $sectionLabel);
+              $statusLabel = (string)($row['status_label'] ?? 'No OJT');
               $yearProgram = 'Academic Year: ' . $academicYearLabel . ' - ' . trim((string)($row['program'] ?? 'N/A'));
+              if ($trackLabel !== '') {
+                $yearProgram .= ' - ' . $trackLabel;
+              }
               $hoursCompleted = (float)($row['hours_completed'] ?? 0);
               $hoursRequired = (float)($row['hours_required'] ?? 0);
               $totalRequirements = (int)($row['total_requirements'] ?? 0);
@@ -244,9 +252,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
               $requirementsPending = (int)($row['requirements_pending'] ?? 0);
               $requirementsCompletion = (int)($row['requirements_completion'] ?? 0);
               $internshipId = isset($row['internship_id']) ? (int)$row['internship_id'] : 0;
+              $searchText = implode(' ', [
+                $studentName,
+                (string)($row['student_number'] ?? ''),
+                (string)($row['email'] ?? ''),
+                (string)($row['program'] ?? ''),
+                $trackLabel,
+                $sectionDisplay,
+                $companyName,
+                $internshipTitle,
+                $statusLabel,
+              ]);
               $buttonId = 'requirements-trigger-' . $studentId;
               ?>
-              <tr>
+              <tr class="js-student-row" data-search="<?php echo adviser_students_escape(strtolower($searchText)); ?>" data-section="<?php echo adviser_students_escape($sectionDisplay); ?>" data-status="<?php echo adviser_students_escape($statusLabel); ?>">
                 <td>
                   <div class="adv-student">
                     <span class="adv-avatar" style="background:<?php echo adviser_students_escape(adviser_students_avatar_gradient($studentId)); ?>;"><?php echo adviser_students_escape($row['initials'] ?? 'NA'); ?></span>
@@ -256,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
                     </div>
                   </div>
                 </td>
-                <td><span class="adv-dept"><?php echo adviser_students_escape((string)($row['department'] ?? 'Unassigned')); ?></span></td>
+                <td><span class="adv-dept"><?php echo adviser_students_escape($sectionDisplay); ?></span></td>
                 <td>
                   <p class="adv-company"><?php echo adviser_students_escape($companyName !== '' ? $companyName : '-'); ?></p>
                   <p class="adv-company-meta"><?php echo adviser_students_escape($moaLabel); ?></p>
@@ -295,6 +314,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
           <?php else: ?>
             <tr>
               <td colspan="6" class="adv-empty">No students found for the selected filters.</td>
+            </tr>
+          <?php endif; ?>
+          <?php if (!empty($rows)): ?>
+            <tr id="advStudentNoLiveMatches" style="display:none;">
+              <td colspan="6" class="adv-empty">No students match your search or filters.</td>
             </tr>
           <?php endif; ?>
         </tbody>
@@ -345,15 +369,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
         </div>
 
         <div class="adv-add-field full">
-          <label class="adv-add-label" for="addStudentDepartment">Department</label>
-          <input id="addStudentDepartment" class="adv-add-input" type="text" name="department" value="<?php echo adviser_students_escape((string)($addStudentForm['department'] ?? $staticDepartmentLabel)); ?>" readonly>
-          <div class="adv-add-help"></div>
-        </div>
-
-        <div class="adv-add-field full">
           <label class="adv-add-label" for="addStudentProgram">Program</label>
           <input id="addStudentProgram" class="adv-add-input" type="text" name="program" value="<?php echo adviser_students_escape((string)($addStudentForm['program'] ?? $staticProgramLabel)); ?>" readonly>
           <div class="adv-add-help"></div>
+        </div>
+
+        <input type="hidden" name="department" value="<?php echo adviser_students_escape((string)($addStudentForm['department'] ?? $staticDepartmentLabel)); ?>">
+
+        <div class="adv-add-field">
+          <label class="adv-add-label" for="addStudentTrack">Track</label>
+          <select id="addStudentTrack" class="adv-add-select" name="track" required>
+            <option value="">Select track</option>
+            <?php foreach ($trackOptions as $trackOption): ?>
+              <?php $trackValue = (string)($trackOption['value'] ?? ''); ?>
+              <option value="<?php echo adviser_students_escape($trackValue); ?>" <?php echo (string)($addStudentForm['track'] ?? '') === $trackValue ? 'selected' : ''; ?>>
+                <?php echo adviser_students_escape((string)($trackOption['label'] ?? $trackValue)); ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+          <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['track'] ?? ''); ?></div>
+        </div>
+
+        <div class="adv-add-field">
+          <label class="adv-add-label" for="addStudentSection">Section</label>
+          <input id="addStudentSection" class="adv-add-input" type="text" name="section" placeholder="e.g. 01" value="<?php echo adviser_students_escape($addStudentForm['section'] ?? ''); ?>" required>
+          <div class="adv-add-help"><?php echo adviser_students_escape($addStudentErrors['section'] ?? ''); ?></div>
         </div>
 
         <div class="adv-add-field full">
@@ -549,6 +589,61 @@ function bindBulkImportFormSubmission() {
       submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...';
     }
   });
+}
+
+function bindStudentTableLiveFilters() {
+  var toolbar = document.querySelector('.adv-toolbar');
+  var searchInput = document.getElementById('advStudentSearchInput');
+  var sectionFilter = document.getElementById('advStudentSectionFilter');
+  var statusFilter = document.getElementById('advStudentStatusFilter');
+  var rows = Array.prototype.slice.call(document.querySelectorAll('.js-student-row'));
+  var emptyRow = document.getElementById('advStudentNoLiveMatches');
+
+  if (!searchInput || !sectionFilter || !statusFilter || rows.length === 0) {
+    return;
+  }
+
+  if (toolbar) {
+    toolbar.addEventListener('submit', function (event) {
+      event.preventDefault();
+      applyStudentTableLiveFilters();
+    });
+  }
+
+  function normalize(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function applyStudentTableLiveFilters() {
+    var query = normalize(searchInput.value);
+    var selectedSection = normalize(sectionFilter.value);
+    var selectedStatus = normalize(statusFilter.value);
+    var visibleCount = 0;
+
+    rows.forEach(function (row) {
+      var haystack = normalize(row.getAttribute('data-search'));
+      var rowSection = normalize(row.getAttribute('data-section'));
+      var rowStatus = normalize(row.getAttribute('data-status'));
+      var matchesSearch = query === '' || haystack.indexOf(query) !== -1;
+      var matchesSection = selectedSection === '' || rowSection === selectedSection;
+      var matchesStatus = selectedStatus === '' || rowStatus === selectedStatus;
+      var shouldShow = matchesSearch && matchesSection && matchesStatus;
+
+      row.style.display = shouldShow ? '' : 'none';
+      if (shouldShow) {
+        visibleCount++;
+      }
+    });
+
+    if (emptyRow) {
+      emptyRow.style.display = visibleCount > 0 ? 'none' : '';
+    }
+  }
+
+  searchInput.addEventListener('input', applyStudentTableLiveFilters);
+  sectionFilter.addEventListener('change', applyStudentTableLiveFilters);
+  statusFilter.addEventListener('change', applyStudentTableLiveFilters);
+  applyStudentTableLiveFilters();
 }
 
   function buildStudentSchoolEmail(studentNumber) {
@@ -885,4 +980,5 @@ document.addEventListener('keydown', function (event) {
 bindAddStudentEmailAutomation();
 bindAddStudentFormSubmission();
 bindBulkImportFormSubmission();
+bindStudentTableLiveFilters();
 </script>

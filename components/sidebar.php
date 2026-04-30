@@ -42,7 +42,6 @@ if ($role === 'student') {
         ]],
         ['label' => 'MANAGEMENT', 'items' => [
             ['icon' => 'fas fa-building',         'text' => 'Companies',     'page' => 'adviser/companies'],
-            ['icon' => 'fas fa-clipboard-check',  'text' => 'Evaluations',   'page' => 'adviser/evaluation'],
         ]],
          ['label' => 'ACCOUNT', 'items' => [
           ['icon' => 'fas fa-gear',             'text' => 'Settings',     'page' => 'adviser/settings'],

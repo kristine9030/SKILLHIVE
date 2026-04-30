@@ -54,7 +54,6 @@ $allowedPages = [
         'adviser/journal_analytics',
         'adviser/analytics',
         'adviser/companies',
-        'adviser/evaluation',
         'adviser/settings',
         'adviser/students',
     ],
@@ -204,6 +203,14 @@ if (!$pageTitle) $pageTitle = 'Dashboard';
   <title>SkillHive — <?php echo htmlspecialchars($pageTitle); ?></title>
   <link rel="stylesheet" href="<?php echo $baseUrl; ?>/assets/css/skillhive.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <?php if ($currentPage === 'adviser/monitoring'): ?>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""></script>
+  <?php endif; ?>
 </head>
 <body class="role-<?php echo htmlspecialchars((string) $role); ?>">
 

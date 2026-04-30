@@ -1,14 +1,20 @@
 <?php
 /**
  * Purpose: Loads filter options for adviser students page.
- * Tables/columns used: adviser_assignment(adviser_id, student_id, status), student(student_id, department), ojt_record(student_id, completion_status, record_id).
+ * Tables/columns used: adviser_assignment(adviser_id, student_id, status), student(student_id, track, section), ojt_record(student_id, completion_status, record_id).
  */
 
 if (!function_exists('adviser_students_get_filter_options')) {
     function adviser_students_get_filter_options(PDO $pdo, int $adviserId): array
     {
         $departmentStmt = $pdo->prepare(
-            'SELECT DISTINCT COALESCE(NULLIF(TRIM(s.department), ""), "Unassigned") AS department
+            'SELECT DISTINCT
+                CASE
+                    WHEN COALESCE(NULLIF(TRIM(s.section), ""), "") = "" THEN "Unassigned"
+                    WHEN LOWER(TRIM(COALESCE(s.track, ""))) = "business analytics" THEN CONCAT("BA ", TRIM(s.section))
+                    WHEN LOWER(TRIM(COALESCE(s.track, ""))) = "networking" THEN CONCAT("NT ", TRIM(s.section))
+                    ELSE TRIM(s.section)
+                END AS department
              FROM adviser_assignment aa
              INNER JOIN student s ON s.student_id = aa.student_id
                          WHERE aa.adviser_id = :adviser_id
@@ -19,8 +25,18 @@ if (!function_exists('adviser_students_get_filter_options')) {
         $departments = $departmentStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
 
         $statusStmt = $pdo->prepare(
-            'SELECT DISTINCT COALESCE(NULLIF(TRIM(o.completion_status), ""), "No OJT") AS completion_status
+            'SELECT DISTINCT
+                CASE
+                    WHEN LOWER(TRIM(COALESCE(o.completion_status, ""))) = "completed" THEN "Completed"
+                    WHEN LOWER(TRIM(COALESCE(o.completion_status, ""))) = "ongoing" THEN "Ongoing"
+                    WHEN LOWER(TRIM(COALESCE(o.completion_status, ""))) = "dropped" THEN "Dropped"
+                    WHEN LOWER(TRIM(COALESCE(s.availability_status, ""))) = "currently interning" THEN "Currently Interning"
+                    WHEN LOWER(TRIM(COALESCE(s.availability_status, ""))) = "unavailable" THEN "Unavailable"
+                    WHEN LOWER(TRIM(COALESCE(s.availability_status, ""))) = "available" THEN "Available"
+                    ELSE "No OJT"
+                END AS completion_status
              FROM adviser_assignment aa
+             INNER JOIN student s ON s.student_id = aa.student_id
              LEFT JOIN (
                 SELECT o1.*
                 FROM ojt_record o1

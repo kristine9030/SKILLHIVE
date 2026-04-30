@@ -30,6 +30,25 @@ if (!function_exists('adviser_students_static_department_label')) {
     }
 }
 
+if (!function_exists('adviser_students_track_options')) {
+    function adviser_students_track_options(): array
+    {
+        return [
+            ['value' => 'Business Analytics', 'label' => 'Business Analytics'],
+            ['value' => 'Networking', 'label' => 'Networking'],
+        ];
+    }
+}
+
+if (!function_exists('adviser_students_normalize_section')) {
+    function adviser_students_normalize_section(string $value): string
+    {
+        $section = strtoupper(trim($value));
+        $section = preg_replace('/\s+/', '', $section);
+        return $section !== null ? $section : '';
+    }
+}
+
 if (!function_exists('adviser_students_default_academic_year')) {
     function adviser_students_default_academic_year(): string
     {
@@ -139,6 +158,8 @@ if (!function_exists('adviser_students_default_add_form')) {
             'last_name' => '',
             'program' => adviser_students_static_program_label(),
             'department' => adviser_students_static_department_label(),
+            'track' => '',
+            'section' => '',
             'academic_year' => adviser_students_default_academic_year(),
             'year_level' => '3',
             'email' => '',
@@ -368,6 +389,8 @@ if (!function_exists('adviser_students_process_add_student')) {
         $form['last_name'] = trim((string)($input['last_name'] ?? ''));
         $form['program'] = adviser_students_static_program_label();
         $form['department'] = adviser_students_static_department_label();
+        $form['track'] = trim((string)($input['track'] ?? ''));
+        $form['section'] = adviser_students_normalize_section((string)($input['section'] ?? ''));
         // Academic year is controlled by system defaults and is not user-editable.
         $form['academic_year'] = adviser_students_default_academic_year();
         $form['email'] = adviser_students_build_school_email($form['student_number']);
@@ -389,6 +412,17 @@ if (!function_exists('adviser_students_process_add_student')) {
 
         if ($form['student_number'] === '') {
             $errors['student_number'] = 'Student ID is required.';
+        }
+
+        $validTracks = array_column(adviser_students_track_options(), 'value');
+        if (!in_array($form['track'], $validTracks, true)) {
+            $errors['track'] = 'Select Business Analytics or Networking.';
+        }
+
+        if ($form['section'] === '') {
+            $errors['section'] = 'Section is required.';
+        } elseif (strlen($form['section']) > 20) {
+            $errors['section'] = 'Section must be 20 characters or fewer.';
         }
 
         if ($form['email'] === '') {
@@ -457,9 +491,9 @@ if (!function_exists('adviser_students_process_add_student')) {
             if (adviser_students_has_academic_year_column($pdo)) {
                 $insertStudentStmt = $pdo->prepare(
                     'INSERT INTO student
-                        (student_number, first_name, last_name, email, program, department, year_level, academic_year, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
+                        (student_number, first_name, last_name, email, program, department, track, section, year_level, academic_year, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
                      VALUES
-                        (:student_number, :first_name, :last_name, :email, :program, :department, :year_level, :academic_year, :password_hash, 1, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
+                        (:student_number, :first_name, :last_name, :email, :program, :department, :track, :section, :year_level, :academic_year, :password_hash, 1, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
                 );
                 $insertStudentStmt->execute([
                     ':student_number' => $form['student_number'],
@@ -468,6 +502,8 @@ if (!function_exists('adviser_students_process_add_student')) {
                     ':email' => $form['email'],
                     ':program' => $form['program'],
                     ':department' => $form['department'],
+                    ':track' => $form['track'],
+                    ':section' => $form['section'],
                     ':year_level' => $yearLevelValue,
                     ':academic_year' => $form['academic_year'],
                     ':password_hash' => password_hash($temporaryPassword, PASSWORD_DEFAULT),
@@ -476,9 +512,9 @@ if (!function_exists('adviser_students_process_add_student')) {
             } else {
                 $insertStudentStmt = $pdo->prepare(
                     'INSERT INTO student
-                        (student_number, first_name, last_name, email, program, department, year_level, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
+                        (student_number, first_name, last_name, email, program, department, track, section, year_level, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
                      VALUES
-                        (:student_number, :first_name, :last_name, :email, :program, :department, :year_level, :password_hash, 1, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
+                        (:student_number, :first_name, :last_name, :email, :program, :department, :track, :section, :year_level, :password_hash, 1, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
                 );
                 $insertStudentStmt->execute([
                     ':student_number' => $form['student_number'],
@@ -487,6 +523,8 @@ if (!function_exists('adviser_students_process_add_student')) {
                     ':email' => $form['email'],
                     ':program' => $form['program'],
                     ':department' => $form['department'],
+                    ':track' => $form['track'],
+                    ':section' => $form['section'],
                     ':year_level' => $yearLevelValue,
                     ':password_hash' => password_hash($temporaryPassword, PASSWORD_DEFAULT),
                     ':availability_status' => 'Available',

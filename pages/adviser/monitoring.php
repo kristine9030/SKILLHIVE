@@ -11,7 +11,7 @@ $currentFilters = [
   'progress' => trim((string)($_REQUEST['progress'] ?? '')),
 ];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $adviserId > 0) {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $adviserId > 0) {
   $action = trim((string)($_POST['action'] ?? ''));
   $recordId = (int)($_POST['record_id'] ?? 0);
 
@@ -44,6 +44,7 @@ $pageData = [
   'selected' => ['search' => '', 'company' => '', 'progress' => ''],
   'filter_options' => ['companies' => [], 'progresses' => []],
   'rows' => [],
+  'map_students' => [],
 ];
 
 if ($adviserId > 0) {
@@ -57,14 +58,22 @@ if ($adviserId > 0) {
 $selected = $pageData['selected'];
 $filterOptions = $pageData['filter_options'];
 $rows = $pageData['rows'];
+$mapStudents = $pageData['map_students'] ?? [];
 
-$ojtCount = count($rows);
+$acceptedPlacementCount = count($mapStudents);
+$ojtCount = 0;
 $onTrackCount = 0;
 $completedCount = 0;
 $warningCount = 0;
 $atRiskCount = 0;
 
 foreach ($rows as $row) {
+  $recordId = (int)($row['record_id'] ?? 0);
+  $completionStatus = strtolower(trim((string)($row['completion_status'] ?? '')));
+  if ($recordId > 0 && $completionStatus === 'ongoing') {
+    $ojtCount++;
+  }
+
   $statusLabel = (string)($row['status_label'] ?? '');
   if ($statusLabel === 'On Track') {
     $onTrackCount++;
@@ -77,11 +86,43 @@ foreach ($rows as $row) {
   }
 }
 
+$mapLocationGroups = [];
+$mapStudentTotal = 0;
+
+foreach ($mapStudents as $student) {
+  $location = trim((string)($student['location'] ?? ''));
+  $companyName = trim((string)($student['company_name'] ?? ''));
+
+  if ($location === '') {
+    continue;
+  }
+
+  $locationKey = strtolower(preg_replace('/\s+/', ' ', $companyName . '|' . $location));
+
+  if (!isset($mapLocationGroups[$locationKey])) {
+    $mapLocationGroups[$locationKey] = [
+      'location' => $location,
+      'company_name' => $companyName !== '' ? $companyName : 'No company listed',
+      'students' => [],
+    ];
+  }
+
+  $mapLocationGroups[$locationKey]['students'][] = $student;
+  $mapStudentTotal++;
+}
+
+$mapLocations = array_values($mapLocationGroups);
+
 if (($_GET['export'] ?? '') === 'csv') {
+  if (ob_get_length() !== false && ob_get_length() > 0) {
+    ob_clean();
+  }
+
   header('Content-Type: text/csv; charset=UTF-8');
   header('Content-Disposition: attachment; filename="monitoring-export-' . date('Ymd-His') . '.csv"');
 
   $output = fopen('php://output', 'w');
+  fwrite($output, "\xEF\xBB\xBF");
   fputcsv($output, ['Student', 'Program', 'Company', 'Hours Logged', 'Progress', 'Last Activity', 'Status']);
 
   foreach ($rows as $row) {
@@ -103,6 +144,15 @@ if (($_GET['export'] ?? '') === 'csv') {
   fclose($output);
   exit;
 }
+
+$exportQuery = http_build_query([
+  'page' => 'adviser/monitoring',
+  'search' => (string)($selected['search'] ?? ''),
+  'company' => (string)($selected['company'] ?? ''),
+  'progress' => (string)($selected['progress'] ?? ''),
+  'export' => 'csv',
+]);
+$exportUrl = $baseUrl . '/layout.php?' . $exportQuery;
 ?>
 
 <style>
@@ -177,6 +227,214 @@ if (($_GET['export'] ?? '') === 'csv') {
     font-weight: 800;
     line-height: 1;
     color: var(--text);
+  }
+
+  .monitoring-map-panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: none;
+    margin-bottom: 20px;
+  }
+
+  .monitoring-map-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .monitoring-map-title {
+    margin: 0;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  .monitoring-map-subtitle {
+    margin-top: 4px;
+    color: var(--text3);
+    font-size: .84rem;
+    line-height: 1.4;
+  }
+
+  .monitoring-map-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .monitoring-map-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #e8f8f2;
+    color: #0f766e;
+    font-size: .78rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .monitoring-map-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(260px, .7fr);
+    min-height: 420px;
+  }
+
+  #map {
+    height: 420px;
+    min-height: 420px;
+    width: 100%;
+    background: #eef2f1;
+  }
+
+  .monitoring-map-list {
+    border-left: 1px solid var(--border);
+    padding: 14px;
+    max-height: 420px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .monitoring-map-location {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  }
+
+  .monitoring-map-location:hover,
+  .monitoring-map-location:focus-visible,
+  .monitoring-map-location.is-active {
+    border-color: #111;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, .08);
+    transform: translateY(-1px);
+    outline: none;
+  }
+
+  .monitoring-map-location-name {
+    color: var(--text);
+    font-size: .88rem;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+
+  .monitoring-map-location-count {
+    margin-top: 4px;
+    color: var(--text3);
+    font-size: .78rem;
+  }
+
+  .monitoring-map-student-list {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+  }
+
+  .monitoring-map-student-list li {
+    display: grid;
+    gap: 2px;
+    font-size: .78rem;
+    color: var(--text2);
+    line-height: 1.35;
+  }
+
+  .monitoring-map-student-list strong {
+    color: var(--text);
+    font-size: .82rem;
+  }
+
+  .monitoring-map-empty {
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--text3);
+    font-size: .88rem;
+  }
+
+  .monitoring-map-warning {
+    border-top: 1px solid var(--border);
+    background: #fff7ed;
+    padding: 12px 18px;
+    color: #9a3412;
+    font-size: .82rem;
+  }
+
+  .monitoring-map-warning-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 800;
+  }
+
+  .monitoring-map-warning ul {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 5px;
+  }
+
+  .monitoring-map-legend {
+    border-top: 1px solid var(--border);
+    padding: 12px 18px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    background: #fbfdfc;
+  }
+
+  .monitoring-map-legend-item {
+    display: grid;
+    gap: 3px;
+    font-size: .78rem;
+    color: var(--text3);
+  }
+
+  .monitoring-map-legend-item strong {
+    color: var(--text);
+    font-size: .84rem;
+  }
+
+  .monitoring-map-popup {
+    min-width: 220px;
+  }
+
+  .monitoring-map-popup-title {
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 8px;
+  }
+
+  .monitoring-map-popup-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+  }
+
+  .monitoring-map-popup-list li {
+    font-size: 12px;
+    line-height: 1.35;
+    color: #4b5563;
+  }
+
+  .monitoring-map-popup-list strong {
+    color: #111827;
   }
 
   .monitoring-toolbar {
@@ -629,6 +887,31 @@ if (($_GET['export'] ?? '') === 'csv') {
       padding: 12px;
     }
 
+    .monitoring-map-header,
+    .monitoring-map-body {
+      grid-template-columns: 1fr;
+    }
+
+    .monitoring-map-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .monitoring-map-stats {
+      justify-content: flex-start;
+    }
+
+    .monitoring-map-list {
+      border-left: 0;
+      border-top: 1px solid var(--border);
+      max-height: none;
+    }
+
+    #map {
+      height: 340px;
+      min-height: 340px;
+    }
+
     .monitoring-toolbar {
       gap: 10px;
     }
@@ -714,6 +997,59 @@ if (($_GET['export'] ?? '') === 'csv') {
     </div>
   </div>
 
+  <section class="monitoring-map-panel" aria-labelledby="monitoringMapTitle">
+    <div class="monitoring-map-header">
+      <div>
+        <h3 class="monitoring-map-title" id="monitoringMapTitle">OJT Location Map</h3>
+        <div class="monitoring-map-subtitle">Internship locations from accepted applications of your assigned students.</div>
+      </div>
+      <div class="monitoring-map-stats">
+        <span class="monitoring-map-chip"><i class="fas fa-map-location-dot"></i> <?php echo count($mapLocations); ?> locations</span>
+        <span class="monitoring-map-chip"><i class="fas fa-user-graduate"></i> <?php echo $acceptedPlacementCount; ?> accepted</span>
+      </div>
+    </div>
+
+    <div class="monitoring-map-body">
+      <div id="map" aria-label="Map of adviser student internship locations"></div>
+      <aside class="monitoring-map-list" aria-label="OJT locations list">
+        <?php if (!empty($mapLocations)): ?>
+          <?php foreach ($mapLocations as $locationIndex => $locationGroup): ?>
+            <?php $studentsAtLocation = (array)($locationGroup['students'] ?? []); ?>
+            <article class="monitoring-map-location" role="button" tabindex="0" data-map-location-index="<?php echo (int)$locationIndex; ?>" aria-label="Focus map on <?php echo adviser_monitoring_escape((string)($locationGroup['location'] ?? 'Location not set')); ?>">
+              <div class="monitoring-map-location-name"><?php echo adviser_monitoring_escape((string)($locationGroup['location'] ?? 'Location not set')); ?></div>
+              <div class="monitoring-map-location-count"><?php echo adviser_monitoring_escape((string)($locationGroup['company_name'] ?? 'No company listed')); ?> - <?php echo count($studentsAtLocation); ?> student<?php echo count($studentsAtLocation) === 1 ? '' : 's'; ?></div>
+              <ul class="monitoring-map-student-list">
+                <?php foreach ($studentsAtLocation as $studentAtLocation): ?>
+                  <li>
+                    <strong><?php echo adviser_monitoring_escape((string)($studentAtLocation['student_name'] ?? 'Student')); ?></strong>
+                    <span><?php echo adviser_monitoring_escape((string)($studentAtLocation['student_number'] ?? '')); ?> - <?php echo adviser_monitoring_escape((string)($studentAtLocation['internship_title'] ?? 'Internship')); ?></span>
+                    <span><?php echo adviser_monitoring_escape((string)($studentAtLocation['hours_label'] ?? '0/0 hrs')); ?> - <?php echo (int)($studentAtLocation['progress_percent'] ?? 0); ?>%</span>
+                  </li>
+                <?php endforeach; ?>
+              </ul>
+            </article>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="monitoring-map-empty">No accepted internship applications with locations were found for this adviser.</div>
+        <?php endif; ?>
+      </aside>
+    </div>
+    <div class="monitoring-map-warning" id="monitoringMapWarnings" hidden>
+      <div class="monitoring-map-warning-title"><i class="fas fa-triangle-exclamation"></i> Locations not found</div>
+      <ul id="monitoringMapWarningList"></ul>
+    </div>
+    <?php if (!empty($mapStudents)): ?>
+      <div class="monitoring-map-legend" id="monitoringMapLegend">
+        <?php foreach ($mapStudents as $mapStudent): ?>
+          <div class="monitoring-map-legend-item">
+            <strong><?php echo adviser_monitoring_escape((string)($mapStudent['student_name'] ?? 'Student')); ?></strong>
+            <span><?php echo adviser_monitoring_escape((string)($mapStudent['company_name'] ?? 'No company listed')); ?> - <?php echo adviser_monitoring_escape((string)($mapStudent['hours_label'] ?? '0/0 hrs')); ?></span>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+  </section>
+
   <form method="get" action="<?php echo $baseUrl; ?>/layout.php" class="monitoring-toolbar">
     <input type="hidden" name="page" value="adviser/monitoring">
 
@@ -736,9 +1072,9 @@ if (($_GET['export'] ?? '') === 'csv') {
       <?php endforeach; ?>
     </select>
 
-    <button class="monitoring-export-btn" type="submit" name="export" value="csv">
+    <a class="monitoring-export-btn" href="<?php echo adviser_monitoring_escape($exportUrl); ?>">
       <i class="fas fa-download"></i> Export
-    </button>
+    </a>
   </form>
 
   <div class="monitoring-table-card">
@@ -881,6 +1217,289 @@ if (($_GET['export'] ?? '') === 'csv') {
     <?php endforeach; ?>
   <?php endif; ?>
 </div>
+
+<script>
+  (function () {
+    var locationGroups = <?php echo json_encode($mapLocations, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
+    var mapElement = document.getElementById('map');
+    var warningPanel = document.getElementById('monitoringMapWarnings');
+    var warningList = document.getElementById('monitoringMapWarningList');
+
+    if (!mapElement || !Array.isArray(locationGroups)) {
+      return;
+    }
+
+    if (typeof L === 'undefined') {
+      mapElement.innerHTML = '<div class="monitoring-map-empty">Map library could not be loaded.</div>';
+      return;
+    }
+
+    var map = L.map('map', {
+      scrollWheelZoom: false
+    }).setView([13.7565, 121.0583], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    window.setTimeout(function () {
+      map.invalidateSize();
+    }, 150);
+
+    var statusControl = L.control({ position: 'bottomleft' });
+    var statusElement = null;
+
+    statusControl.onAdd = function () {
+      statusElement = L.DomUtil.create('div');
+      statusElement.style.background = 'rgba(255,255,255,.94)';
+      statusElement.style.border = '1px solid #d1d5db';
+      statusElement.style.borderRadius = '8px';
+      statusElement.style.padding = '6px 9px';
+      statusElement.style.fontSize = '12px';
+      statusElement.style.color = '#374151';
+      statusElement.style.boxShadow = '0 4px 12px rgba(15,23,42,.12)';
+      statusElement.textContent = 'Resolving internship locations...';
+      return statusElement;
+    };
+    statusControl.addTo(map);
+
+    function setStatus(message) {
+      if (statusElement) {
+        statusElement.textContent = message;
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function buildSearchQuery(locationText) {
+      var value = String(locationText || '').trim();
+      if (value === '') {
+        return '';
+      }
+
+      return /philippines/i.test(value) ? value : value + ', Philippines';
+    }
+
+    function cacheKey(query) {
+      return 'skillhive:ojt-map:geocode:' + query.toLowerCase();
+    }
+
+    function readCachedPoint(query) {
+      try {
+        var cached = window.localStorage.getItem(cacheKey(query));
+        if (!cached) {
+          return null;
+        }
+
+        var parsed = JSON.parse(cached);
+        var lat = Number(parsed.lat);
+        var lon = Number(parsed.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+          return null;
+        }
+
+        return { lat: lat, lon: lon };
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function writeCachedPoint(query, point) {
+      try {
+        window.localStorage.setItem(cacheKey(query), JSON.stringify(point));
+      } catch (error) {
+      }
+    }
+
+    function delay(ms) {
+      return new Promise(function (resolve) {
+        window.setTimeout(resolve, ms);
+      });
+    }
+
+    function geocodeLocation(locationText) {
+      var query = buildSearchQuery(locationText);
+      if (query === '') {
+        return Promise.resolve(null);
+      }
+
+      var cachedPoint = readCachedPoint(query);
+      if (cachedPoint) {
+        return Promise.resolve(cachedPoint);
+      }
+
+      var url = 'https://nominatim.openstreetmap.org/search?q='
+        + encodeURIComponent(query)
+        + '&format=json&limit=1';
+
+      return fetch(url, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+        .then(function (response) {
+          if (!response.ok) {
+            return null;
+          }
+          return response.json();
+        })
+        .then(function (rows) {
+          if (!Array.isArray(rows) || rows.length === 0) {
+            return null;
+          }
+
+          var point = {
+            lat: Number(rows[0].lat),
+            lon: Number(rows[0].lon)
+          };
+
+          if (!Number.isFinite(point.lat) || !Number.isFinite(point.lon)) {
+            return null;
+          }
+
+          writeCachedPoint(query, point);
+          return point;
+        })
+        .catch(function () {
+          return null;
+        });
+    }
+
+    function buildPopup(group) {
+      var students = Array.isArray(group.students) ? group.students : [];
+      var items = students.map(function (student) {
+        var yearLevel = Number(student.year_level || 0);
+        var programYear = [
+          student.program || 'Program not set',
+          yearLevel > 0 ? ('Year ' + yearLevel) : ''
+        ].filter(Boolean).join(' - ');
+
+        return '<li>'
+          + '<strong>' + escapeHtml(student.student_name || 'Student') + '</strong><br>'
+          + escapeHtml(student.student_number || 'No student number') + '<br>'
+          + escapeHtml(programYear) + '<br>'
+          + escapeHtml(student.company_name || group.company_name || 'No company listed') + '<br>'
+          + escapeHtml(student.internship_title || 'Internship') + '<br>'
+          + escapeHtml(student.hours_label || '0/0 hrs') + '<br>'
+          + escapeHtml(student.location || group.location || 'Location not set')
+          + '</li>';
+      }).join('');
+
+      return '<div class="monitoring-map-popup">'
+        + '<div class="monitoring-map-popup-title">' + escapeHtml((group.company_name || 'OJT Location') + ' - ' + (group.location || 'Location not set')) + '</div>'
+        + '<ul class="monitoring-map-popup-list">' + items + '</ul>'
+        + '</div>';
+    }
+
+    function showWarning(group) {
+      if (!warningPanel || !warningList) {
+        return;
+      }
+
+      var students = Array.isArray(group.students) ? group.students : [];
+      students.forEach(function (student) {
+        var item = document.createElement('li');
+        item.textContent = (student.student_name || 'Student') + ' - ' + (group.location || 'Location not set');
+        warningList.appendChild(item);
+      });
+
+      warningPanel.hidden = false;
+    }
+
+    var bounds = [];
+    var mappedCount = 0;
+    var unresolvedCount = 0;
+    var markersByIndex = {};
+    var cardElements = document.querySelectorAll('[data-map-location-index]');
+
+    function setActiveCard(index) {
+      cardElements.forEach(function (card) {
+        card.classList.toggle('is-active', card.getAttribute('data-map-location-index') === String(index));
+      });
+    }
+
+    function focusLocation(index) {
+      var marker = markersByIndex[index];
+      if (!marker) {
+        setStatus('Location is still loading or could not be mapped');
+        return;
+      }
+
+      setActiveCard(index);
+      map.flyTo(marker.getLatLng(), Math.max(map.getZoom(), 14), {
+        duration: 0.8
+      });
+
+      window.setTimeout(function () {
+        marker.openPopup();
+      }, 450);
+    }
+
+    cardElements.forEach(function (card) {
+      card.addEventListener('click', function () {
+        focusLocation(card.getAttribute('data-map-location-index'));
+      });
+
+      card.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+          return;
+        }
+
+        event.preventDefault();
+        focusLocation(card.getAttribute('data-map-location-index'));
+      });
+    });
+
+    locationGroups.reduce(function (chain, group, index) {
+      return chain.then(function () {
+        setStatus('Resolving location ' + (index + 1) + ' of ' + locationGroups.length + '...');
+
+        return geocodeLocation(group.location).then(function (point) {
+          if (!point) {
+            unresolvedCount++;
+            showWarning(group);
+            return null;
+          }
+
+          var latLng = [point.lat, point.lon];
+          bounds.push(latLng);
+          mappedCount++;
+
+          var marker = L.marker(latLng)
+            .addTo(map)
+            .bindPopup(buildPopup(group));
+          markersByIndex[index] = marker;
+
+          marker.on('click', function () {
+            setActiveCard(index);
+          });
+
+          return delay(1000);
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, {
+          padding: [30, 30],
+          maxZoom: 13
+        });
+      } else {
+        setStatus(locationGroups.length === 0 ? 'No accepted internship locations found for the current adviser' : 'No locations could be mapped');
+        return;
+      }
+
+      setStatus(mappedCount + ' mapped' + (unresolvedCount > 0 ? ', ' + unresolvedCount + ' needs review' : ''));
+    });
+  })();
+</script>
 
 <script>
   (function () {

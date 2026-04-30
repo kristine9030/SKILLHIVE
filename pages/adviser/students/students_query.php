@@ -1,7 +1,7 @@
 <?php
 /**
  * Purpose: Loads assigned students with latest internship/OJT context for adviser students page.
- * Tables/columns used: adviser_assignment(adviser_id, student_id, status), student(student_id, first_name, last_name, email, department, program, year_level, availability_status), ojt_record(record_id, student_id, internship_id, hours_required, hours_completed, completion_status), internship(internship_id, title, employer_id), employer(employer_id, company_name), requirement(requirement_id, applicable_to), student_requirement(student_id, internship_id, requirement_id, status).
+ * Tables/columns used: adviser_assignment(adviser_id, student_id, status), student(student_id, first_name, last_name, email, department, program, track, section, year_level, availability_status), ojt_record(record_id, student_id, internship_id, hours_required, hours_completed, completion_status), internship(internship_id, title, employer_id), employer(employer_id, company_name), requirement(requirement_id, applicable_to), student_requirement(student_id, internship_id, requirement_id, status).
  */
 
 if (!function_exists('adviser_students_get_rows')) {
@@ -15,11 +15,14 @@ if (!function_exists('adviser_students_get_rows')) {
         $sql = '
             SELECT
                 s.student_id,
+                s.student_number,
                 s.first_name,
                 s.last_name,
                 s.email,
                 s.program,
                 s.department,
+                s.track,
+                s.section,
                 s.year_level,
                 ' . $academicYearSelect . '
                 s.availability_status,
@@ -98,13 +101,26 @@ if (!function_exists('adviser_students_get_rows')) {
 
         $department = trim((string)($filters['department'] ?? ''));
         if ($department !== '') {
-            $sql .= ' AND COALESCE(NULLIF(TRIM(s.department), ""), "Unassigned") = :department';
+            $sql .= ' AND CASE
+                    WHEN COALESCE(NULLIF(TRIM(s.section), ""), "") = "" THEN "Unassigned"
+                    WHEN LOWER(TRIM(COALESCE(s.track, ""))) = "business analytics" THEN CONCAT("BA ", TRIM(s.section))
+                    WHEN LOWER(TRIM(COALESCE(s.track, ""))) = "networking" THEN CONCAT("NT ", TRIM(s.section))
+                    ELSE TRIM(s.section)
+                END = :department';
             $params[':department'] = $department;
         }
 
         $status = trim((string)($filters['status'] ?? ''));
         if ($status !== '') {
-            $sql .= ' AND COALESCE(NULLIF(TRIM(o.completion_status), ""), "No OJT") = :completion_status';
+            $sql .= ' AND CASE
+                    WHEN LOWER(TRIM(COALESCE(o.completion_status, ""))) = "completed" THEN "Completed"
+                    WHEN LOWER(TRIM(COALESCE(o.completion_status, ""))) = "ongoing" THEN "Ongoing"
+                    WHEN LOWER(TRIM(COALESCE(o.completion_status, ""))) = "dropped" THEN "Dropped"
+                    WHEN LOWER(TRIM(COALESCE(s.availability_status, ""))) = "currently interning" THEN "Currently Interning"
+                    WHEN LOWER(TRIM(COALESCE(s.availability_status, ""))) = "unavailable" THEN "Unavailable"
+                    WHEN LOWER(TRIM(COALESCE(s.availability_status, ""))) = "available" THEN "Available"
+                    ELSE "No OJT"
+                END = :completion_status';
             $params[':completion_status'] = $status;
         }
 
@@ -112,8 +128,11 @@ if (!function_exists('adviser_students_get_rows')) {
         if ($search !== '') {
             $sql .= ' AND (
                 CONCAT(COALESCE(s.first_name, ""), " ", COALESCE(s.last_name, "")) LIKE :search
+                OR COALESCE(s.student_number, "") LIKE :search
                 OR s.program LIKE :search
                 OR s.department LIKE :search
+                OR COALESCE(s.track, "") LIKE :search
+                OR COALESCE(s.section, "") LIKE :search
                 ' . ($hasAcademicYearColumn ? 'OR COALESCE(s.academic_year, "") LIKE :search' : '') . '
                 OR COALESCE(i.title, "") LIKE :search
                 OR COALESCE(e.company_name, "") LIKE :search

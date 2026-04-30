@@ -22,6 +22,7 @@ if (!function_exists('getAdviserMonitoringPageData')) {
             'selected' => $selected,
             'filter_options' => adviser_monitoring_get_filter_options($pdo, $adviserId),
             'rows' => adviser_monitoring_get_rows($pdo, $adviserId, $selected),
+            'map_students' => adviser_monitoring_get_map_students($pdo, $adviserId),
         ];
     }
 }
