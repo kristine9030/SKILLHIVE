@@ -44,17 +44,49 @@ $ojtAjaxUrl = (isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '' ? rtrim
     </div>
     <form method="post" enctype="multipart/form-data" class="ojt-log-form" data-ajax-url="<?php echo htmlspecialchars($ojtAjaxUrl); ?>">
       <input type="hidden" name="log_entry" value="1">
-      <div class="ojt-field">
+      <div class="ojt-field ojt-field-date">
         <label for="log_date">Date</label>
         <input type="date" name="log_date" class="form-control" value="<?php echo date('Y-m-d'); ?>" required>
+      </div>
+      <div class="ojt-field ojt-field-date-warning" id="ojtDateWarning" style="display:none;">
+        <div class="ojt-warning-banner">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span id="ojtDateWarningText"></span>
+        </div>
       </div>
       <div class="ojt-field">
         <label for="accomplishment">Accomplishment / Task</label>
         <textarea name="accomplishment" class="form-control" rows="3" required></textarea>
       </div>
       <div class="ojt-field">
-        <label for="hours_rendered">Hours Rendered</label>
-        <input type="number" name="hours_rendered" class="form-control" min="0.5" max="12" step="0.25" required>
+        <label>Time Rendered</label>
+        <div class="ojt-time-row">
+          <div class="ojt-time-group">
+            <span class="ojt-time-label">Start</span>
+            <input type="time" name="start_time" id="ojtStartTime" class="form-control ojt-time-input" required>
+          </div>
+          <div class="ojt-time-sep">&#8594;</div>
+          <div class="ojt-time-group">
+            <span class="ojt-time-label">End</span>
+            <input type="time" name="end_time" id="ojtEndTime" class="form-control ojt-time-input" required>
+          </div>
+        </div>
+        <div class="ojt-break-row">
+          <label class="ojt-break-label" for="ojtBreakMinutes">Break deduction</label>
+          <select name="break_minutes" id="ojtBreakMinutes" class="form-control ojt-break-select">
+            <option value="0">No break</option>
+            <option value="15">15 min</option>
+            <option value="30" selected>30 min</option>
+            <option value="45">45 min</option>
+            <option value="60">1 hour</option>
+            <option value="90">1.5 hours</option>
+          </select>
+        </div>
+        <div class="ojt-hours-computed" id="ojtHoursComputed">
+          <span class="ojt-hours-computed-label">Hours rendered:</span>
+          <span class="ojt-hours-computed-val" id="ojtHoursComputedVal">—</span>
+        </div>
+        <input type="hidden" name="hours_rendered" id="ojtHoursRenderedHidden">
       </div>
       <div class="ojt-field">
         <label for="mood_tag">Mood</label>
@@ -160,6 +192,14 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
 </div>
 
 <style>
+  .ojt-file-btn {
+  color: #fff !important;
+  }
+  .ojt-log-modal {
+  max-width: 800px;
+  width: 95vw;
+  }
+
   .ojt-calendar-panel .panel-card-header {
     flex-wrap: wrap;
     gap: 10px;
@@ -305,6 +345,118 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
     font-size: .78rem;
     font-weight: 700;
     cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .ojt-calendar-log-btn.is-already-logged {
+    background: #f59e0b;
+  }
+
+  .ojt-calendar-cell.is-future {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .ojt-warning-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: .82rem;
+    color: #92400e;
+    font-weight: 500;
+  }
+
+  .ojt-warning-banner i {
+    color: #f59e0b;
+    flex-shrink: 0;
+  }
+
+  .ojt-time-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .ojt-time-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .ojt-time-label {
+    font-size: .75rem;
+    font-weight: 600;
+    color: #6b7280;
+  }
+
+  .ojt-time-input {
+    padding: 8px 10px;
+  }
+
+  .ojt-time-sep {
+    font-size: 1.1rem;
+    color: #9ca3af;
+    margin-top: 18px;
+    flex-shrink: 0;
+  }
+
+  .ojt-break-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .ojt-break-label {
+    font-size: .78rem;
+    color: #6b7280;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .ojt-break-select {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: .82rem;
+  }
+
+  .ojt-hours-computed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-top: 4px;
+  }
+
+  .ojt-hours-computed-label {
+    font-size: .8rem;
+    color: #166534;
+    font-weight: 500;
+  }
+
+  .ojt-hours-computed-val {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #15803d;
+  }
+
+  .ojt-hours-computed.is-error {
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+
+  .ojt-hours-computed.is-error .ojt-hours-computed-label,
+  .ojt-hours-computed.is-error .ojt-hours-computed-val {
+    color: #991b1b;
   }
 
   @media (max-width: 700px) {
@@ -361,9 +513,13 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
     selectedDate: null
   };
 
-  function openOjtModal() {
+  function openOjtModal(source) {
     var modal = document.getElementById('logModal');
     if (!modal) return;
+    var dateField = modal.querySelector('.ojt-field-date');
+    if (dateField) {
+      dateField.style.display = (source === 'calendar') ? 'none' : '';
+    }
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
   }
@@ -388,6 +544,109 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
       }
     });
   })();
+
+  (function bindOjtHoursComputed() {
+  var startInput  = document.getElementById('ojtStartTime');
+  var endInput    = document.getElementById('ojtEndTime');
+  var breakSelect = document.getElementById('ojtBreakMinutes');
+  var display     = document.getElementById('ojtHoursComputed');
+  var valEl       = document.getElementById('ojtHoursComputedVal');
+  var hiddenInput = document.getElementById('ojtHoursRenderedHidden');
+
+  // Pull live stats from the DOM (already rendered by PHP)
+  function getHoursLogged()  { return parseFloat(document.getElementById('ojtHoursLogged')?.textContent  || 0); }
+  function getHoursTarget()  { return parseFloat(document.getElementById('ojtHoursTarget')?.textContent  || 0); }
+
+  // Per-day hours already logged — read from calendar entries for selected date
+  function getDayHoursLogged() {
+    var selected = (typeof ojtCalendarState !== 'undefined' && ojtCalendarState.selectedDate)
+      ? ojtCalendarState.selectedDate
+      : (document.querySelector('.ojt-log-form input[name="log_date"]')?.value || '');
+    if (!selected || typeof ojtCalendarEntries === 'undefined') return 0;
+    return parseFloat((ojtCalendarEntries[selected] || {}).hours || 0);
+  }
+
+  var warningEl = document.getElementById('ojtDateWarning');
+  var warningTextEl = document.getElementById('ojtDateWarningText');
+
+  function showWarning(msg) {
+    if (!warningEl || !warningTextEl) return;
+    warningTextEl.textContent = msg;
+    warningEl.style.display = '';
+  }
+
+  function clearWarning() {
+    if (!warningEl) return;
+    warningEl.style.display = 'none';
+  }
+
+  function computeHours() {
+    var start = startInput.value;
+    var end   = endInput.value;
+
+    clearWarning();
+    display.classList.remove('is-error', 'is-warning');
+
+    if (!start || !end) {
+      valEl.textContent = '—';
+      if (hiddenInput) hiddenInput.value = '';
+      return;
+    }
+
+    var startParts = start.split(':').map(Number);
+    var endParts   = end.split(':').map(Number);
+    var startMins  = startParts[0] * 60 + startParts[1];
+    var endMins    = endParts[0]   * 60 + endParts[1];
+    var breakMins  = parseInt(breakSelect.value, 10) || 0;
+    var totalMins  = endMins - startMins - breakMins;
+
+    if (totalMins <= 0) {
+      valEl.textContent = 'Invalid range';
+      display.classList.add('is-error');
+      if (hiddenInput) hiddenInput.value = '';
+      return;
+    }
+
+    var hours        = totalMins / 60;
+    var hoursLogged  = getHoursLogged();
+    var hoursTarget  = getHoursTarget();
+    var dayLogged    = getDayHoursLogged();
+    var warnings     = [];
+
+    // --- Check 1: total target hours ---
+    var remaining = hoursTarget - hoursLogged;
+    if (hoursTarget > 0 && hoursLogged >= hoursTarget) {
+      warnings.push('You have already reached your target of ' + hoursTarget + ' hrs. This entry will still be saved.');
+    } else if (hoursTarget > 0 && (hoursLogged + hours) > hoursTarget) {
+      var over = ((hoursLogged + hours) - hoursTarget).toFixed(2).replace(/\.00$/, '');
+      warnings.push('This entry will exceed your target by ' + over + ' hr(s). Remaining: ' + remaining.toFixed(2).replace(/\.00$/, '') + ' hr(s).');
+    }
+
+    // --- Check 2: 24-hour daily cap ---
+    var dayTotal = dayLogged + hours;
+    if (dayTotal > 24) {
+      var dayOver = (dayTotal - 24).toFixed(2).replace(/\.00$/, '');
+      warnings.push('Adding this entry will exceed 24 hrs for this date by ' + dayOver + ' hr(s). Already logged today: ' + dayLogged.toFixed(2).replace(/\.00$/, '') + ' hr(s).');
+    }
+
+    if (warnings.length > 0) {
+      showWarning(warnings.join(' '));
+      display.classList.add('is-warning');
+    }
+
+    valEl.textContent = hours.toFixed(2).replace(/\.00$/, '') + ' hr' + (hours !== 1 ? 's' : '');
+    if (hiddenInput) hiddenInput.value = hours.toFixed(4);
+  }
+
+  // Re-run when the date changes (calendar selection updates day hours)
+  document.addEventListener('ojtDateSelected', computeHours);
+
+  startInput.addEventListener('change',  computeHours);
+  startInput.addEventListener('input',   computeHours);
+  endInput.addEventListener('change',    computeHours);
+  endInput.addEventListener('input',     computeHours);
+  breakSelect.addEventListener('change', computeHours);
+})();
 
   (function bindAjaxLogSubmit() {
     var form = document.querySelector('.ojt-log-form');
@@ -659,7 +918,7 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
           var today = new Date();
           ojtCalendarSelectDate(formatOjtCalendarDateKey(today.getFullYear(), today.getMonth(), today.getDate()));
         }
-        openOjtModal();
+        openOjtModal('calendar');
       });
     }
 
