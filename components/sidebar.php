@@ -13,6 +13,7 @@ if ($role === 'student') {
             ['icon' => 'fas fa-paper-plane',  'text' => 'Applications', 'page' => 'student/applications'],
             ['icon' => 'fas fa-clock',        'text' => 'OJT Tracker',  'page' => 'student/ojt-log'],
             ['icon' => 'fas fa-book',         'text' => 'Journal',      'page' => 'student/ojt-log/journal'],
+            ['icon' => 'fas fa-clipboard-check', 'text' => 'Requirements', 'page' => 'student/requirements'],
             ['icon' => 'fas fa-chart-bar',    'text' => 'Analytics',    'page' => 'student/analytics'],
         ]],
         ['label' => 'SYSTEM', 'items' => [
