@@ -23,6 +23,11 @@ if ($studentSettingsUserId > 0) {
 }
 
 $settingsActionUrl = (isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '' ? rtrim($baseUrl, '/') : '/SkillHive') . '/pages/student/settings/actions.php';
+
+$bannerTitle = 'Settings';
+$bannerDescription = 'Configure your account preferences and notification settings.';
+$bannerShowToggle = true;
+include __DIR__ . '/../../../components/student_banner.php';
 ?>
 
 <div class="page-header">

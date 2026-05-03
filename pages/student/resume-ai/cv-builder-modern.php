@@ -1,9 +1,191 @@
-<div class="cv-hero" style="background:linear-gradient(135deg,#0a0e27 0%,#162550 40%,#1a3a5c 70%,#0f2a45 100%);border-radius:16px;padding:18px 20px 18px 20px;margin-bottom:16px;display:flex;align-items:center;gap:18px;position:relative;overflow:hidden;">
-  <div style="flex:1;z-index:2;">
-    <h2 style="margin:0;font-size:1.5rem;line-height:1.2;color:#fff;font-weight:600;letter-spacing:-0.01em;">Build your professional CV</h2>
-    <p style="margin:6px 0 0;color:#fff;font-size:.97rem;font-weight:500;opacity:0.95;">Create a standout CV with SkillHive's easy-to-use builder. Preview, save, and download your resume instantly.</p>
+<?php
+// OJT-style banner for CV Builder
+?>
+<style>
+.cv-ojt-banner {
+  background:
+    radial-gradient(95% 70% at 26% 44%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.1) 18%, rgba(255, 255, 255, 0) 48%),
+    radial-gradient(150% 200% at 80% 14%, rgba(37, 168, 158, 0.56) 0%, rgba(9, 22, 24, 0) 46%),
+    linear-gradient(135deg, #010101 0%, #020202 62%, #0a1f1e 82%, #0f4e49 100%);
+  border-radius: 16px;
+  padding: 20px 28px;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+  border: 1.5px solid rgba(15, 118, 110, 0.35);
+  box-shadow: 0 8px 32px rgba(15, 118, 110, 0.15), 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.cv-ojt-banner::before {
+  content: '';
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 550px;
+  height: 550px;
+  background-image: url('/SkillHive/assets/media/banner%20other.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.cv-ojt-banner::after {
+  content: '';
+  position: absolute;
+  right: 20px;
+  top: 30%;
+  transform: translateY(-50%);
+  width: 500px;
+  height: 500px;
+  background-image: url('/SkillHive/assets/media/Banner.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.cv-ojt-banner.collapsed {
+  padding: 8px 16px;
+  min-height: 0;
+}
+
+.cv-ojt-banner.collapsed .cv-ojt-main {
+  display: none;
+}
+
+.cv-ojt-main {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+.cv-ojt-info {
+  flex: 1;
+  border-left: 1.5px solid rgba(255, 255, 255, 0.25);
+  padding-left: 16px;
+}
+
+.cv-ojt-date {
+  font-size: 12px;
+  font-weight: 100;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+.cv-ojt-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 2px;
+  text-transform: capitalize;
+  display: inline;
+}
+
+.cv-ojt-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+  max-width: 450px;
+}
+
+.cv-ojt-toggle {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(20, 184, 166, 0.15);
+  color: #0f766e;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  font-size: 13px;
+}
+
+.cv-ojt-toggle:hover {
+  background: #fff;
+  border-color: rgba(20, 184, 166, 0.3);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.1);
+}
+
+.cv-ojt-expand-hint {
+  display: none;
+  text-align: center;
+  font-size: 13px;
+  color: #0f766e;
+  font-weight: 500;
+  opacity: 0.8;
+  cursor: pointer;
+  padding: 4px 0;
+  width: 100%;
+  transition: opacity 0.2s ease;
+}
+
+.cv-ojt-expand-hint:hover {
+  opacity: 1;
+}
+
+.cv-ojt-banner.collapsed .cv-ojt-expand-hint {
+  display: block;
+}
+
+.cv-ojt-banner:not(.collapsed) .cv-ojt-expand-hint {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .cv-ojt-banner { flex-direction: column; text-align: center; }
+}
+</style>
+
+<div class="cv-ojt-banner">
+  <div class="cv-ojt-main">
+    <div class="cv-ojt-info">
+      <div class="cv-ojt-date"><?php echo date('l, jS F'); ?></div>
+      <div class="cv-ojt-title">Good afternoon, <?php echo htmlspecialchars($userName ?? 'Student'); ?>!</div>
+      <div class="cv-ojt-desc">Build your professional CV with SkillHive's easy-to-use builder. Preview, save, and download your resume instantly.</div>
+    </div>
+  </div>
+  <button type="button" class="cv-ojt-toggle" onclick="toggleCvBanner()" title="Hide banner">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+  <div class="cv-ojt-expand-hint" onclick="toggleCvBanner()">
+    <i class="fas fa-chevron-down"></i> Show banner
   </div>
 </div>
+
+<script>
+function toggleCvBanner() {
+  const banner = document.querySelector('.cv-ojt-banner');
+  if (!banner) return;
+  const icon = banner.querySelector('.cv-ojt-toggle i');
+  banner.classList.toggle('collapsed');
+  if (icon) {
+    icon.className = banner.classList.contains('collapsed') ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+  }
+}
+</script>
+
 <?php
 if (!isset($pdo) || !($pdo instanceof PDO)) {
     require_once __DIR__ . '/../../../backend/db_connect.php';

@@ -88,11 +88,7 @@ $recentApplicants = $dashboardData['recent_applicants'];
 $upcomingInterviews = $dashboardData['upcoming_interviews'];
 ?>
 
-<div class="page-header">
-  <div>
-    <h2 class="page-title">Employer Dashboard</h2>
-    <p class="page-subtitle">Manage your internship postings and track candidates.</p>
-  </div>
+<div class="page-header" style="display: none;">
   <?php if ($isEmployerApproved): ?>
     <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/post_internship" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Post Internship</a>
   <?php else: ?>
@@ -102,6 +98,7 @@ $upcomingInterviews = $dashboardData['upcoming_interviews'];
 
 <?php
 // Banner variables for employer
+$bannerDate = date('l, jS F');
 $bannerGreeting = 'Good afternoon';
 $bannerUserName = $userName ?? 'Employer';
 $bannerTitle = 'Build Your Team';
@@ -111,6 +108,8 @@ $bannerStats = [
   ['value' => (int)($stats['total_applicants'] ?? 0), 'label' => 'Total Applicants'],
   ['value' => (int)($stats['interviews'] ?? 0), 'label' => 'Interviews'],
 ];
+$bannerShowMascot = false;
+$bannerImage = $baseUrl . '/assets/media/Banner.png';
 include __DIR__ . '/../../components/dashboard_banner.php';
 ?>
 
@@ -133,22 +132,45 @@ include __DIR__ . '/../../components/dashboard_banner.php';
 <?php endif; ?>
 
 <div class="stat-cards">
-  <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-briefcase" style="color:#12b3ac"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num"><?php echo (int)$stats['active_postings']; ?></div><div class="stat-card-label">Active Postings</div></div>
+  <div class="stat-card employer-stat-postings">
+    <div class="stat-card-icon"><img src="/SkillHive/assets/media/Active%20Posting.png" alt="Active Postings"></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num-row">
+        <div class="stat-card-trend neutral"><?php echo (int)$stats['active_postings']; ?> active</div>
+        <div class="stat-card-num"><?php echo (int)$stats['active_postings']; ?></div>
+      </div>
+      <div class="stat-card-label">Active Postings</div>
+    </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-users" style="color:#12b3ac"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num"><?php echo (int)$stats['total_applicants']; ?></div><div class="stat-card-label">Total Applicants</div></div>
-    <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +<?php echo (int)$stats['week_applicants']; ?> this week</div>
+  <div class="stat-card employer-stat-applicants">
+    <div class="stat-card-icon"><img src="/SkillHive/assets/media/Total%20Applicants.png" alt="Total Applicants"></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num-row">
+        <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +<?php echo (int)$stats['week_applicants']; ?> this week</div>
+        <div class="stat-card-num"><?php echo (int)$stats['total_applicants']; ?></div>
+      </div>
+      <div class="stat-card-label">Total Applicants</div>
+    </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-calendar-check" style="color:#12b3ac"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num"><?php echo (int)$stats['interviews']; ?></div><div class="stat-card-label">Interviews</div></div>
+  <div class="stat-card employer-stat-interviews">
+    <div class="stat-card-icon"><img src="/SkillHive/assets/media/Interviews.png" alt="Interviews"></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num-row">
+        <div class="stat-card-trend neutral"><?php echo (int)$stats['interviews']; ?> scheduled</div>
+        <div class="stat-card-num"><?php echo (int)$stats['interviews']; ?></div>
+      </div>
+      <div class="stat-card-label">Interviews</div>
+    </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-double" style="color:#12b3ac"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num"><?php echo (int)$stats['hired']; ?></div><div class="stat-card-label">Hired</div></div>
+  <div class="stat-card employer-stat-hired">
+    <div class="stat-card-icon"><img src="/SkillHive/assets/media/Hiredd.png" alt="Hired"></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num-row">
+        <div class="stat-card-trend neutral"><?php echo (int)$stats['hired']; ?> hired</div>
+        <div class="stat-card-num"><?php echo (int)$stats['hired']; ?></div>
+      </div>
+      <div class="stat-card-label">Hired</div>
+    </div>
   </div>
 </div>
 
@@ -162,22 +184,33 @@ include __DIR__ . '/../../components/dashboard_banner.php';
 
       <?php if (!empty($postings)): ?>
         <?php foreach ($postings as $posting): ?>
-          <div class="job-card">
-            <div class="job-card-header">
-              <div class="job-card-info">
-                <div class="job-card-title"><?php echo dashboard_escape($posting['title'] ?? 'Untitled Internship'); ?></div>
-                <div class="job-card-company"><?php echo dashboard_escape(dashboard_time_ago($posting['posted_at'] ?? null)); ?></div>
+          <?php
+            $postingStatus = $posting['status'] ?? 'pending';
+            $statusClass = dashboard_status_class($postingStatus);
+            $statusLabel = dashboard_status_label($postingStatus);
+            $applicantsCount = (int)($posting['applicants_count'] ?? 0);
+            $location = dashboard_escape($posting['location'] ?? 'N/A');
+            $duration = dashboard_duration_label((int)($posting['duration_weeks'] ?? 0));
+            $postedTime = dashboard_time_ago($posting['posted_at'] ?? null);
+          ?>
+          <div class="posting-card">
+            <div class="posting-card-top">
+              <div class="posting-card-title-row">
+                <span class="posting-card-title"><?php echo dashboard_escape($posting['title'] ?? 'Untitled Internship'); ?></span>
+                <span class="posting-card-badge <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span>
               </div>
-              <span class="status-pill <?php echo dashboard_status_class($posting['status'] ?? 'pending'); ?>"><?php echo dashboard_escape(dashboard_status_label($posting['status'] ?? 'pending')); ?></span>
+              <div class="posting-card-meta">
+                <span class="posting-meta"><i class="fas fa-user-group"></i><?php echo $applicantsCount; ?> applicants</span>
+                <span class="posting-meta"><i class="fas fa-location-dot"></i><?php echo $location; ?></span>
+                <span class="posting-meta"><i class="fas fa-clock"></i><?php echo $duration; ?></span>
+              </div>
             </div>
-            <div class="job-card-meta">
-              <span><i class="fas fa-users"></i> <?php echo (int)($posting['applicants_count'] ?? 0); ?> applicants</span>
-              <span><i class="fas fa-map-marker-alt"></i> <?php echo dashboard_escape($posting['location'] ?? 'N/A'); ?></span>
-              <span><i class="fas fa-clock"></i> <?php echo dashboard_escape(dashboard_duration_label((int)($posting['duration_weeks'] ?? 0))); ?></span>
-            </div>
-            <div class="job-card-actions">
-              <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/candidates&position=<?php echo (int)($posting['internship_id'] ?? 0); ?>" class="btn btn-ghost btn-sm">View Applicants</a>
-              <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/post_internship&focus_posting=<?php echo (int)($posting['internship_id'] ?? 0); ?>#my-postings" class="btn btn-ghost btn-sm"><i class="fas fa-edit"></i> Edit</a>
+            <div class="posting-card-bottom">
+              <span class="posting-card-time"><?php echo $postedTime; ?></span>
+              <div class="posting-card-actions">
+                <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/candidates&position=<?php echo (int)($posting['internship_id'] ?? 0); ?>" class="btn btn-outline btn-sm">View Applicants</a>
+                <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/post_internship&focus_posting=<?php echo (int)($posting['internship_id'] ?? 0); ?>#my-postings" class="btn btn-outline btn-sm"><i class="fas fa-pen"></i> Edit</a>
+              </div>
             </div>
           </div>
         <?php endforeach; ?>
@@ -221,21 +254,21 @@ include __DIR__ . '/../../components/dashboard_banner.php';
           </div>
         <?php endif; ?>
       <?php else: ?>
-        <div class="job-card">
-          <div class="job-card-header">
-            <div class="job-card-info">
-              <div class="job-card-title">No postings yet</div>
-              <div class="job-card-company">Create a new internship to show it on your dashboard.</div>
+        <div class="posting-card posting-card-empty">
+          <div class="posting-card-top">
+            <div class="posting-card-title-row">
+              <span class="posting-card-title">No postings yet</span>
+              <span class="posting-card-badge badge-pending">Pending</span>
             </div>
-            <span class="status-pill status-pending">Pending</span>
+            <div class="posting-card-meta">
+              <span class="posting-meta">Create a new internship to show it on your dashboard.</span>
+            </div>
           </div>
-          <div class="job-card-meta">
-            <span><i class="fas fa-users"></i> 0 applicants</span>
-            <span><i class="fas fa-map-marker-alt"></i> N/A</span>
-            <span><i class="fas fa-clock"></i> N/A</span>
-          </div>
-          <div class="job-card-actions">
-            <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/post_internship" class="btn btn-ghost btn-sm">Post Internship</a>
+          <div class="posting-card-bottom">
+            <span class="posting-card-time"></span>
+            <div class="posting-card-actions">
+              <a href="<?php echo $baseUrl; ?>/layout.php?page=employer/post_internship" class="btn btn-primary btn-sm">Post Internship</a>
+            </div>
           </div>
         </div>
       <?php endif; ?>
@@ -280,13 +313,6 @@ include __DIR__ . '/../../components/dashboard_banner.php';
   </div>
 
   <div class="feed-side">
-    <div class="panel-card" style="text-align:center">
-      <div class="profile-avatar-lg" style="margin:0 auto 12px"><?php echo dashboard_escape($companyInitials); ?></div>
-      <div style="font-weight:700;font-size:1rem;margin-bottom:4px"><?php echo dashboard_escape($companyName); ?></div>
-      <div style="font-size:.78rem;color:#999;margin-bottom:10px">Employer Account</div>
-      <span class="status-pill <?php echo $companyStatusClass; ?>"><?php echo dashboard_escape($companyStatusLabel); ?></span>
-    </div>
-
     <div class="panel-card">
       <div class="panel-card-header"><h3>This Month</h3></div>
       <div style="display:flex;flex-direction:column;gap:8px;font-size:.85rem">

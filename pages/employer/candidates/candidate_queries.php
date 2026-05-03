@@ -18,7 +18,9 @@ if (!function_exists('candidates_get_candidate_rows')) {
                 s.last_name,
                 s.program,
                 s.year_level,
-                s.internship_readiness_score,
+                s.email,
+                s.profile_picture,
+                s.resume_file,
                 CASE
                     WHEN EXISTS (
                         SELECT 1

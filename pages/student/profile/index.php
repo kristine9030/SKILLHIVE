@@ -1373,4 +1373,7 @@ openCoverModal();
 <?php if ($profileErrors && isset($_POST['action']) && $_POST['action'] === 'update_avatar_style'): ?>
 openAvatarModal();
 <?php endif; ?>
+<?php if ($profileSuccess && isset($_POST['action']) && in_array($_POST['action'], ['update_media', 'update_avatar_style'], true)): ?>
+<div id="pendingAvatarUpdate" data-url="<?php echo htmlspecialchars($profilePicturePath); ?>" style="display:none;"></div>
+<?php endif; ?>
 </script>

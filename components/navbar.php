@@ -1,3 +1,15 @@
+<?php
+/**
+ * Navbar component variables (defined in layout.php)
+ * @var string $pageTitle - The current page title
+ * @var string $role - The user's role (student, employer, adviser, admin)
+ * @var string $baseUrl - Base URL for the application
+ * @var string $userName - The logged-in user's name
+ * @var string $userEmail - The logged-in user's email
+ * @var int $userId - The logged-in user's ID
+ * @var array $_SESSION - PHP session superglobal
+ */
+?>
 <header class="topbar">
   <div class="topbar-left">
     <button class="hamburger" onclick="toggleSidebar()">
@@ -46,25 +58,91 @@
       <i class="fas fa-comment-dots"></i>
     </a>
     
+    <?php 
+    $profileLink = 'student/profile';
+    $settingsLink = 'student/settings';
+    $userAvatar = $initials;
+    $showLogoInNav = false;
+
+    if ($role === 'student') {
+        $profileLink = 'student/profile';
+        $settingsLink = 'student/settings';
+        $studentId = (int)($userId ?? 0);
+        if ($studentId > 0) {
+            try {
+                $stmt = $pdo->prepare('SELECT profile_picture FROM student WHERE student_id = ? LIMIT 1');
+                $stmt->execute([$studentId]);
+                $sRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($sRow && !empty($sRow['profile_picture'])) {
+                    $picFile = trim((string)$sRow['profile_picture']);
+                    if (!empty($picFile)) {
+                        if (strpos($picFile, 'http://') === 0 || strpos($picFile, 'https://') === 0) {
+                            $userAvatar = $picFile;
+                        } else {
+                            $userAvatar = $baseUrl . '/assets/backend/uploads/profile/' . rawurlencode($picFile);
+                        }
+                        $showLogoInNav = true;
+                    }
+                }
+            } catch (Throwable $e) {}
+        }
+    } elseif ($role === 'employer') {
+        $profileLink = 'employer/profile';
+        $settingsLink = 'employer/settings';
+        $empId = (int)($_SESSION['employer_id'] ?? 0);
+        if ($empId > 0) {
+            try {
+                $stmt = $pdo->prepare('SELECT company_logo, company_name FROM employer WHERE employer_id = ? LIMIT 1');
+                $stmt->execute([$empId]);
+                $empRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($empRow && !empty($empRow['company_logo'])) {
+                    $companyLogoPath = trim((string)$empRow['company_logo']);
+                    if (!empty($companyLogoPath) && strpos($companyLogoPath, 'http') === 0) {
+                        $userAvatar = $companyLogoPath;
+                    } elseif (!empty($companyLogoPath)) {
+                        $userAvatar = $baseUrl . '/assets/backend/uploads/company/' . rawurlencode($companyLogoPath);
+                    }
+                    $showLogoInNav = !empty($companyLogoPath);
+                }
+            } catch (Throwable $e) {}
+        }
+    } elseif ($role === 'adviser') {
+        $profileLink = 'adviser/profile';
+        $settingsLink = 'adviser/profile';
+        $adviserId = (int)($userId ?? 0);
+        if ($adviserId > 0) {
+            try {
+                $stmt = $pdo->prepare('SELECT profile_picture FROM internship_adviser WHERE adviser_id = ? LIMIT 1');
+                $stmt->execute([$adviserId]);
+                $aRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($aRow && !empty($aRow['profile_picture'])) {
+                    $picFile = trim((string)$aRow['profile_picture']);
+                    if (!empty($picFile)) {
+                        if (strpos($picFile, 'http://') === 0 || strpos($picFile, 'https://') === 0) {
+                            $userAvatar = $picFile;
+                        } else {
+                            $userAvatar = $baseUrl . '/assets/backend/uploads/profile/' . rawurlencode($picFile);
+                        }
+                        $showLogoInNav = true;
+                    }
+                }
+            } catch (Throwable $e) {}
+        }
+    } elseif ($role === 'admin') {
+        $profileLink = 'admin/dashboard';
+        $settingsLink = 'admin/settings';
+    }
+    ?>
+
     <div class="topbar-profile-dropdown" id="topbarProfileWrap">
       <button class="topbar-user" id="topbarProfileToggle" type="button" aria-expanded="false" onclick="toggleTopbarProfile(event)">
-        <div class="topbar-avatar"><?php echo $initials; ?></div>
+        <?php if ($showLogoInNav): ?>
+          <img src="<?php echo htmlspecialchars($userAvatar); ?>" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+        <?php else: ?>
+          <div class="topbar-avatar"><?php echo $initials; ?></div>
+        <?php endif; ?>
       </button>
 
-      <?php 
-      $profileLink = 'student/profile';
-      $settingsLink = 'student/settings';
-      if ($role === 'employer') {
-          $profileLink = 'employer/profile';
-          $settingsLink = 'employer/profile';
-      } elseif ($role === 'adviser') {
-          $profileLink = 'adviser/profile';
-          $settingsLink = 'adviser/profile';
-      } elseif ($role === 'admin') {
-          $profileLink = 'admin/dashboard';
-          $settingsLink = 'admin/settings';
-      }
-      ?>
       <div class="topbar-dropdown-menu" id="topbarProfileMenu">
         <a href="<?php echo $baseUrl; ?>/layout.php?page=<?php echo $profileLink; ?>" class="topbar-dropdown-item">
           <i class="fas fa-user topbar-item-icon"></i>

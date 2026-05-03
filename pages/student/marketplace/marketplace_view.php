@@ -215,14 +215,14 @@ function marketplace_render(array $data): void
 }
 .market-shell { background:var(--mk-bg); border:1px solid #ebedf2; border-radius:22px; padding:16px; margin-bottom:16px; }
 .market-layout { display:grid; grid-template-columns:280px 1fr; gap:16px; align-items:start; }
-.market-filter-panel { background:#fff; border:1px solid var(--mk-border); border-radius:16px; padding:16px; position:sticky; top:14px; }
-.market-filter-head { font-size:1.2rem; font-weight:800; color:#0a0e27; margin-bottom:12px; }
+.market-filter-panel { background:#f5f5f5; border:1px solid #e5e5e5; border-radius:16px; padding:16px; position:sticky; top:14px; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+.market-filter-head { font-size:1.2rem; font-weight:800; color:#0d6b5e; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
 .market-filter-group { border-top:1px solid #e5e7ee; padding-top:12px; margin-top:12px; }
-.market-filter-title { font-size:.82rem; text-transform:uppercase; letter-spacing:.08em; color:#6b7280; margin-bottom:8px; font-weight:800; }
+.market-filter-title { font-size:.82rem; text-transform:uppercase; letter-spacing:.08em; color:#0d6b5e; margin-bottom:8px; font-weight:500; }
 .market-input, .market-select { width:100%; border:1px solid var(--mk-border); border-radius:10px; padding:10px 12px; font-size:.87rem; background:#fff; color:#0a0e27; font-weight:500; }
 .market-radio-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 .market-radio-tile { border:1px solid var(--mk-border); background:#ffffff; color:#6b7280; border-radius:10px; padding:10px 10px; font-size:.8rem; font-weight:700; text-align:center; cursor:pointer; transition:all .18s ease; }
-.market-radio-tile.active { border-color:#162550; background:#162550; color:#ffffff; }
+.market-radio-tile.active { border-color:#111111; background:#111111; color:#ffffff; }
 .market-main-panel { min-width:0; }
 .market-header {
   display:flex;
@@ -307,30 +307,34 @@ function marketplace_render(array $data): void
   color:#ffffff;
 }
 .market-search-row { display:grid; grid-template-columns:1fr 110px; gap:10px; margin-bottom:10px; }
-.market-search-wrap { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--mk-border); border-radius:12px; padding:0 12px; height:42px; }
-.market-search-wrap i { color:#8d93a7; }
-.market-search-wrap input { border:none; outline:none; width:100%; padding:0; background:transparent; font-size:.88rem; height:100%; }
-.market-action-btn { border:none; border-radius:12px; background:#111111; color:#ffffff; font-weight:700; font-size:.86rem; cursor:pointer; padding:10px 20px; white-space:nowrap; transition:all .18s ease; }
-.market-action-btn:hover { background:#000000; }
-.market-top-picks { border:1px solid #e4e6ef; border-radius:16px; background:linear-gradient(120deg,#ffffff 0%,#f2f8ff 45%,#e8f3ff 100%); padding:14px; margin:8px 0 12px; }
+.market-search-wrap { display:flex; align-items:center; gap:8px; background:#fff; border:1.5px solid #e5e7eb; border-radius:12px; padding:0 14px; height:44px; transition:all .2s ease; }
+.market-search-wrap i { color:#9ca3af; }
+.market-search-wrap:focus-within { border-color:#12b3ac; box-shadow:0 2px 8px rgba(18,179,172,0.1); }
+.market-search-wrap input { border:none; outline:none; width:100%; padding:0; background:transparent; font-size:.88rem; height:100%; color:#111; }
+.market-search-wrap input::placeholder { color:#a3a6b3; }
+.market-action-btn { border:none; border-radius:12px; background:#1f2937; color:#ffffff; font-weight:700; font-size:.86rem; cursor:pointer; padding:10px 24px; white-space:nowrap; transition:all .18s ease; }
+.market-action-btn:hover { background:#111827; }
+.market-top-picks { border:1px solid #d4e8e6; border-radius:16px; background:linear-gradient(135deg,#ffffff 0%,#f0faf8 45%,#e8f5f3 100%); padding:16px; margin:12px 0 16px; }
 .market-top-picks-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
 .market-top-picks-title { font-size:1.2rem; color:#0a0e27; font-weight:700; line-height:1.25; letter-spacing:.01em; }
 .market-top-picks-sub { font-size:.85rem; color:#4b5563; margin-top:3px; font-weight:500; }
 .market-top-picks-refresh { width:34px; height:34px; border-radius:999px; border:1px solid #d4dae7; background:#fff; color:#050505; cursor:pointer; }
 .market-picks-list { display:flex; flex-direction:column; gap:0; }
-.market-pick-item { display:grid; grid-template-columns:52px 1fr auto; gap:12px; align-items:center; padding:12px 12px; border:1px solid #e5e7ee; border-top: none; border-radius:12px; margin-bottom:8px; background:#ffffff; }
-.market-pick-item:first-child { border-top: none; }
+.market-pick-item { display:grid; grid-template-columns:52px 1fr auto; gap:12px; align-items:center; padding:14px 12px; border:1px solid #e5e7ee; border-left:4px solid var(--pick-accent, #12b3ac); border-radius:12px; margin-bottom:10px; background:#ffffff; transition:all .2s ease; }
+.market-pick-item:first-child { border-top: auto; }
 .market-pick-logo { width:52px; height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:1.1rem; flex-shrink:0; }
 .market-pick-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .market-pick-title { font-size:.92rem; font-weight:600; color:#0a0e27; line-height:1.2; }
-.market-pick-fit { font-size:.74rem; border-radius:999px; padding:3px 8px; background:#12b3ac; color:#fff; font-weight:700; white-space:nowrap; }
+.market-pick-fit { font-size:.74rem; border-radius:999px; padding:4px 10px; background:#12b3ac; color:#fff; font-weight:700; white-space:nowrap; display:flex; align-items:center; gap:4px; }
 .market-pick-meta { color:#6b7280; font-size:.82rem; margin-top:3px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .market-pick-hint { color:#162550; font-size:.78rem; margin-top:4px; font-weight:600; }
 .market-pick-reasons { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
 .market-pick-reason { font-size:.7rem; border:1px solid #d8dceb; background:#ffffff; color:#6b7280; border-radius:999px; padding:3px 10px; font-weight:600; }
 .market-pick-actions { display:flex; align-items:center; gap:8px; }
-.market-pick-link { font-size:.75rem; text-decoration:none; color:#fff; border:1px solid #111; border-radius:999px; padding:5px 12px; background:#111; font-weight:700; }
-.market-pick-dismiss { width:26px; height:26px; border-radius:999px; border:1px solid #111; background:#111; color:#fff; cursor:pointer; }
+.market-pick-link { font-size:.75rem; text-decoration:none; color:#111; border:1.5px solid #111; border-radius:999px; padding:5px 12px; background:transparent; font-weight:700; transition:all .2s ease; }
+.market-pick-link:hover { background:#111; color:#fff; }
+.market-pick-dismiss { width:26px; height:26px; border-radius:999px; border:1.5px solid #111; background:transparent; color:#111; cursor:pointer; transition:all .2s ease; }
+.market-pick-dismiss:hover { background:#111; color:#fff; }
 .market-pick-item.hidden { display:none; }
 .market-top-picks-empty { display:none; font-size:.8rem; color:#6b7280; padding:8px 0 2px; }
 .market-top-picks-empty.show { display:block; }
@@ -340,7 +344,7 @@ function marketplace_render(array $data): void
 .market-section-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
 .market-section-title { font-size:1.1rem; font-weight:800; color:#0a0e27; }
 .market-section-pill { font-size:.74rem; border-radius:999px; padding:4px 12px; border:1px solid #d1d5db; color:#6b7280; background:#ffffff; font-weight:600; }
-.market-toggle-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:10px 14px; border-radius:10px; border:1px solid #162550; background:#162550; color:#ffffff; font-size:.84rem; font-weight:800; text-decoration:none; box-shadow:none; }
+.market-toggle-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:10px 14px; border-radius:10px; border:1px solid #111111; background:#111111; color:#ffffff; font-size:.84rem; font-weight:800; text-decoration:none; box-shadow:none; }
 .market-toggle-btn:hover { filter:brightness(1.05); }
 .market-toggle-btn.off { background:#ffffff; border-color:#cfd4dc; color:#111111; box-shadow:none; }
 .market-external-hint { margin-top:8px; font-size:.76rem; color:#6b7280; font-weight:500; }
@@ -440,7 +444,7 @@ function marketplace_render(array $data): void
   <form method="get" action="<?php echo marketplace_e($baseUrl); ?>/layout.php" id="marketFilterForm">
     <input type="hidden" name="page" value="student/marketplace">
 
-    <div class="market-layout">
+    <div class="market-layout" style="align-items: flex-start;">
       <aside class="market-filter-panel">
         <div class="market-filter-head">Filters</div>
 
@@ -516,12 +520,8 @@ function marketplace_render(array $data): void
         </div>
       </aside>
 
-      <div class="market-main-panel">
-        <header class="market-header">
-          <div>
-            <h1 class="market-header-title">Find Your Dream Internship</h1>
-            <p class="market-header-sub">Explore opportunities from SkillHive partner employers and verified external API listings in one place.</p>
-          </div>
+      <div class="market-main-panel" style="margin-top:0;padding-top:0;">
+          <header class="market-header">
           <div class="market-header-controls">
             <div class="market-header-search">
               <div class="market-search-wrap" style="flex:1;">
@@ -530,10 +530,10 @@ function marketplace_render(array $data): void
               </div>
               <button type="submit" class="market-action-btn">Search</button>
             </div>
-            <div class="market-header-right">
-              <div style="display:flex;flex-direction:column;gap:4px;min-width:150px;">
-                <label style="font-size:.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Sort</label>
-                <select class="market-sort-select" name="sort" onchange="document.getElementById('marketFilterForm').submit();">
+              <div class="market-header-right">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <label style="font-size:.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;"><i class="fas fa-sort"></i> Sort</label>
+                  <select class="market-sort-select" name="sort" onchange="document.getElementById('marketFilterForm').submit();">
                   <option value="latest" <?php echo $sortFilter === 'latest' ? 'selected' : ''; ?>>Latest first</option>
                   <option value="bestmatch" <?php echo $sortFilter === 'bestmatch' ? 'selected' : ''; ?>>Best match</option>
                   <option value="allowance_high" <?php echo $sortFilter === 'allowance_high' ? 'selected' : ''; ?>>Allowance: High to Low</option>
@@ -550,82 +550,81 @@ function marketplace_render(array $data): void
           </div>
         </header>
 
-        <?php if ($topPicks): ?>
-          <section class="market-top-picks" id="topPicksCard">
-            <div class="market-top-picks-head">
-              <div>
-                <div class="market-top-picks-title">Top job picks for you</div>
-                <div class="market-top-picks-sub">Based on your profile, skills, and recent marketplace activity.</div>
+          <?php if ($topPicks): ?>
+            <section class="market-top-picks" id="topPicksCard">
+              <div class="market-top-picks-head">
+                <div>
+                  <div class="market-top-picks-title"><i class="fas fa-bolt" style="color:#f59e0b;margin-right:6px;"></i>Top job picks for you</div>
+                  <div class="market-top-picks-sub">Based on your profile, skills, and recent marketplace activity.</div>
+                </div>
+                <button type="button" class="market-top-picks-refresh" id="refreshTopPicks" title="Refresh picks"><i class="fas fa-redo"></i></button>
               </div>
-              <button type="button" class="market-top-picks-refresh" id="refreshTopPicks" title="Refresh picks"><i class="fas fa-redo"></i></button>
-            </div>
 
-            <div class="market-picks-list" id="topPicksList">
-              <?php foreach ($topPicks as $pick): ?>
-                <?php
-                  $pickCompany = (string) ($pick['company_name'] ?? 'Company');
-                  $pickInitial = strtoupper(substr($pickCompany, 0, 1));
-                  $pickTitle = (string) ($pick['title'] ?? 'Internship');
-                  $pickLocation = trim((string) ($pick['location'] ?? 'Location not set'));
-                  $pickSetup = trim((string) ($pick['work_setup'] ?? 'On-site'));
-                  $pickScore = $compatibilityScore($pick);
-                  $pickDetailUrl = marketplace_detail_url($baseUrl, $currentFilters, (int) ($pick['internship_id'] ?? 0));
-                  $pickAccentPalette = ['#12b3ac', '#38bdf8', '#12b3ac', '#a78bfa', '#14b8a6', '#f97316'];
-                  $pickAccent = $pickAccentPalette[abs(crc32(strtolower($pickCompany))) % count($pickAccentPalette)];
-                  $pickSkills = array_values(array_filter(array_map('trim', explode(',', (string) ($pick['required_skills'] ?? '')))));
-                  $pickRequiredCount = count($pickSkills);
-                  $pickMatchedCount = 0;
-                  foreach ($pickSkills as $skillName) {
-                    if (isset($studentSkillNames[strtolower($skillName)])) {
-                      $pickMatchedCount++;
+              <div class="market-picks-list" id="topPicksList">
+                <?php foreach ($topPicks as $pick):
+                    $pickCompany = (string) ($pick['company_name'] ?? 'Company');
+                    $pickInitial = strtoupper(substr($pickCompany, 0, 1));
+                    $pickTitle = (string) ($pick['title'] ?? 'Internship');
+                    $pickLocation = trim((string) ($pick['location'] ?? 'Location not set'));
+                    $pickSetup = trim((string) ($pick['work_setup'] ?? 'On-site'));
+                    $pickScore = $compatibilityScore($pick);
+                    $pickDetailUrl = marketplace_detail_url($baseUrl, $currentFilters, (int) ($pick['internship_id'] ?? 0));
+                    $pickAccentPalette = ['#12b3ac', '#38bdf8', '#12b3ac', '#a78bfa', '#14b8a6', '#f97316'];
+                    $pickAccent = $pickAccentPalette[abs(crc32(strtolower($pickCompany))) % count($pickAccentPalette)];
+                    $pickSkills = array_values(array_filter(array_map('trim', explode(',', (string) ($pick['required_skills'] ?? '')))));
+                    $pickRequiredCount = count($pickSkills);
+                    $pickMatchedCount = 0;
+                    foreach ($pickSkills as $skillName) {
+                      if (isset($studentSkillNames[strtolower($skillName)])) {
+                        $pickMatchedCount++;
+                      }
                     }
-                  }
 
-                  $pickReasons = [];
-                  if ($pickRequiredCount > 0) {
-                    $pickReasons[] = 'Matched ' . $pickMatchedCount . '/' . $pickRequiredCount . ' skills';
-                  } else {
-                    $pickReasons[] = 'No strict skills required';
-                  }
+                    $pickReasons = [];
+                    if ($pickRequiredCount > 0) {
+                      $pickReasons[] = 'Matched ' . $pickMatchedCount . '/' . $pickRequiredCount . ' skills';
+                    } else {
+                      $pickReasons[] = 'No strict skills required';
+                    }
 
-                  $pickAllowance = (float) ($pick['allowance'] ?? 0);
-                  if ($pickAllowance >= 6000) {
-                    $pickReasons[] = 'High allowance';
-                  }
+                    $pickAllowance = (float) ($pick['allowance'] ?? 0);
+                    if ($pickAllowance >= 6000) {
+                      $pickReasons[] = 'High allowance';
+                    }
 
-                  $postedTs = strtotime((string) ($pick['posted_at'] ?? ''));
-                  if ($postedTs !== false && $postedTs >= strtotime('-7 days')) {
-                    $pickReasons[] = 'Fresh posting';
-                  }
+                    $postedTs = strtotime((string) ($pick['posted_at'] ?? ''));
+                    if ($postedTs !== false && $postedTs >= strtotime('-7 days')) {
+                      $pickReasons[] = 'Fresh posting';
+                    }
 
-                  if (in_array($pickSetup, ['Remote', 'Hybrid'], true)) {
-                    $pickReasons[] = $pickSetup . ' setup';
-                  }
-                ?>
-                <article class="market-pick-item" style="--pick-accent: <?php echo marketplace_e($pickAccent); ?>;">
-                  <div class="market-pick-logo" style="background:<?php echo marketplace_e(marketplace_company_gradient($pickCompany)); ?>"><?php echo marketplace_e($pickInitial !== '' ? $pickInitial : 'C'); ?></div>
-                  <div>
-                    <div class="market-pick-top">
-                      <div class="market-pick-title"><?php echo marketplace_e($pickTitle); ?></div>
-                      <span class="market-pick-fit"><?php echo (int) $pickScore; ?>% fit</span>
+                    if (in_array($pickSetup, ['Remote', 'Hybrid'], true)) {
+                      $pickReasons[] = $pickSetup . ' setup';
+                    }
+                  ?>
+                  <article class="market-pick-item" style="--pick-accent: <?php echo marketplace_e($pickAccent); ?>;">
+                    <div class="market-pick-logo" style="background:<?php echo marketplace_e(marketplace_company_gradient($pickCompany)); ?>"><?php echo marketplace_e($pickInitial !== '' ? $pickInitial : 'C'); ?></div>
+                    <div>
+                      <div class="market-pick-top">
+                        <div class="market-pick-title"><?php echo marketplace_e($pickTitle); ?></div>
+                        <span class="market-pick-fit"><?php echo (int) $pickScore; ?>% fit</span>
+                      </div>
+                      <div class="market-pick-meta"><i class="fas fa-building" style="color:#162550;margin-right:4px;"></i><?php echo marketplace_e($pickCompany); ?> · <i class="fas fa-map-marker-alt" style="color:#162550;margin-right:4px;margin-left:6px;"></i><?php echo marketplace_e($pickLocation); ?></div>
+                      <div class="market-pick-reasons">
+                        <?php foreach (array_slice($pickReasons, 0, 3) as $reason): ?>
+                          <span class="market-pick-reason"><?php echo marketplace_e((string) $reason); ?></span>
+                        <?php endforeach; ?>
+                      </div>
                     </div>
-                    <div class="market-pick-meta"><i class="fas fa-building" style="color:#162550;margin-right:4px;"></i><?php echo marketplace_e($pickCompany); ?> · <i class="fas fa-map-marker-alt" style="color:#162550;margin-right:4px;margin-left:6px;"></i><?php echo marketplace_e($pickLocation); ?></div>
-                    <div class="market-pick-reasons">
-                      <?php foreach (array_slice($pickReasons, 0, 3) as $reason): ?>
-                        <span class="market-pick-reason"><?php echo marketplace_e((string) $reason); ?></span>
-                      <?php endforeach; ?>
+                    <div class="market-pick-actions">
+                      <a class="market-pick-link" href="<?php echo marketplace_e($pickDetailUrl); ?>">View</a>
+                      <button type="button" class="market-pick-dismiss" title="Hide this pick"><i class="fas fa-times"></i></button>
                     </div>
-                  </div>
-                  <div class="market-pick-actions">
-                    <a class="market-pick-link" href="<?php echo marketplace_e($pickDetailUrl); ?>">View</a>
-                    <button type="button" class="market-pick-dismiss" title="Hide this pick"><i class="fas fa-times"></i></button>
-                  </div>
-                </article>
-              <?php endforeach; ?>
-            </div>
-            <div class="market-top-picks-empty" id="topPicksEmpty">All picks were hidden. Click refresh to show them again.</div>
-          </section>
-        <?php endif; ?>
+                  </article>
+                <?php endforeach; ?>
+              </div>
+              <div class="market-top-picks-empty" id="topPicksEmpty">All picks were hidden. Click refresh to show them again.</div>
+            </section>
+          <?php endif; ?>
 
         <div class="market-subhead">
           <div class="market-subhead-copy">Showing <strong><?php echo count($localListings) + count($externalListingsPage); ?></strong> result<?php echo (count($localListings) + count($externalListingsPage)) === 1 ? '' : 's'; ?>.</div>

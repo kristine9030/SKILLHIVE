@@ -84,6 +84,21 @@ if (abs($storedScore - $readinessScore) >= 0.01) {
 
 $student['internship_readiness_score'] = $readinessScore;
 
+// Fetch student stats
+$statsStmt = $pdo->prepare(
+  "SELECT
+    (SELECT COUNT(*) FROM application WHERE student_id = ?) AS total_applications,
+    (SELECT COUNT(*) FROM application WHERE student_id = ? AND status IN ('shortlisted', 'accepted', 'hired')) AS shortlisted_count,
+    (SELECT COALESCE(SUM(hours_worked), 0) FROM ojt_log WHERE student_id = ?) AS ojt_hours
+  "
+);
+$statsStmt->execute([$userId, $userId, $userId]);
+$stats = $statsStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+$totalApplications = (int)($stats['total_applications'] ?? 0);
+$shortlistedCount = (int)($stats['shortlisted_count'] ?? 0);
+$ojtHours = (int)($stats['ojt_hours'] ?? 0);
+
 $recommendedStmt = $pdo->query(
   "SELECT
       i.internship_id,
@@ -106,6 +121,21 @@ $recommendedStmt = $pdo->query(
    LIMIT 3"
 );
 $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+// Banner variables for student
+$bannerDate = date('l, jS F');
+$bannerGreeting = 'Good afternoon';
+$bannerUserName = $firstName ?? 'Student';
+$bannerTitle = 'Track Your Progress';
+$bannerDescription = 'Monitor your applications, track your OJT hours, and build your skills. Your internship journey continues here.';
+$bannerStats = [
+  ['value' => $totalApplications, 'label' => 'Applications'],
+  ['value' => $shortlistedCount, 'label' => 'Shortlisted'],
+  ['value' => $ojtHours, 'label' => 'OJT Hours'],
+];
+$bannerShowMascot = false;
+$bannerImage = $baseUrl . '/assets/media/Banner.png';
+include __DIR__ . '/../../../components/dashboard_banner.php';
 ?>
 
 <div class="page-header">
@@ -120,23 +150,23 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-paper-plane" style="color:#12b3ac"></i></div>
     <div class="stat-card-info">
-      <div class="stat-card-num">12</div>
+      <div class="stat-card-num"><?php echo $totalApplications; ?></div>
       <div class="stat-card-label">Applications</div>
     </div>
-    <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +3 this week</div>
+    <div class="stat-card-trend neutral"><?php echo $totalApplications; ?> total</div>
   </div>
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-circle" style="color:#12b3ac"></i></div>
     <div class="stat-card-info">
-      <div class="stat-card-num">4</div>
+      <div class="stat-card-num"><?php echo $shortlistedCount; ?></div>
       <div class="stat-card-label">Shortlisted</div>
     </div>
-    <div class="stat-card-trend up"><i class="fas fa-arrow-up"></i> +1 today</div>
+    <div class="stat-card-trend neutral"><?php echo $shortlistedCount; ?> shortlisted</div>
   </div>
   <div class="stat-card">
     <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-clock" style="color:#12b3ac"></i></div>
     <div class="stat-card-info">
-      <div class="stat-card-num">248</div>
+      <div class="stat-card-num"><?php echo $ojtHours; ?></div>
       <div class="stat-card-label">OJT Hours</div>
     </div>
     <div class="stat-card-trend neutral">of 500 target</div>

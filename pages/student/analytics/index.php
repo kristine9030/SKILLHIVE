@@ -8,6 +8,11 @@ if (!isset($userId) && isset($_SESSION['user_id'])) {
   $userId = (int) $_SESSION['user_id'];
 }
 
+$bannerTitle = 'Analytics Dashboard';
+$bannerDescription = 'Track your performance, skills growth, and internship progress with detailed analytics.';
+$bannerShowToggle = true;
+include __DIR__ . '/../../../components/student_banner.php';
+
 $studentId = (int) ($userId ?? 0);
 $analytics = analytics_job_load($pdo, $studentId);
 

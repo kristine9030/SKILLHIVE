@@ -73,7 +73,7 @@ $phaseOrder = ['Pre-OJT', 'During OJT', 'Post-OJT'];
 <!-- Page Header -->
 <div class="page-header">
     <div>
-        <h2 class="page-title">Requirements</h2>
+        <h2 class="page-title gradient-text">Requirements</h2>
         <p class="page-subtitle">Submit and track your OJT document requirements.</p>
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
@@ -91,7 +91,7 @@ $phaseOrder = ['Pre-OJT', 'During OJT', 'Post-OJT'];
 
 <!-- Summary Stats -->
 <div class="stat-cards" style="margin-bottom:24px;">
-    <div class="stat-card" style="cursor:default;">
+    <div class="stat-card" style="cursor:default;position:relative;overflow:hidden;">
         <div class="stat-card-icon" style="background:linear-gradient(135deg,#12b3ac,#0a8a85);display:flex;align-items:center;justify-content:center;border-radius:14px;width:52px;height:52px;">
             <i class="fas fa-clipboard-list" style="font-size:1.5rem;color:#fff;"></i>
         </div>
@@ -101,8 +101,9 @@ $phaseOrder = ['Pre-OJT', 'During OJT', 'Post-OJT'];
             </div>
             <div class="stat-card-label">Total Requirements</div>
         </div>
+        <img src="<?php echo $baseUrl; ?>/assets/media/Total Evaluation.png" alt="" style="position:absolute;right:-15px;bottom:-15px;width:80px;height:80px;opacity:0.08;pointer-events:none;">
     </div>
-    <div class="stat-card" style="cursor:default;">
+    <div class="stat-card" style="cursor:default;position:relative;overflow:hidden;">
         <div class="stat-card-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;border-radius:14px;width:52px;height:52px;">
             <i class="fas fa-clock" style="font-size:1.5rem;color:#fff;"></i>
         </div>
@@ -112,8 +113,9 @@ $phaseOrder = ['Pre-OJT', 'During OJT', 'Post-OJT'];
             </div>
             <div class="stat-card-label">Pending</div>
         </div>
+        <img src="<?php echo $baseUrl; ?>/assets/media/Pendingg.png" alt="" style="position:absolute;right:-15px;bottom:-15px;width:80px;height:80px;opacity:0.08;pointer-events:none;">
     </div>
-    <div class="stat-card" style="cursor:default;">
+    <div class="stat-card" style="cursor:default;position:relative;overflow:hidden;">
         <div class="stat-card-icon" style="background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;border-radius:14px;width:52px;height:52px;">
             <i class="fas fa-paper-plane" style="font-size:1.5rem;color:#fff;"></i>
         </div>
@@ -123,8 +125,9 @@ $phaseOrder = ['Pre-OJT', 'During OJT', 'Post-OJT'];
             </div>
             <div class="stat-card-label">Submitted</div>
         </div>
+        <img src="<?php echo $baseUrl; ?>/assets/media/Interviews.png" alt="" style="position:absolute;right:-15px;bottom:-15px;width:80px;height:80px;opacity:0.08;pointer-events:none;">
     </div>
-    <div class="stat-card" style="cursor:default;">
+    <div class="stat-card" style="cursor:default;position:relative;overflow:hidden;">
         <div class="stat-card-icon" style="background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;border-radius:14px;width:52px;height:52px;">
             <i class="fas fa-check-circle" style="font-size:1.5rem;color:#fff;"></i>
         </div>
@@ -134,6 +137,7 @@ $phaseOrder = ['Pre-OJT', 'During OJT', 'Post-OJT'];
             </div>
             <div class="stat-card-label">Approved</div>
         </div>
+        <img src="<?php echo $baseUrl; ?>/assets/media/Hiredd.png" alt="" style="position:absolute;right:-15px;bottom:-15px;width:80px;height:80px;opacity:0.08;pointer-events:none;">
     </div>
 </div>
 

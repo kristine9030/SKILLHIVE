@@ -54,3 +54,44 @@ if (!function_exists('updateEmployerInternshipPostingStatus')) {
         return ['success' => true, 'error' => null];
     }
 }
+
+// Extend an expired internship posting by resetting posted_at to now
+if (!function_exists('extendInternshipPosting')) {
+    function extendInternshipPosting(PDO $pdo, int $employerId, int $internshipId): array
+    {
+        if ($internshipId <= 0) {
+            return ['success' => false, 'error' => 'Invalid posting selected.'];
+        }
+
+        // Verify ownership
+        $ownershipStmt = $pdo->prepare(
+            'SELECT internship_id
+             FROM internship
+             WHERE internship_id = :internship_id
+               AND employer_id = :employer_id
+             LIMIT 1'
+        );
+        $ownershipStmt->execute([
+            ':internship_id' => $internshipId,
+            ':employer_id' => $employerId,
+        ]);
+
+        if (!$ownershipStmt->fetch(PDO::FETCH_ASSOC)) {
+            return ['success' => false, 'error' => 'Posting not found or not owned by your account.'];
+        }
+
+        // Reset posted_at to now to extend the expiration date
+        $extendStmt = $pdo->prepare(
+            'UPDATE internship
+             SET posted_at = NOW()
+             WHERE internship_id = :internship_id
+               AND employer_id = :employer_id'
+        );
+        $extendStmt->execute([
+            ':internship_id' => $internshipId,
+            ':employer_id' => $employerId,
+        ]);
+
+        return ['success' => true, 'error' => null];
+    }
+}

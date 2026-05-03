@@ -1,7 +1,6 @@
 <?php
 
-function ojt_load_summary(PDO $pdo, ?array $ojt): array
-{
+function ojt_load_summary($pdo, $ojt) {
   $defaultRequiredHours = defined('SKILLHIVE_REQUIRED_OJT_HOURS') ? (float) SKILLHIVE_REQUIRED_OJT_HOURS : 500.00;
   $hoursLogged = (float) ($ojt['hours_completed'] ?? 0);
   $hoursTarget = (float) ($ojt['hours_required'] ?? $defaultRequiredHours);
@@ -24,4 +23,14 @@ function ojt_load_summary(PDO $pdo, ?array $ojt): array
     'daysPresent' => $daysPresent,
     'tasksCompleted' => $tasksCompleted,
   ];
+}
+
+function ojt_load_entries_by_date($pdo, $ojt, $date) {
+  if (!$ojt) {
+    return [];
+  }
+
+  $stmt = $pdo->prepare('SELECT log_id, log_date, start_time, end_time, hours_rendered, accomplishment, mood_tag, file_path FROM daily_log WHERE record_id = ? AND log_date = ? ORDER BY start_time ASC');
+  $stmt->execute([$ojt['record_id'], $date]);
+  return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }

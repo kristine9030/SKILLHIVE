@@ -4,10 +4,35 @@ require_once __DIR__ . '/../../backend/db_connect.php';
 $currentRole = (string)($role ?? ($_SESSION['role'] ?? ''));
 $studentId = (int)($_SESSION['student_id'] ?? ($_SESSION['user_id'] ?? 0));
 
-if ($currentRole !== 'student' || $studentId <= 0) {
+if ($currentRole !== 'student' || $studentId <=0) {
     header('Location: ' . $baseUrl . '/layout.php');
     exit;
 }
+
+$errors = [];
+
+$stateStmt = $pdo->prepare(
+    'SELECT must_change_password
+     FROM student
+     WHERE student_id = :student_id
+     LIMIT 1'
+);
+$stateStmt->execute([':student_id' => $studentId]);
+$studentState = $stateStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+if (!$studentState) {
+    $errors['form'] = 'Student account not found.';
+} elseif ((int)($studentState['must_change_password'] ?? 0) !== 1) {
+    $_SESSION['must_change_password'] = false;
+    header('Location: ' . $baseUrl . '/layout.php?page=student/dashboard');
+    exit;
+}
+
+$bannerTitle = 'First Login Setup';
+$bannerDescription = 'Change your password to continue using SkillHive.';
+$bannerShowToggle = false;
+include __DIR__ . '/../../components/student_banner.php';
+
 
 $errors = [];
 

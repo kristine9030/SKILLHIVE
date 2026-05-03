@@ -5,6 +5,11 @@ require_once __DIR__ . '/marketplace_db.php';
 require_once __DIR__ . '/marketplace_apply.php';
 require_once __DIR__ . '/marketplace_view.php';
 
+$bannerTitle = 'Explore Opportunities';
+$bannerDescription = 'Browse available internships and find the perfect match for your skills and career goals.';
+$bannerShowToggle = true;
+include __DIR__ . '/../../../components/student_banner.php';
+
 $currentFilters  = marketplace_filters_from_request();
 $selectedDetailId = (int) $currentFilters['detail'];
 $openApplyModal  = (int) $currentFilters['open_apply'] === 1;

@@ -1,3 +1,10 @@
+<?php
+$bannerTitle = 'AI Matching';
+$bannerDescription = 'Discover internships matched to your skills by our AI engine.';
+$bannerShowToggle = true;
+include __DIR__ . '/../../../components/student_banner.php';
+?>
+
 <div class="page-header">
   <div>
     <h2 class="page-title">AI Matching</h2>

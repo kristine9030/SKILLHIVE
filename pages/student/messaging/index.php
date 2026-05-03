@@ -7,6 +7,11 @@ if (!function_exists('messaging_e')) {
 }
 
 $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
+
+$bannerTitle = 'Messages';
+$bannerDescription = 'Communicate with employers and advisers securely through SkillHive messaging.';
+$bannerShowToggle = true;
+include __DIR__ . '/../../../components/student_banner.php';
 ?>
 
 <div class="feed-main" style="max-width:1400px;">

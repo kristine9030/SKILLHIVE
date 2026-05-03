@@ -16,6 +16,8 @@ $bannerShowGreeting = array_key_exists('bannerShowGreeting', get_defined_vars())
 $bannerShowMascot = array_key_exists('bannerShowMascot', get_defined_vars()) ? (bool)$bannerShowMascot : true;
 $bannerDaysText = $bannerDaysText ?? 'LAST 7 DAYS';
 $bannerStats = $bannerStats ?? [];
+$bannerImage = $bannerImage ?? '';
+$bannerDate = $bannerDate ?? '';
 
 $baseUrl = $baseUrl ?? '/SkillHive';
 $beeMascotPath = $baseUrl . '/assets/media/skillhive-logo.png';
@@ -28,8 +30,8 @@ $beeMascotPath = $baseUrl . '/assets/media/skillhive-logo.png';
       radial-gradient(120% 160% at 92% 14%, rgba(37, 168, 158, 0.56) 0%, rgba(9, 22, 24, 0) 46%),
       linear-gradient(135deg, #010101 0%, #020202 62%, #0a1f1e 82%, #0f4e49 100%);
     border-radius: 16px;
-    padding: 4px 16px;
-    margin-bottom: 28px;
+    padding: 24px 32px;
+    margin: 0 4px 28px 4px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -108,32 +110,40 @@ $beeMascotPath = $baseUrl . '/assets/media/skillhive-logo.png';
   }
 
   .banner-greeting {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 500;
     opacity: 0.85;
-    margin-bottom: 0px;
+    margin-bottom: 2px;
     text-transform: capitalize;
     letter-spacing: 0.5px;
   }
 
+  .banner-date {
+    font-size: 12px;
+    font-weight: 100;
+    opacity: 0.6;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+
   .banner-user-name {
-    font-size: 40px;
+    font-size: 32px;
     font-weight: 700;
     margin-bottom: 4px;
     letter-spacing: -0.5px;
   }
 
   .banner-title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     opacity: 0.95;
   }
 
   .banner-description {
-    font-size: 16px;
+    font-size: 14px;
     opacity: 0.85;
-    line-height: 1.6;
+    line-height: 1.5;
     margin-bottom: 0;
     max-width: 450px;
     letter-spacing: 0.3px;
@@ -148,23 +158,23 @@ $beeMascotPath = $baseUrl . '/assets/media/skillhive-logo.png';
 
   .banner-stats {
     display: flex;
-    gap: 24px;
+    gap: 20px;
     flex-wrap: wrap;
   }
 
   .banner-stat {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
   }
 
   .banner-stat-value {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
   }
 
   .banner-stat-label {
-    font-size: 12px;
+    font-size: 11px;
     opacity: 0.75;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -182,6 +192,22 @@ $beeMascotPath = $baseUrl . '/assets/media/skillhive-logo.png';
     object-fit: contain;
     filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
     animation: float 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
+
+  .banner-image {
+    flex-shrink: 0;
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+  }
+
+  .banner-image img {
+    height: 180px;
+    width: auto;
+    object-fit: contain;
+    opacity: 0.9;
   }
 
   @keyframes float {
@@ -238,6 +264,9 @@ $beeMascotPath = $baseUrl . '/assets/media/skillhive-logo.png';
 
 <div class="dashboard-banner<?php echo $bannerIsCompact ? ' dashboard-banner--compact' : ''; ?><?php echo $bannerClass !== '' ? ' ' . htmlspecialchars($bannerClass) : ''; ?>">
   <div class="banner-content">
+    <?php if (!empty($bannerDate)): ?>
+      <div class="banner-date"><?php echo htmlspecialchars($bannerDate); ?></div>
+    <?php endif; ?>
     <?php if ($bannerShowGreeting): ?>
       <div class="banner-greeting"><?php echo htmlspecialchars($bannerGreeting); ?>, <span style="font-weight:600;"><?php echo htmlspecialchars($bannerUserName); ?></span>!</div>
     <?php endif; ?>
@@ -254,6 +283,11 @@ $beeMascotPath = $baseUrl . '/assets/media/skillhive-logo.png';
   <?php if ($bannerShowMascot): ?>
     <div class="banner-mascot">
       <img src="<?php echo htmlspecialchars($beeMascotPath); ?>" alt="SkillHive Logo">
+    </div>
+  <?php endif; ?>
+  <?php if ($bannerImage !== ''): ?>
+    <div class="banner-image">
+      <img src="<?php echo htmlspecialchars($bannerImage); ?>" alt="Banner Image">
     </div>
   <?php endif; ?>
 </div>

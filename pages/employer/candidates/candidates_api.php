@@ -119,6 +119,59 @@ try {
         ];
 
         candidates_api_respond($result);
+    } elseif ($action === 'get_profile') {
+        $studentId = (int) ($_GET['student_id'] ?? 0);
+        $applicationId = (int) ($_GET['application_id'] ?? 0);
+
+        if ($studentId <= 0 || $applicationId <= 0) {
+            candidates_api_respond(['ok' => false, 'error' => 'Invalid request'], 400);
+        }
+
+        $stmt = $pdo->prepare('
+            SELECT
+                s.student_id,
+                s.first_name,
+                s.last_name,
+                s.email,
+                s.program,
+                s.year_level,
+                s.profile_picture,
+                s.resume_file,
+                a.compatibility_score,
+                a.application_date,
+                i.title AS internship_title
+            FROM application a
+            INNER JOIN internship i ON i.internship_id = a.internship_id
+            INNER JOIN student s ON s.student_id = a.student_id
+            WHERE a.application_id = ?
+              AND s.student_id = ?
+              AND i.employer_id = ?
+            LIMIT 1
+        ');
+        $stmt->execute([$applicationId, $studentId, $employerId]);
+        $profile = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$profile) {
+            candidates_api_respond(['ok' => false, 'error' => 'Profile not found'], 404);
+        }
+
+        $skillStmt = $pdo->prepare('
+            SELECT sk.skill_name, sk.skill_id, ssk.verified
+            FROM student_skill ssk
+            INNER JOIN skill sk ON sk.skill_id = ssk.skill_id
+            WHERE ssk.student_id = ?
+            ORDER BY sk.skill_name
+            LIMIT 20
+        ');
+        $skillStmt->execute([$studentId]);
+        $skills = $skillStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        candidates_api_respond([
+            'ok' => true,
+            'profile' => $profile,
+            'skills' => $skills,
+            'baseUrl' => '/SkillHive',
+        ]);
     } elseif ($action === 'update_status') {
         $applicationId = (int) ($_POST['application_id'] ?? 0);
         $newStatus = trim((string) ($_POST['status'] ?? ''));

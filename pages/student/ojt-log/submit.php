@@ -1,49 +1,111 @@
 <?php
-ob_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
-    if (!(error_reporting() & $severity)) {
-        return false;
-    }
-    throw new ErrorException($message, 0, $severity, $file, $line);
-});
-
-if (!function_exists('ojt_submit_json')) {
-    function ojt_submit_json(array $payload, int $statusCode = 200): void
-    {
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-
-        if (!headers_sent()) {
-            http_response_code($statusCode);
-            header('Content-Type: application/json; charset=UTF-8');
-        }
-
-        echo json_encode($payload);
-        exit;
-    }
-}
+session_start();
 
 require_once __DIR__ . '/../../../backend/db_connect.php';
-require_once __DIR__ . '/ojt_log_helpers.php';
-require_once __DIR__ . '/ojt_log_submit.php';
 
-try {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['log_entry'])) {
-        ojt_submit_json(['ok' => false, 'message' => 'Invalid request.'], 400);
-    }
-
-    $studentId = (int)($_SESSION['user_id'] ?? 0);
-    if ($studentId <= 0) {
-        ojt_submit_json(['ok' => false, 'message' => 'Unauthorized.'], 401);
-    }
-
-    $ojt = ojt_get_or_create_record($pdo, $studentId);
-
-    ojt_log_handle_submit($pdo, $ojt);
-
-    ojt_submit_json(['ok' => false, 'message' => 'Unexpected response from log submit handler.'], 500);
-} catch (Throwable $e) {
-    ojt_submit_json(['ok' => false, 'message' => 'Server error: ' . $e->getMessage()], 500);
+$studentId = 0;
+if (isset($_SESSION['user_id'])) {
+    $studentId = (int)$_SESSION['user_id'];
 }
+
+// Log for debugging
+$log = date('Y-m-d H:i:s') . " - studentId=$studentId, method=" . $_SERVER['REQUEST_METHOD'] . ", action=" . (isset($_GET['action']) ? $_GET['action'] : 'none') . "\n";
+file_put_contents(__DIR__ . '/debug.log', $log, FILE_APPEND);
+
+header('Content-Type: application/json');
+
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    echo json_encode(array('ok' => false, 'message' => 'Invalid request method'));
+    exit;
+}
+
+$action = '';
+if (isset($_GET['action'])) {
+    $action = $_GET['action'];
+}
+if ($action !== 'get_entries') {
+    echo json_encode(array('ok' => false, 'message' => 'Invalid action'));
+    exit;
+}
+
+if (!$studentId) {
+    echo json_encode(array('ok' => false, 'message' => 'Not logged in. user_id=' . $studentId));
+    exit;
+}
+
+$date = '';
+if (isset($_GET['date'])) {
+    $date = trim($_GET['date']);
+}
+if (!$date) {
+    echo json_encode(array('ok' => false, 'message' => 'No date provided'));
+    exit;
+}
+
+// Get OJT record
+$stmt = $pdo->prepare('SELECT * FROM ojt_record WHERE student_id = ? ORDER BY record_id DESC LIMIT 1');
+$stmt->execute(array($studentId));
+$ojt = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$ojt) {
+    echo json_encode(array('ok' => true, 'entries' => array()));
+    exit;
+}
+
+// Get entries
+$sql = 'SELECT log_id, log_date, start_time, end_time, hours_rendered, accomplishment, mood_tag, file_path FROM daily_log WHERE record_id = ? AND log_date = ? ORDER BY start_time ASC';
+$stmt = $pdo->prepare($sql);
+$stmt->execute(array($ojt['record_id'], $date));
+$entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Log success
+file_put_contents(__DIR__ . '/debug.log', date('Y-m-d H:i:s') . " - Success, entries=" . count($entries) . "\n", FILE_APPEND);
+
+echo json_encode(array('ok' => true, 'entries' => $entries));
+exit;
+}
+
+$action = '';
+if (isset($_GET['action'])) {
+    $action = $_GET['action'];
+}
+if ($action !== 'get_entries') {
+    echo json_encode(array('ok' => false, 'message' => 'Invalid action'));
+    exit;
+}
+
+if (!$studentId) {
+    echo json_encode(array('ok' => false, 'message' => 'Not logged in. user_id=' . $studentId));
+    exit;
+}
+
+$date = '';
+if (isset($_GET['date'])) {
+    $date = trim($_GET['date']);
+}
+if (!$date) {
+    echo json_encode(array('ok' => false, 'message' => 'No date provided'));
+    exit;
+}
+
+// Get OJT record
+$stmt = $pdo->prepare('SELECT * FROM ojt_record WHERE student_id = ? ORDER BY record_id DESC LIMIT 1');
+$stmt->execute(array($studentId));
+$ojt = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$ojt) {
+    echo json_encode(array('ok' => true, 'entries' => array()));
+    exit;
+}
+
+// Get entries
+$sql = 'SELECT log_id, log_date, start_time, end_time, hours_rendered, accomplishment, mood_tag, file_path FROM daily_log WHERE record_id = ? AND log_date = ? ORDER BY start_time ASC';
+$stmt = $pdo->prepare($sql);
+$stmt->execute(array($ojt['record_id'], $date));
+$entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+echo json_encode(array('ok' => true, 'entries' => $entries));
+exit;

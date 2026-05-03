@@ -263,27 +263,51 @@ function applications_render_view(array $ctx): void
 
 <div class="page-header">
   <div>
-    <h2 class="page-title">My Applications</h2>
-    <p class="page-subtitle">Track all your internship applications in one place.</p>
+    <h2 class="page-title" style="background:linear-gradient(135deg,#0f172a 0%,#12b3ac 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800">My Applications</h2>
+    <p class="page-subtitle">Track your internship applications and monitor their status throughout the hiring process.</p>
   </div>
 </div>
 
 <div class="stat-cards">
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-paper-plane" style="color:#12b3ac"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num"><?php echo $totalApplied; ?></div><div class="stat-card-label">Total Applied</div></div>
+    <div class="stat-card-icon"><img src="/SkillHive/assets/media/Applications.png" alt="Total Applied"></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num-row">
+        <div class="stat-card-trend neutral"><?php echo $totalApplied; ?> applied</div>
+        <div class="stat-card-num"><?php echo $totalApplied; ?></div>
+      </div>
+      <div class="stat-card-label">Total Applied</div>
+    </div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-hourglass-half" style="color:#12b3ac"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num"><?php echo (int) ($statusCounts['Pending'] ?? 0); ?></div><div class="stat-card-label">Pending</div></div>
+    <div class="stat-card-icon"><img src="/SkillHive/assets/media/Pendingg.png" alt="Pending"></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num-row">
+        <div class="stat-card-trend neutral"><?php echo (int) ($statusCounts['Pending'] ?? 0); ?> pending</div>
+        <div class="stat-card-num"><?php echo (int) ($statusCounts['Pending'] ?? 0); ?></div>
+      </div>
+      <div class="stat-card-label">Pending</div>
+    </div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-list-check" style="color:#12b3ac"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num"><?php echo (int) ($statusCounts['Waitlisted'] ?? 0); ?></div><div class="stat-card-label">Waitlisted</div></div>
+    <div class="stat-card-icon"><img src="/SkillHive/assets/media/Shortlisted.png" alt="Waitlisted"></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num-row">
+        <div class="stat-card-trend neutral"><?php echo (int) ($statusCounts['Waitlisted'] ?? 0); ?> waitlisted</div>
+        <div class="stat-card-num"><?php echo (int) ($statusCounts['Waitlisted'] ?? 0); ?></div>
+      </div>
+      <div class="stat-card-label">Waitlisted</div>
+    </div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-double" style="color:#12b3ac"></i></div>
-    <div class="stat-card-info"><div class="stat-card-num"><?php echo (int) ($statusCounts['Accepted'] ?? 0); ?></div><div class="stat-card-label">Accepted</div></div>
+    <div class="stat-card-icon"><img src="/SkillHive/assets/media/Hiredd.png" alt="Accepted"></div>
+    <div class="stat-card-info">
+      <div class="stat-card-num-row">
+        <div class="stat-card-trend neutral"><?php echo (int) ($statusCounts['Accepted'] ?? 0); ?> accepted</div>
+        <div class="stat-card-num"><?php echo (int) ($statusCounts['Accepted'] ?? 0); ?></div>
+      </div>
+      <div class="stat-card-label">Accepted</div>
+    </div>
   </div>
 </div>
 

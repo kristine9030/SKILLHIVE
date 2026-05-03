@@ -8,6 +8,8 @@ if (!$role) {
     exit;
 }
 
+require_once __DIR__ . '/backend/db_connect.php';
+
 $baseUrl = '/SkillHive';
 $userName = $_SESSION['user_name'] ?? 'User';
 $userEmail = $_SESSION['user_email'] ?? '';
@@ -42,14 +44,17 @@ $allowedPages = [
     'employer' => [
         'employer/dashboard',
         'employer/profile',
+        'employer/settings',
         'employer/messaging',
         'employer/post_internship',
         'employer/post-internship',
         'employer/candidates',
-        'employer/evaluation',
-        'help',
-    ],
-    'adviser' => [
+         'employer/evaluation',
+         'employer/ojt_students',
+         'employer/analytics',
+         'help',
+     ],
+     'adviser' => [
         'adviser/dashboard',
         'adviser/profile',
         'adviser/messaging',
@@ -283,6 +288,14 @@ function applySidebarState() {
     sidebar.classList.toggle('collapsed', savedCollapsed);
 }
 
+function handleLogoClick(event) {
+    var sidebar = document.querySelector('.sidebar');
+    if (sidebar && sidebar.classList.contains('collapsed')) {
+        toggleSidebar();
+        event.preventDefault();
+    }
+}
+
 function toggleSidebar() {
     var sidebar = document.querySelector('.sidebar');
     var overlay = document.getElementById('mobileOverlay');
@@ -301,6 +314,27 @@ function toggleSidebar() {
 
     var isCollapsed = sidebar.classList.toggle('collapsed');
     window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, isCollapsed ? '1' : '0');
+}
+
+function updateAllAvatars(url) {
+    if (!url) return;
+    var navAvatarImg = document.querySelector('.topbar-user img');
+    if (navAvatarImg) {
+        navAvatarImg.src = url;
+    }
+    var navAvatarWrap = document.querySelector('.topbar-user');
+    if (navAvatarWrap && navAvatarImg) {
+        navAvatarWrap.classList.add('has-avatar-img');
+    }
+    var sbAvatarEl = document.querySelector('.sb-user .sb-avatar');
+    if (sbAvatarEl) {
+        var existingImg = sbAvatarEl.querySelector('img');
+        if (existingImg) {
+            existingImg.src = url;
+        } else {
+            sbAvatarEl.innerHTML = '<img src="' + url + '" alt="Avatar" style="width:36px;height:36px;border-radius:8px;object-fit:cover;">';
+        }
+    }
 }
 
 function closeMobileSidebar() {
@@ -590,6 +624,12 @@ if (topbarMarkAllButton) {
 refreshTopbarUnreadCount();
 loadTopbarNotifications();
 applySidebarState();
+
+var pendingAvatar = document.getElementById('pendingAvatarUpdate');
+if (pendingAvatar && pendingAvatar.dataset.url && typeof updateAllAvatars === 'function') {
+    updateAllAvatars(pendingAvatar.dataset.url);
+}
+
 window.setInterval(refreshTopbarUnreadCount, 15000);
 
 // Auto-dismiss flash toast
