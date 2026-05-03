@@ -1,2 +1,3 @@
 backend/local_config.php
-
+/assets/backend/uploads/requirements/**
+!/assets/backend/uploads/requirements/.gitkeep
