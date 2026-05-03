@@ -36,6 +36,7 @@ if ($role === 'student') {
             ['icon' => 'fas fa-house',            'text' => 'Dashboard',     'page' => 'adviser/dashboard'],
       ['icon' => 'fas fa-id-card',          'text' => 'Profile',       'page' => 'adviser/profile'],
             ['icon' => 'fas fa-house',            'text' => 'My Students',   'page' => 'adviser/students'],
+            ['icon' => 'fas fa-folder-open',      'text' => 'Requirements',  'page' => 'adviser/requirements'],
             ['icon' => 'fas fa-stamp',            'text' => 'Endorsements',  'page' => 'adviser/endorsement'],
             ['icon' => 'fas fa-eye',              'text' => 'OJT Monitoring','page' => 'adviser/monitoring'],
             ['icon' => 'fas fa-book-open',        'text' => 'Student Journals', 'page' => 'adviser/journal_analytics'],
