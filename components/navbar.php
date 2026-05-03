@@ -74,7 +74,7 @@
           <i class="fas fa-gear topbar-item-icon"></i>
           <span>Settings</span>
         </a>
-        <a href="javascript:void(0)" class="topbar-dropdown-item">
+        <a href="<?php echo $baseUrl; ?>/layout.php?page=help" class="topbar-dropdown-item">
           <i class="fas fa-circle-question topbar-item-icon"></i>
           <span>Help</span>
         </a>

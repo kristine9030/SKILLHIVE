@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $employerId > 0) {
     }
     $errorMessage = (string)($saveResult['error'] ?? 'Unable to save evaluation.');
   } catch (Throwable $e) {
-    $errorMessage = 'Unable to save evaluation right now. Please try again.';
+    $errorMessage = 'Already evaluated.';
   }
 }
 

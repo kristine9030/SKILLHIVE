@@ -37,6 +37,7 @@ $allowedPages = [
         'student/analytics',
         'student/requirements',
         'student/settings',
+        'help',
     ],
     'employer' => [
         'employer/dashboard',
@@ -46,6 +47,7 @@ $allowedPages = [
         'employer/post-internship',
         'employer/candidates',
         'employer/evaluation',
+        'help',
     ],
     'adviser' => [
         'adviser/dashboard',
@@ -59,6 +61,7 @@ $allowedPages = [
         'adviser/companies',
         'adviser/settings',
         'adviser/students',
+        'help',
     ],
     'admin' => [
         'admin/dashboard',
@@ -69,6 +72,7 @@ $allowedPages = [
         'admin/reports',
         'admin/audit-logs',
         'admin/settings',
+        'help',
     ],
 ];
 
