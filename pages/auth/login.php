@@ -78,7 +78,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #c7d2f5 0%, #d6e4f7 25%, #ede4d4 50%, #f8edd4 75%, #f0e8da 100%);
+  background: url('<?php echo $baseUrl; ?>/assets/media/LOGIN BG.png') center center / cover no-repeat;
   color: #111;
   -webkit-font-smoothing: antialiased;
   padding: 24px;

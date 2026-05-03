@@ -111,34 +111,161 @@ $atRiskStudents = $dashboardData['at_risk_students'];
     padding: 18px;
   }
 
-  .adviser-stat-icon {
-    width: 46px;
-    height: 46px;
+  .adviser-dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .adviser-stat-card {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition);
+    min-height: 140px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+
+  .adviser-stat-card:hover {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+  }
+
+  .adviser-stat-card::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -20px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0.08;
+    background: #162550;
+  }
+
+  .adviser-stat-card::after {
+    content: '';
+    position: absolute;
+    top: 40px;
+    right: -80px;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0.06;
+    background: #162550;
+  }
+
+  .adviser-stat-card-icon {
+    width: 200px !important;
+    height: 200px !important;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.08) 100%) !important;
+    color: transparent !important;
+    box-shadow: none !important;
+    margin: -25px 0 -25px -25px;
     border-radius: 16px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
-    background: rgba(31, 111, 107, 0.12);
-    color: var(--ad-verdigris-dark);
-    box-shadow: 0 2px 8px rgba(31, 111, 107, 0.12);
+    font-size: 4rem;
     position: relative;
     z-index: 2;
+    flex-shrink: 0;
   }
 
-  .adviser-stat-label {
-    margin: 0 0 6px;
-    font-size: 0.82rem;
-    color: var(--ad-ink);
-    font-weight: 500;
+  .adviser-stat-card-icon i {
+    color: #1f6f6b;
+    font-size: 5rem;
   }
 
-  .adviser-stat-value {
-    margin: 0;
-    font-size: 1.9rem;
-    font-weight: 700;
+  .adviser-stat-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .adviser-stat-card-num-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    justify-content: flex-end;
+    width: 100%;
+  }
+
+  .adviser-stat-card-num {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 3.2rem;
+    font-weight: 800;
     line-height: 1;
-    color: var(--ad-ink);
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+    max-width: 180px;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    text-align: right;
+  }
+
+  .adviser-stat-card-label {
+    font-size: .85rem;
+    color: var(--text2);
+    font-weight: 500;
+    position: relative;
+    z-index: 2;
+    text-align: right;
+    align-self: flex-end;
+  }
+
+  .adviser-stat-card-trend {
+    font-size: .7rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+    white-space: nowrap;
+    color: var(--accent2);
+    justify-content: flex-end;
+    align-self: flex-end;
+    text-align: right;
+  }
+
+  .adviser-stat-students::before,
+  .adviser-stat-students::after {
+    background: #1f6f6b !important;
+  }
+
+  .adviser-stat-placed::before,
+  .adviser-stat-placed::after {
+    background: #10B981 !important;
+  }
+
+  .adviser-stat-risk::before,
+  .adviser-stat-risk::after {
+    background: #F59E0B !important;
+  }
+
+  .adviser-stat-partners::before,
+  .adviser-stat-partners::after {
+    background: #06B6D4 !important;
   }
 
   .adviser-dashboard-grid {
@@ -393,50 +520,65 @@ $atRiskStudents = $dashboardData['at_risk_students'];
 
 <div class="adviser-dashboard-page">
 
-  <?php
-  // Banner variables for adviser
-  $bannerGreeting = 'Good afternoon';
-  $bannerUserName = $profile['first_name'] ?? 'Adviser';
-  $bannerTitle = 'Empower Your Students';
-  $bannerDescription = 'Guide students through their journey, provide endorsements, monitor progress, and help them succeed in their internship placements.';
-  $bannerStats = [
-    ['value' => (int)($stats['my_students'] ?? 0), 'label' => 'My Students'],
-    ['value' => (int)($stats['placed_students'] ?? 0), 'label' => 'Placed'],
-    ['value' => (int)($stats['pending_review'] ?? 0), 'label' => 'Pending Review'],
-  ];
-  include __DIR__ . '/../../components/dashboard_banner.php';
-  ?>
+<?php
+// Banner variables for adviser
+$bannerDate = date('l, jS F');
+$bannerGreeting = 'Good afternoon';
+$bannerUserName = $profile['first_name'] ?? 'Adviser';
+$bannerTitle = 'Empower Your Students';
+$bannerDescription = 'Guide students through their journey, provide endorsements, monitor progress, and help them succeed in their internship placements.';
+$bannerStats = [
+  ['value' => (int)($stats['my_students'] ?? 0), 'label' => 'My Students'],
+  ['value' => (int)($stats['placed_students'] ?? 0), 'label' => 'Placed'],
+  ['value' => (int)($stats['pending_review'] ?? 0), 'label' => 'Pending Review'],
+];
+$bannerShowMascot = false;
+$bannerImage = $baseUrl . '/assets/media/Banner.png';
+include __DIR__ . '/../../components/dashboard_banner.php';
+?>
 
   <div class="adviser-dashboard-stats">
-    <div class="adviser-stat-card">
-      <span class="adviser-stat-icon" style="background:rgba(31,111,107,.14);color:#1f6f6b;"><i class="fas fa-user-graduate"></i></span>
-      <div>
-        <p class="adviser-stat-label">Assigned Students</p>
-        <p class="adviser-stat-value"><?php echo (int)($stats['my_students'] ?? 0); ?></p>
+    <div class="adviser-stat-card adviser-stat-students">
+      <div class="adviser-stat-card-icon"><i class="fas fa-user-graduate"></i></div>
+      <div class="adviser-stat-card-info">
+        <div class="adviser-stat-card-num-row">
+          <div class="adviser-stat-card-trend neutral"><?php echo (int)($stats['my_students'] ?? 0); ?> students</div>
+          <div class="adviser-stat-card-num"><?php echo (int)($stats['my_students'] ?? 0); ?></div>
+        </div>
+        <div class="adviser-stat-card-label">Assigned Students</div>
       </div>
     </div>
 
-    <div class="adviser-stat-card">
-      <span class="adviser-stat-icon" style="background:rgba(43,138,132,.16);color:#1f6f6b;"><i class="fas fa-circle-check"></i></span>
-      <div>
-        <p class="adviser-stat-label">Placed Students</p>
-        <p class="adviser-stat-value"><?php echo (int)($stats['placed_students'] ?? 0); ?></p>
+    <div class="adviser-stat-card adviser-stat-placed">
+      <div class="adviser-stat-card-icon"><i class="fas fa-circle-check"></i></div>
+      <div class="adviser-stat-card-info">
+        <div class="adviser-stat-card-num-row">
+          <div class="adviser-stat-card-trend neutral"><?php echo (int)($stats['placed_students'] ?? 0); ?> placed</div>
+          <div class="adviser-stat-card-num"><?php echo (int)($stats['placed_students'] ?? 0); ?></div>
+        </div>
+        <div class="adviser-stat-card-label">Placed Students</div>
       </div>
     </div>
 
-    <div class="adviser-stat-card">
-      <span class="adviser-stat-icon" style="background:rgba(120,169,166,.18);color:#1f6f6b;"><i class="fas fa-triangle-exclamation"></i></span>
-      <div>
-        <p class="adviser-stat-label">At Risk</p>
-        <p class="adviser-stat-value"><?php echo (int)($stats['at_risk_students'] ?? 0); ?></p>
+    <div class="adviser-stat-card adviser-stat-risk">
+      <div class="adviser-stat-card-icon"><i class="fas fa-triangle-exclamation"></i></div>
+      <div class="adviser-stat-card-info">
+        <div class="adviser-stat-card-num-row">
+          <div class="adviser-stat-card-trend neutral"><?php echo (int)($stats['at_risk_students'] ?? 0); ?> at risk</div>
+          <div class="adviser-stat-card-num"><?php echo (int)($stats['at_risk_students'] ?? 0); ?></div>
+        </div>
+        <div class="adviser-stat-card-label">At Risk</div>
       </div>
     </div>
 
-    <div class="adviser-stat-card">
-      <span class="adviser-stat-icon" style="background:rgba(31,111,107,.14);color:#1f6f6b;"><i class="fas fa-building"></i></span>
-      <div>
-        <p class="adviser-stat-label">Partner Companies</p>
-        <p class="adviser-stat-value"><?php echo (int)($stats['partner_companies'] ?? 0); ?></p>
+    <div class="adviser-stat-card adviser-stat-partners">
+      <div class="adviser-stat-card-icon"><i class="fas fa-building"></i></div>
+      <div class="adviser-stat-card-info">
+        <div class="adviser-stat-card-num-row">
+          <div class="adviser-stat-card-trend neutral"><?php echo (int)($stats['partner_companies'] ?? 0); ?> partners</div>
+          <div class="adviser-stat-card-num"><?php echo (int)($stats['partner_companies'] ?? 0); ?></div>
+        </div>
+        <div class="adviser-stat-card-label">Partner Companies</div>
       </div>
     </div>
   </div>

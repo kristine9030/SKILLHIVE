@@ -52,7 +52,6 @@ if ($role === 'student') {
             ['icon' => 'fas fa-house',        'text' => 'Dashboard',   'page' => 'adviser/dashboard'],
             ['icon' => 'fas fa-user',         'text' => 'Profile',     'page' => 'adviser/profile'],
             ['icon' => 'fas fa-users',        'text' => 'Students',    'page' => 'adviser/students'],
-            ['icon' => 'fas fa-envelope',     'text' => 'Messaging',   'page' => 'adviser/messaging'],
         ]],
         ['label' => 'MANAGEMENT', 'items' => [
             ['icon' => 'fas fa-eye',          'text' => 'Monitoring',  'page' => 'adviser/monitoring'],
