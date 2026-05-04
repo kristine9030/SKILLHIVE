@@ -3,6 +3,10 @@
  * pages/student/requirements/requirements_upload.php
  * Handles AJAX file upload for student OJT requirement submissions.
  *
+ * File content is stored directly in the database as a LONGBLOB —
+ * no local filesystem path is saved, so files are always retrievable
+ * regardless of server storage layout.
+ *
  * Expects POST:
  *   action         => 'upload'
  *   requirement_id => int
@@ -17,14 +21,12 @@ require_once __DIR__ . '/../../../backend/db_connect.php';
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 header('Content-Type: application/json');
 
-// Only allow POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['ok' => false, 'error' => 'Method not allowed.']);
     exit;
 }
 
-// Authenticated student only
 if (empty($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'student') {
     http_response_code(401);
     echo json_encode(['ok' => false, 'error' => 'Unauthorised. Please log in again.']);
@@ -57,7 +59,7 @@ if (!$chkStmt->fetch()) {
     exit;
 }
 
-// ─── Check existing submission status (block re-upload if Approved) ───────────
+// ─── Check existing submission (block re-upload if Approved) ─────────────────
 $existStmt = $pdo->prepare(
     "SELECT req_submission_id, status, internship_id
      FROM student_requirement
@@ -73,7 +75,6 @@ if ($existing && $existing['status'] === 'Approved') {
 }
 
 // ─── Resolve student's active internship_id (nullable) ───────────────────────
-// Re-use existing internship_id if already recorded; otherwise look it up.
 $internshipId = null;
 if ($existing && $existing['internship_id']) {
     $internshipId = (int) $existing['internship_id'];
@@ -115,7 +116,7 @@ if ($file['size'] > $maxBytes) {
     exit;
 }
 
-// Allowed MIME types
+// Allowed MIME types — verified server-side via finfo, not browser-supplied
 $allowedMime = [
     'application/pdf',
     'image/jpeg',
@@ -125,7 +126,6 @@ $allowedMime = [
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ];
 
-// Use finfo for reliable MIME detection (not just the browser-supplied type)
 $finfo    = new finfo(FILEINFO_MIME_TYPE);
 $mimeType = $finfo->file($file['tmp_name']);
 
@@ -135,97 +135,70 @@ if (!in_array($mimeType, $allowedMime, true)) {
 }
 
 // Extension whitelist (secondary check)
-$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+$ext        = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'doc', 'docx'];
 if (!in_array($ext, $allowedExt, true)) {
     echo json_encode(['ok' => false, 'error' => 'Invalid file extension.']);
     exit;
 }
 
-// ─── Save file to disk ────────────────────────────────────────────────────────
-// Walks up from this file's location to the project root (SkillHive/),
-// then into assets/backend/uploads/requirements/<studentId>/
-// __DIR__ = <root>/pages/student/requirements  →  ../../.. = <root>
-$projectRoot = realpath(__DIR__ . '/../../..') ?: dirname(dirname(dirname(__DIR__)));
-
-// ── Adjust this constant if your uploads live elsewhere ──────────────────────
-define('UPLOAD_BASE_DIR', $projectRoot . '/assets/backend/uploads/requirements');
-
-$studentDir = UPLOAD_BASE_DIR . '/' . $studentId;
-
-if (!is_dir($studentDir)) {
-    // Create the full path including any missing parent directories.
-    // Uses the current process umask; 0775 is the requested mode before masking.
-    $created = @mkdir($studentDir, 0775, true);
-    if (!$created && !is_dir($studentDir)) {          // guard against race condition
-        $err = error_get_last();
-        error_log(sprintf(
-            'requirements_upload: mkdir failed for "%s" — %s',
-            $studentDir,
-            $err['message'] ?? 'unknown reason'
-        ));
-        echo json_encode([
-            'ok'    => false,
-            'error' => 'Server storage error: could not create upload directory. '
-                     . 'Check that the web server has write permission on: '
-                     . dirname(UPLOAD_BASE_DIR),
-        ]);
-        exit;
-    }
-}
-
-// Build a unique filename: req_{reqId}_{timestamp}_{random}.{ext}
-$uniqueName = 'req_' . $reqId . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-$destPath   = $studentDir . '/' . $uniqueName;
-
-// The relative path stored in DB (relative to /assets/backend/uploads/)
-$dbFilePath = 'requirements/' . $studentId . '/' . $uniqueName;
-
-// Delete old file if replacing
-// $dbFilePath values are relative to assets/backend/uploads/, e.g.
-// "requirements/6/req_1_1234567890_ab12cd34.pdf"
-if ($existing && !empty($existing['file_path'])) {
-    $oldFile = $projectRoot . '/assets/backend/uploads/' . $existing['file_path'];
-    if (is_file($oldFile)) {
-        @unlink($oldFile);
-    }
-}
-
-if (!move_uploaded_file($file['tmp_name'], $destPath)) {
-    error_log("requirements_upload: move_uploaded_file failed for student $studentId req $reqId");
-    echo json_encode(['ok' => false, 'error' => 'Failed to save file. Please try again.']);
+// ─── Read file binary into memory ─────────────────────────────────────────────
+$fileData = file_get_contents($file['tmp_name']);
+if ($fileData === false) {
+    error_log("requirements_upload: file_get_contents failed for student $studentId req $reqId");
+    echo json_encode(['ok' => false, 'error' => 'Failed to read uploaded file. Please try again.']);
     exit;
 }
+
+// Sanitise the original filename for storage (strip path components)
+$originalName = basename($file['name']);
+$fileSize     = $file['size'];
 
 // ─── Persist to database ──────────────────────────────────────────────────────
 try {
     if ($existing) {
-        // UPDATE existing row — reset to Submitted, clear old review data
+        // UPDATE existing row — replace binary, reset to Submitted, clear old review
         $upd = $pdo->prepare(
             "UPDATE student_requirement
-             SET file_path    = ?,
+             SET file_data    = :data,
+                 file_name    = :name,
+                 file_mime    = :mime,
+                 file_size    = :size,
                  status       = 'Submitted',
                  submitted_at = NOW(),
                  reviewed_at  = NULL,
                  reviewed_by  = NULL,
                  notes        = NULL
-             WHERE student_id     = ?
-               AND requirement_id = ?"
+             WHERE student_id     = :sid
+               AND requirement_id = :rid"
         );
-        $upd->execute([$dbFilePath, $studentId, $reqId]);
+        $upd->bindValue(':data', $fileData,     PDO::PARAM_LOB);
+        $upd->bindValue(':name', $originalName, PDO::PARAM_STR);
+        $upd->bindValue(':mime', $mimeType,     PDO::PARAM_STR);
+        $upd->bindValue(':size', $fileSize,     PDO::PARAM_INT);
+        $upd->bindValue(':sid',  $studentId,    PDO::PARAM_INT);
+        $upd->bindValue(':rid',  $reqId,        PDO::PARAM_INT);
+        $upd->execute();
     } else {
         // INSERT new row
         $ins = $pdo->prepare(
             "INSERT INTO student_requirement
-               (student_id, internship_id, requirement_id, status, file_path, submitted_at)
+               (student_id, internship_id, requirement_id,
+                status, file_data, file_name, file_mime, file_size, submitted_at)
              VALUES
-               (?, ?, ?, 'Submitted', ?, NOW())"
+               (:sid, :iid, :rid,
+                'Submitted', :data, :name, :mime, :size, NOW())"
         );
-        $ins->execute([$studentId, $internshipId, $reqId, $dbFilePath]);
+        $ins->bindValue(':sid',  $studentId,    PDO::PARAM_INT);
+        $ins->bindValue(':iid',  $internshipId, PDO::PARAM_INT);
+        $ins->bindValue(':rid',  $reqId,        PDO::PARAM_INT);
+        $ins->bindValue(':data', $fileData,     PDO::PARAM_LOB);
+        $ins->bindValue(':name', $originalName, PDO::PARAM_STR);
+        $ins->bindValue(':mime', $mimeType,     PDO::PARAM_STR);
+        $ins->bindValue(':size', $fileSize,     PDO::PARAM_INT);
+        $ins->execute();
     }
 } catch (PDOException $e) {
-    // Roll back the uploaded file so disk and DB stay in sync
-    @unlink($destPath);
     error_log("requirements_upload DB error: " . $e->getMessage());
     echo json_encode(['ok' => false, 'error' => 'Database error. Please try again.']);
     exit;

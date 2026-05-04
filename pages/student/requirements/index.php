@@ -23,7 +23,8 @@ $reqStmt = $pdo->prepare(
         r.sort_order,
         sr.req_submission_id,
         sr.status,
-        sr.file_path,
+        sr.file_name,
+        (sr.file_data IS NOT NULL) AS has_file,
         sr.submitted_at,
         sr.reviewed_at,
         sr.notes AS adviser_notes,
@@ -57,8 +58,9 @@ foreach ($requirements as $req) {
     }
 }
 
-$uploadUrl = $baseUrl . '/pages/student/requirements/requirements_upload.php';
-$uploadBase = $baseUrl . '/assets/backend/uploads/';
+$uploadUrl   = $baseUrl . '/pages/student/requirements/requirements_upload.php';
+// Proxy URL — serves files by submission ID; never exposes the real upload path
+$viewBaseUrl = $baseUrl . '/pages/student/requirements/requirements_view.php';
 
 // Group requirements by phase
 $phases = [];
@@ -192,7 +194,7 @@ $phaseOrder = ['Pre-OJT', 'During OJT', 'Post-OJT'];
             <tbody>
                 <?php foreach ($phaseReqs as $req):
                     $status    = $req['status'] ?? 'Pending';
-                    $filePath  = $req['file_path'] ?? null;
+                    $hasFile   = !empty($req['has_file']);
                     $reqId     = (int) $req['requirement_id'];
                     $deadline  = $req['deadline'] ?? null;
                     $notes     = $req['adviser_notes'] ?? null;
@@ -270,13 +272,28 @@ $phaseOrder = ['Pre-OJT', 'During OJT', 'Post-OJT'];
                     <!-- Actions -->
                     <td style="padding:14px 16px;text-align:right;vertical-align:middle;">
                         <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
-                            <?php if ($filePath): ?>
-                            <a href="<?php echo htmlspecialchars($uploadBase . $filePath); ?>"
-                               target="_blank"
-                               class="btn btn-ghost btn-sm"
-                               title="View submitted file"
-                               style="font-size:.78rem;">
+                            <?php if ($hasFile && $req['req_submission_id']): ?>
+                            <?php
+                                $subId      = (int) $req['req_submission_id'];
+                                $viewUrl    = htmlspecialchars($viewBaseUrl . '?id=' . $subId);
+                                $dlUrl      = htmlspecialchars($viewBaseUrl . '?id=' . $subId . '&download=1');
+                            ?>
+                            <button type="button"
+                                    class="btn btn-ghost btn-sm req-preview-btn"
+                                    data-sub-id="<?php echo $subId; ?>"
+                                    data-view-url="<?php echo $viewUrl; ?>"
+                                    data-dl-url="<?php echo $dlUrl; ?>"
+                                    data-req-name="<?php echo htmlspecialchars($req['name'], ENT_QUOTES); ?>"
+                                    data-file-name="<?php echo htmlspecialchars($req['file_name'] ?? '', ENT_QUOTES); ?>"
+                                    title="Preview submitted file"
+                                    style="font-size:.78rem;">
                                 <i class="fas fa-eye"></i> View
+                            </button>
+                            <a href="<?php echo $dlUrl; ?>"
+                               class="btn btn-ghost btn-sm"
+                               title="Download submitted file"
+                               style="font-size:.78rem;">
+                                <i class="fas fa-download"></i>
                             </a>
                             <?php endif; ?>
 
@@ -286,7 +303,7 @@ $phaseOrder = ['Pre-OJT', 'During OJT', 'Post-OJT'];
                                     data-req-name="<?php echo htmlspecialchars($req['name'], ENT_QUOTES); ?>"
                                     style="font-size:.78rem;">
                                 <i class="fas fa-upload"></i>
-                                <?php echo $filePath ? 'Replace' : 'Upload'; ?>
+                                <?php echo $hasFile ? 'Replace' : 'Upload'; ?>
                             </button>
                             <?php else: ?>
                             <span style="color:#10b981;font-size:.8rem;font-weight:600;">
@@ -360,14 +377,85 @@ $phaseOrder = ['Pre-OJT', 'During OJT', 'Post-OJT'];
 
 <!-- File Preview Modal -->
 <div id="reqPreviewModal" class="modal-overlay" aria-hidden="true" onclick="if(event.target===this){closePreviewModal();}">
-    <div class="modal" role="dialog" aria-modal="true" style="max-width:800px;width:95%;height:85vh;display:flex;flex-direction:column;">
-        <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:16px;margin-bottom:0;flex-shrink:0;">
-            <h3 class="modal-title" id="previewModalTitle" style="margin:0;font-size:1rem;">File Preview</h3>
-            <button type="button" class="modal-close" onclick="closePreviewModal()" aria-label="Close">&times;</button>
+    <div class="modal" role="dialog" aria-modal="true" style="max-width:860px;width:96%;height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                <span id="previewFileIcon" style="font-size:1.3rem;flex-shrink:0;"></span>
+                <div style="min-width:0;">
+                    <div id="previewModalTitle" style="font-weight:700;font-size:.95rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                    <div id="previewModalMeta" style="font-size:.75rem;color:#666;margin-top:1px;"></div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                <a id="previewDownloadBtn" href="#" class="btn btn-ghost btn-sm" style="font-size:.78rem;" title="Download">
+                    <i class="fas fa-download"></i> Download
+                </a>
+                <button type="button" class="modal-close" onclick="closePreviewModal()" aria-label="Close" style="font-size:1.3rem;line-height:1;">&times;</button>
+            </div>
         </div>
-        <div id="previewContainer" style="flex:1;overflow:hidden;border-radius:0 0 12px 12px;background:#111;"></div>
+
+        <!-- Body -->
+        <div id="previewContainer" style="flex:1;overflow:auto;position:relative;background:#0e0e0e;">
+
+            <!-- Loading state -->
+            <div id="previewLoading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;">
+                <div class="preview-spinner"></div>
+                <span style="color:#666;font-size:.85rem;">Loading preview…</span>
+            </div>
+
+            <!-- PDF viewer -->
+            <iframe id="previewPdf"
+                    style="display:none;width:100%;height:100%;border:none;"
+                    title="Document preview"></iframe>
+
+            <!-- Image viewer -->
+            <div id="previewImageWrap" style="display:none;height:100%;overflow:auto;display:none;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
+                <img id="previewImage" src="" alt="File preview"
+                     style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.6);">
+            </div>
+
+            <!-- Unsupported (Word / other) -->
+            <div id="previewUnsupported" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:18px;padding:32px;text-align:center;">
+                <div id="previewUnsupportedIcon" style="font-size:3.5rem;"></div>
+                <div style="color:var(--text);font-weight:600;font-size:1rem;" id="previewUnsupportedLabel">Preview not available</div>
+                <div style="color:#666;font-size:.85rem;max-width:340px;line-height:1.6;">
+                    This file type cannot be previewed in the browser. Download the file to view it.
+                </div>
+                <a id="previewUnsupportedDl" href="#" class="btn btn-primary btn-sm" style="margin-top:6px;">
+                    <i class="fas fa-download"></i> Download File
+                </a>
+            </div>
+
+            <!-- Error state -->
+            <div id="previewError" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;padding:32px;text-align:center;">
+                <i class="fas fa-exclamation-triangle" style="font-size:2.5rem;color:#ef4444;"></i>
+                <div style="color:#ef4444;font-weight:600;">Failed to load preview</div>
+                <div style="color:#666;font-size:.85rem;" id="previewErrorMsg">Please try downloading the file instead.</div>
+                <a id="previewErrorDl" href="#" class="btn btn-ghost btn-sm" style="margin-top:4px;">
+                    <i class="fas fa-download"></i> Download Instead
+                </a>
+            </div>
+        </div>
     </div>
 </div>
+
+<style>
+/* ── Preview spinner ─────────────────────────────────────────── */
+.preview-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(18,179,172,.15);
+    border-top-color: #12b3ac;
+    border-radius: 50%;
+    animation: previewSpin .7s linear infinite;
+}
+@keyframes previewSpin { to { transform: rotate(360deg); } }
+
+/* ── Image wrap flex fix ─────────────────────────────────────── */
+#previewImageWrap { display: none; }
+#previewImageWrap.visible { display: flex; }
+</style>
 
 <style>
 .req-drop-zone:hover, .req-drop-zone.dragover {
@@ -437,11 +525,112 @@ $phaseOrder = ['Pre-OJT', 'During OJT', 'Post-OJT'];
         document.getElementById('reqUploadModal').setAttribute('aria-hidden', 'true');
     };
 
-    window.closePreviewModal = function() {
-        document.getElementById('reqPreviewModal').classList.remove('open');
-        document.getElementById('reqPreviewModal').setAttribute('aria-hidden', 'true');
-        document.getElementById('previewContainer').innerHTML = '';
+    // ─── Preview Modal ────────────────────────────────────────────────────────
+    const PREVIEWABLE_IMAGE = ['jpg','jpeg','png','gif','webp'];
+    const PREVIEWABLE_PDF   = ['pdf'];
+
+    const MIME_ICONS = {
+        pdf:  { icon: '📄', label: 'PDF Document' },
+        doc:  { icon: '📝', label: 'Word Document' },
+        docx: { icon: '📝', label: 'Word Document' },
+        jpg:  { icon: '🖼️', label: 'Image' },
+        jpeg: { icon: '🖼️', label: 'Image' },
+        png:  { icon: '🖼️', label: 'Image' },
+        gif:  { icon: '🖼️', label: 'Image' },
+        _default: { icon: '📎', label: 'File' },
     };
+
+    function getExt(filename) {
+        return (filename || '').split('.').pop().toLowerCase().replace(/[^a-z]/g, '');
+    }
+
+    function setPreviewState(state) {
+        ['previewLoading','previewPdf','previewImageWrap','previewUnsupported','previewError'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (id === 'previewImageWrap') {
+                el.classList.toggle('visible', id === state);
+                if (id !== state) el.style.display = 'none';
+            } else {
+                el.style.display = (id === state) ? (id === 'previewPdf' ? 'block' : 'flex') : 'none';
+            }
+        });
+        if (state === 'previewImageWrap') {
+            document.getElementById('previewImageWrap').style.display = 'flex';
+        }
+    }
+
+    window.openPreviewModal = function(subId, reqName, fileName, viewUrl, dlUrl) {
+        const ext    = getExt(fileName);
+        const iconData = MIME_ICONS[ext] || MIME_ICONS['_default'];
+
+        // Header
+        document.getElementById('previewModalTitle').textContent = reqName;
+        document.getElementById('previewModalMeta').textContent  = fileName || '';
+        document.getElementById('previewFileIcon').textContent   = iconData.icon;
+        document.getElementById('previewDownloadBtn').href       = dlUrl;
+        document.getElementById('previewUnsupportedDl').href     = dlUrl;
+        document.getElementById('previewErrorDl').href           = dlUrl;
+
+        // Show modal
+        const modal = document.getElementById('reqPreviewModal');
+        modal.classList.add('open');
+        modal.removeAttribute('aria-hidden');
+
+        // Reset to loading
+        setPreviewState('previewLoading');
+
+        if (PREVIEWABLE_PDF.includes(ext)) {
+            // PDF — load in iframe
+            const iframe = document.getElementById('previewPdf');
+            iframe.onload = function() { setPreviewState('previewPdf'); };
+            iframe.onerror = function() {
+                document.getElementById('previewErrorMsg').textContent = 'Could not load PDF. Try downloading it.';
+                setPreviewState('previewError');
+            };
+            // Small delay so the loading spinner is visible before iframe starts
+            setTimeout(function() { iframe.src = viewUrl; }, 80);
+
+        } else if (PREVIEWABLE_IMAGE.includes(ext)) {
+            // Image — load via <img>
+            const img = document.getElementById('previewImage');
+            img.onload  = function() { setPreviewState('previewImageWrap'); };
+            img.onerror = function() {
+                document.getElementById('previewErrorMsg').textContent = 'Could not load image. Try downloading it.';
+                setPreviewState('previewError');
+            };
+            setTimeout(function() { img.src = viewUrl; }, 80);
+
+        } else {
+            // Word / unsupported
+            document.getElementById('previewUnsupportedIcon').textContent  = iconData.icon;
+            document.getElementById('previewUnsupportedLabel').textContent = iconData.label + ' — Preview Not Available';
+            setTimeout(function() { setPreviewState('previewUnsupported'); }, 300);
+        }
+    };
+
+    window.closePreviewModal = function() {
+        const modal = document.getElementById('reqPreviewModal');
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+        // Tear down sources to stop any ongoing load / release memory
+        document.getElementById('previewPdf').src   = '';
+        document.getElementById('previewImage').src = '';
+        setPreviewState('previewLoading');
+    };
+
+    // Wire up preview buttons
+    document.querySelectorAll('.req-preview-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            openPreviewModal(
+                this.dataset.subId,
+                this.dataset.reqName,
+                this.dataset.fileName,
+                this.dataset.viewUrl,
+                this.dataset.dlUrl
+            );
+        });
+    });
 
     // ─── Drag & Drop ─────────────────────────────────────────────────────────
     const dropZone = document.getElementById('reqDropZone');
