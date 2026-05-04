@@ -64,7 +64,6 @@ $acceptedPlacementCount = count($mapStudents);
 $ojtCount = 0;
 $onTrackCount = 0;
 $completedCount = 0;
-$warningCount = 0;
 $atRiskCount = 0;
 
 foreach ($rows as $row) {
@@ -79,8 +78,6 @@ foreach ($rows as $row) {
     $onTrackCount++;
   } elseif ($statusLabel === 'Completed') {
     $completedCount++;
-  } elseif ($statusLabel === 'Warning') {
-    $warningCount++;
   } elseif ($statusLabel === 'At Risk') {
     $atRiskCount++;
   }
@@ -164,69 +161,27 @@ $exportUrl = $baseUrl . '/layout.php?' . $exportQuery;
 
   .monitoring-summary-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
     margin-bottom: 18px;
   }
 
-  .monitoring-summary-card {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    min-height: auto;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    box-shadow: none;
+  @media (max-width: 1180px) {
+    .monitoring-summary-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
 
-  .monitoring-summary-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
+  @media (max-width: 768px) {
+    .monitoring-summary-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
-  .monitoring-summary-icon.total {
-    background: #f3f1ff;
-    color: #dc2626;
-  }
-
-  .monitoring-summary-icon.track {
-    background: #e8f8f2;
-    color: #12b3ac;
-  }
-
-  .monitoring-summary-icon.completed {
-    background: #e7f0ff;
-    color: #12b3ac;
-  }
-
-  .monitoring-summary-icon.warning {
-    background: #fff4e3;
-    color: #12b3ac;
-  }
-
-  .monitoring-summary-icon.risk {
-    background: #fdecec;
-    color: #12b3ac;
-  }
-
-  .monitoring-summary-label {
-    margin-top: 10px;
-    font-size: .78rem;
-    color: var(--text3);
-  }
-
-  .monitoring-summary-value {
-    font-size: 1.3rem;
-    font-weight: 800;
-    line-height: 1;
-    color: var(--text);
+  @media (max-width: 480px) {
+    .monitoring-summary-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   .monitoring-map-panel {
@@ -883,10 +838,6 @@ $exportUrl = $baseUrl . '/layout.php?' . $exportQuery;
   }
 
   @media (max-width: 768px) {
-    .monitoring-summary-card {
-      padding: 12px;
-    }
-
     .monitoring-map-header,
     .monitoring-map-body {
       grid-template-columns: 1fr;
@@ -945,12 +896,10 @@ $exportUrl = $baseUrl . '/layout.php?' . $exportQuery;
   }
 </style>
 
-<div style="background:linear-gradient(90deg, #050505 0%, #12b3ac 40%, rgba(0, 0, 0, 0.38) 100%), url('/Skillhive/assets/media/element%203.png') right center / auto 100% no-repeat;border-radius:16px;padding:28px;margin-bottom:20px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0, 0, 0, 0.44);">
-  <div style="z-index:2;flex:1;">
-    <h2 style="font-size:1.8rem;font-weight:900;margin:0 0 12px 0;line-height:1.2;color:white;">OJT Monitoring</h2>
-    <p style="font-size:0.95rem;margin:0;line-height:1.6;color:#e0e0e0;">Track student progress, activity, and risk levels during internship.</p>
+  <div class="analytics-title-header" style="margin-bottom:32px;">
+    <h2 class="analytics-page-title" style="font-size:2rem;">OJT Monitoring</h2>
+    <p class="analytics-page-subtitle" style="font-size:0.95rem;margin-top:10px;">Track student progress, activity, and risk levels during internship.</p>
   </div>
-</div>
 
 <?php if ($errorMessage !== ''): ?>
   <div class="error-msg" style="margin-bottom:14px;">
@@ -959,40 +908,45 @@ $exportUrl = $baseUrl . '/layout.php?' . $exportQuery;
 <?php endif; ?>
 
 <div class="monitoring-page">
-  <div class="monitoring-summary-grid">
-    <div class="monitoring-summary-card">
-      <div class="monitoring-summary-icon total"><i class="fas fa-users"></i></div>
-      <div>
-        <div class="monitoring-summary-label">Currently On OJT</div>
-        <div class="monitoring-summary-value"><?php echo $ojtCount; ?></div>
+  <div class="stat-cards">
+    <div class="stat-card adviser-stat-students">
+      <div class="stat-card-icon"><img src="/SkillHive/assets/media/Active%20Posting.png" alt="Currently On OJT"></div>
+      <div class="stat-card-info">
+        <div class="stat-card-num-row">
+          <div class="stat-card-trend neutral"><?php echo $ojtCount; ?> students</div>
+          <div class="stat-card-num"><?php echo $ojtCount; ?></div>
+        </div>
+        <div class="stat-card-label">Currently On OJT</div>
       </div>
     </div>
-    <div class="monitoring-summary-card">
-      <div class="monitoring-summary-icon track"><i class="fas fa-check"></i></div>
-      <div>
-        <div class="monitoring-summary-label">On Track</div>
-        <div class="monitoring-summary-value"><?php echo $onTrackCount; ?></div>
+    <div class="stat-card adviser-stat-placed">
+      <div class="stat-card-icon"><img src="/SkillHive/assets/media/Total%20Applicants.png" alt="On Track"></div>
+      <div class="stat-card-info">
+        <div class="stat-card-num-row">
+          <div class="stat-card-trend neutral"><?php echo $onTrackCount; ?> on track</div>
+          <div class="stat-card-num"><?php echo $onTrackCount; ?></div>
+        </div>
+        <div class="stat-card-label">On Track</div>
       </div>
     </div>
-    <div class="monitoring-summary-card">
-      <div class="monitoring-summary-icon completed"><i class="fas fa-check-double"></i></div>
-      <div>
-        <div class="monitoring-summary-label">Completed</div>
-        <div class="monitoring-summary-value"><?php echo $completedCount; ?></div>
+    <div class="stat-card adviser-stat-completed">
+      <div class="stat-card-icon"><img src="/SkillHive/assets/media/Interviews.png" alt="Completed"></div>
+      <div class="stat-card-info">
+        <div class="stat-card-num-row">
+          <div class="stat-card-trend neutral"><?php echo $completedCount; ?> completed</div>
+          <div class="stat-card-num"><?php echo $completedCount; ?></div>
+        </div>
+        <div class="stat-card-label">Completed</div>
       </div>
     </div>
-    <div class="monitoring-summary-card">
-      <div class="monitoring-summary-icon warning"><i class="fas fa-exclamation-triangle"></i></div>
-      <div>
-        <div class="monitoring-summary-label">Warning</div>
-        <div class="monitoring-summary-value"><?php echo $warningCount; ?></div>
-      </div>
-    </div>
-    <div class="monitoring-summary-card">
-      <div class="monitoring-summary-icon risk"><i class="fas fa-times-circle"></i></div>
-      <div>
-        <div class="monitoring-summary-label">At Risk</div>
-        <div class="monitoring-summary-value"><?php echo $atRiskCount; ?></div>
+    <div class="stat-card adviser-stat-risk">
+      <div class="stat-card-icon"><img src="/SkillHive/assets/media/Active%20Posting.png" alt="At Risk"></div>
+      <div class="stat-card-info">
+        <div class="stat-card-num-row">
+          <div class="stat-card-trend neutral"><?php echo $atRiskCount; ?> at risk</div>
+          <div class="stat-card-num"><?php echo $atRiskCount; ?></div>
+        </div>
+        <div class="stat-card-label">At Risk</div>
       </div>
     </div>
   </div>

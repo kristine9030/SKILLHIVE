@@ -572,32 +572,168 @@ $sortChangeBaseUrl = $baseUrl . '/layout.php?' . http_build_query([
         border-radius: 999px;
     }
 
-    .stat-card-grid {
+    .analytics-header {
+        background: linear-gradient(135deg, #050505 0%, #12b3ac 50%, #0d8a7f 100%);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .analytics-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    .analytics-header-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .analytics-title {
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: #ffffff;
+        margin: 0 0 6px 0;
+        line-height: 1.2;
+    }
+
+    .analytics-subtitle {
+        font-size: 0.88rem;
+        color: rgba(255, 255, 255, 0.85);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .analytics-header-icon {
+        position: relative;
+        z-index: 2;
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        color: #ffffff;
+        flex-shrink: 0;
+    }
+
+    .stat-cards {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+        grid-template-columns: repeat(4, 1fr);
         gap: 12px;
+        margin-bottom: 18px;
     }
 
-    .stat-card {
-        background: var(--ja-surface);
-        border: 1px solid var(--ja-border);
-        border-radius: 12px;
-        padding: 14px;
-        text-align: left;
+    .stat-cards .stat-card {
+        padding: 16px;
+        min-height: auto;
+        gap: 10px;
+        background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
     }
 
-    .stat-value {
-        font-size: 1.5rem;
+    .stat-cards .stat-card::before {
+        content: '';
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(18, 179, 172, 0.06);
+        pointer-events: none;
+    }
+
+    .stat-cards .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+        border-color: #12b3ac;
+    }
+
+    .stat-cards .stat-card-icon {
+        width: 35px;
+        height: 35px;
+        flex-shrink: 0;
+        opacity: 0.8;
+    }
+
+    .stat-cards .stat-card-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .stat-cards .stat-card-num {
+        font-size: 1.8rem;
+        line-height: 1.1;
         font-weight: 800;
-        color: var(--ja-banner-mid);
-        line-height: 1;
+        color: #050505;
     }
 
-    .stat-label {
+    .stat-cards .stat-card-label {
         font-size: 0.78rem;
-        color: var(--ja-muted);
-        margin-top: 6px;
+        margin-top: 2px;
         font-weight: 600;
+        color: #64748b;
+    }
+
+    .stat-cards .stat-card-trend {
+        font-size: 0.7rem;
+        margin-bottom: 2px;
+        color: #94a3b8;
+    }
+
+    .stat-cards .stat-card-info {
+        gap: 4px;
+        flex: 1;
+    }
+
+    @media (max-width: 1180px) {
+        .stat-cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 720px) {
+        .stat-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .analytics-header {
+            flex-direction: column;
+            text-align: center;
+            padding: 16px;
+        }
+
+        .analytics-title {
+            font-size: 1.5rem;
+        }
+
+        .analytics-header-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
+        }
     }
 
     .panel-card-header {
@@ -1141,12 +1277,10 @@ $sortChangeBaseUrl = $baseUrl . '/layout.php?' . http_build_query([
     }
 </style>
 
-<div class="journal-hero-banner" style="background:linear-gradient(90deg, #050505 0%, #12b3ac 40%, rgba(0, 0, 0, 0.38) 100%), url('/Skillhive/assets/media/element%203.png') right center / auto 100% no-repeat;border-radius:16px;padding:28px;margin-bottom:20px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0, 0, 0, 0.44);">
-    <div style="z-index:2;flex:1;">
-        <h2 style="font-size:1.8rem;font-weight:900;margin:0 0 12px 0;line-height:1.2;color:white;">Student Journal Analytics</h2>
-        <p style="font-size:0.95rem;margin:0;line-height:1.6;color:#e0e0e0;">Monitor student internship journal entries and progress. Only your assigned students are visible.</p>
-    </div>
-</div>
+  <div class="analytics-title-header" style="margin-bottom:32px;">
+    <h2 class="analytics-page-title" style="font-size:2rem;">Student Journal Analytics</h2>
+    <p class="analytics-page-subtitle" style="font-size:0.95rem;margin-top:10px;">Monitor student internship journal entries and progress.</p>
+  </div>
 
 <script>
 (function () {
@@ -1309,22 +1443,56 @@ $sortChangeBaseUrl = $baseUrl . '/layout.php?' . http_build_query([
             </div>
 
             <?php if ($studentStats): ?>
-                <div class="stat-card-grid">
-                    <div class="stat-card">
-                        <div class="stat-value"><?php echo (int)$studentStats['total_entries']; ?></div>
-                        <div class="stat-label">Total Entries</div>
+                <div class="analytics-header">
+                    <div class="analytics-header-content">
+                        <h2 class="analytics-title">Analytics</h2>
+                        <p class="analytics-subtitle">Overview of journal performance and activity metrics</p>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value"><?php echo (int)$studentStats['unique_skills']; ?></div>
-                        <div class="stat-label">Unique Skills</div>
+                    <div class="analytics-header-icon">
+                        <i class="fas fa-chart-line"></i>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value"><?php echo (int)$studentStats['total_challenges']; ?></div>
-                        <div class="stat-label">Challenges</div>
+                </div>
+
+                <div class="stat-cards">
+                    <div class="stat-card adviser-stat-entries">
+                        <div class="stat-card-icon"><img src="/SkillHive/assets/media/Active%20Posting.png" alt="Total Entries"></div>
+                        <div class="stat-card-info">
+                            <div class="stat-card-num-row">
+                                <div class="stat-card-trend neutral"><?php echo (int)$studentStats['total_entries']; ?> entries</div>
+                                <div class="stat-card-num"><?php echo (int)$studentStats['total_entries']; ?></div>
+                            </div>
+                            <div class="stat-card-label">Total Entries</div>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value"><?php echo (float)$studentStats['avg_daily_tasks']; ?></div>
-                        <div class="stat-label">Avg Daily Tasks</div>
+                    <div class="stat-card adviser-stat-skills">
+                        <div class="stat-card-icon"><img src="/SkillHive/assets/media/Total%20Applicants.png" alt="Unique Skills"></div>
+                        <div class="stat-card-info">
+                            <div class="stat-card-num-row">
+                                <div class="stat-card-trend neutral"><?php echo (int)$studentStats['unique_skills']; ?> skills</div>
+                                <div class="stat-card-num"><?php echo (int)$studentStats['unique_skills']; ?></div>
+                            </div>
+                            <div class="stat-card-label">Unique Skills</div>
+                        </div>
+                    </div>
+                    <div class="stat-card adviser-stat-challenges">
+                        <div class="stat-card-icon"><img src="/SkillHive/assets/media/Interviews.png" alt="Challenges"></div>
+                        <div class="stat-card-info">
+                            <div class="stat-card-num-row">
+                                <div class="stat-card-trend neutral"><?php echo (int)$studentStats['total_challenges']; ?> challenges</div>
+                                <div class="stat-card-num"><?php echo (int)$studentStats['total_challenges']; ?></div>
+                            </div>
+                            <div class="stat-card-label">Challenges</div>
+                        </div>
+                    </div>
+                    <div class="stat-card adviser-stat-avg-tasks">
+                        <div class="stat-card-icon"><img src="/SkillHive/assets/media/Hiredd.png" alt="Avg Daily Tasks"></div>
+                        <div class="stat-card-info">
+                            <div class="stat-card-num-row">
+                                <div class="stat-card-trend neutral"><?php echo (float)$studentStats['avg_daily_tasks']; ?> avg</div>
+                                <div class="stat-card-num"><?php echo (float)$studentStats['avg_daily_tasks']; ?></div>
+                            </div>
+                            <div class="stat-card-label">Avg Daily Tasks</div>
+                        </div>
                     </div>
                 </div>
 

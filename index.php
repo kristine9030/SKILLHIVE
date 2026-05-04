@@ -45,11 +45,11 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
   <div class="hero-blob hero-blob-3"></div>
   <div class="hero-content">
     <div class="hero-badge"><i class="fas fa-bolt"></i> AI-Powered Internship Matching</div>
-    <h1 class="hero-title">Revolutionize Your <span class="highlight">Internship</span> Experience with AI</h1>
-    <p class="hero-desc">Automate candidate screening, smart matching, and internship monitoring with AI to hire faster, smarter, and fairer.</p>
+    <h1 class="hero-title">Find Your Next <span class="highlight">Opportunity</span>, Faster.</h1>
+    <p class="hero-desc">SkillHive connects ambitious students with the right internships using AI-driven matching and real-time insights.</p>
     <div class="hero-actions">
       <a href="<?php echo $baseUrl; ?>/pages/auth/register.php" class="btn btn-primary btn-lg">Get Started Free <i class="fas fa-arrow-right"></i></a>
-      <a href="#features" class="btn btn-ghost btn-lg">Explore Features <i class="fas fa-play"></i></a>
+      <a href="#features" class="btn btn-ghost btn-lg">Explore Features <i class="fas fa-chevron-right"></i></a>
     </div>
     <div class="hero-trust">
       <div class="trust-avatars">
@@ -58,39 +58,42 @@ $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
         <span style="background:#12b3ac">AL</span>
         <span style="background:#111">KP</span>
       </div>
-      <div class="trust-text">Trusted by <strong>1.2k+</strong> students & companies</div>
+      <div class="trust-text">Trusted by <strong>1.2k+</strong> students and companies</div>
     </div>
   </div>
   <div class="hero-visual">
     <div class="hero-cards-wrap">
       <div class="hero-card-float hcf-1">
-        <div class="hcf-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-check-circle" style="color:#12b3ac"></i></div>
-        <div><div class="hcf-label">Applications</div><div class="hcf-value">12 Active</div></div>
+        <div class="hcf-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-chart-line" style="color:#12b3ac"></i></div>
+        <div><div class="hcf-label">Top Matches</div><div class="hcf-value">For You</div></div>
       </div>
       <div class="hero-card-main">
         <div class="hc-header">
-          <div class="hc-title">Top Match For You</div>
-          <div class="match-badge">87% fit</div>
+          <div class="hc-title">Top Matches For You</div>
         </div>
         <div class="hc-company">
           <div class="co-logo" style="background:linear-gradient(135deg,#12b3ac,#12b3ac)">G</div>
-          <div><div style="font-weight:700;font-size:.88rem">Google Philippines</div><small>UI/UX Design Internship</small></div>
+          <div><div style="font-weight:700;font-size:.88rem">UI/UX Design Intern</div><small>Google</small></div>
+          <div class="match-badge">87% match</div>
         </div>
-        <div class="hc-skills">
-          <span class="skill-chip match">Figma ✓</span>
-          <span class="skill-chip match">React ✓</span>
-          <span class="skill-chip gap">Flutter ↑</span>
+        <div class="hc-company">
+          <div class="co-logo" style="background:linear-gradient(135deg,#8B5CF6,#6366F1)">P</div>
+          <div><div style="font-weight:700;font-size:.88rem">Product Design Intern</div><small>Spotify</small></div>
+          <div class="match-badge">82% match</div>
         </div>
-        <div class="hc-score-bar"><div class="hc-score-fill" style="width:87%"></div></div>
-        <div class="hc-score-label"><span>Compatibility</span><span>87%</span></div>
+        <a href="#" style="color:#12b3ac;text-decoration:none;font-size:.85rem;font-weight:600">View All Matches →</a>
       </div>
       <div class="hero-card-float hcf-2">
-        <div class="hcf-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-clock" style="color:#12b3ac"></i></div>
-        <div><div class="hcf-label">Hours Logged</div><div class="hcf-value">248 hrs</div></div>
+        <div class="hcf-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-clipboard-list" style="color:#12b3ac"></i></div>
+        <div><div class="hcf-label">Application</div><div class="hcf-value">24</div><small style="color:#999;font-size:.7rem">This Week</small></div>
       </div>
       <div class="hero-card-float hcf-3">
-        <div class="hcf-icon" style="background:rgba(18,179,172,.12)"><i class="fas fa-robot" style="color:#12b3ac"></i></div>
-        <div><div class="hcf-label">AI Resume Score</div><div class="hcf-value">92 / 100</div></div>
+        <div class="hcf-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-user-circle" style="color:#12b3ac"></i></div>
+        <div><div class="hcf-label">Profile Strength</div><div style="display:flex;align-items:baseline;gap:4px"><div class="hcf-value">68%</div></div></div>
+      </div>
+      <div class="hero-card-float hcf-4">
+        <div class="hcf-icon" style="background:rgba(16,185,129,.1)"><i class="fas fa-eye" style="color:#12b3ac"></i></div>
+        <div><div class="hcf-label">Profile Views</div><div class="hcf-value">156</div><small style="color:#999;font-size:.7rem">This Week</small></div>
       </div>
     </div>
   </div>

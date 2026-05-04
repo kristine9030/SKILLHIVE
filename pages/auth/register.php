@@ -157,7 +157,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: url('<?php echo $baseUrl; ?>/assets/media/LOGIN BG.png') center center / cover no-repeat;
+  background: url('<?php echo $baseUrl; ?>/assets/media/LOGIN.jpg') center center / cover no-repeat;
   color: #111;
   -webkit-font-smoothing: antialiased;
   padding: 20px;

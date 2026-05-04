@@ -462,6 +462,8 @@ td,
     border-radius: var(--radius);
     padding: 22px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    max-height: 280px;
+    overflow-y: auto;
 }
 
 .hc-header {
@@ -479,17 +481,50 @@ td,
 .match-badge {
     background: linear-gradient(135deg, var(--accent2), #059669);
     color: #fff;
-    font-size: .75rem;
+    font-size: .7rem;
     font-weight: 700;
-    padding: 4px 10px;
+    padding: 3px 8px;
     border-radius: 50px;
 }
 
 .hc-company {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.hc-company:last-child {
+    border-bottom: none;
+    margin-bottom: 10px;
+    padding-bottom: 0;
+}
+
+.hc-company .co-logo {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.hc-company > div:nth-child(2) {
+    flex: 1;
+}
+
+.hc-company > div:nth-child(2) > div:first-child {
+    font-weight: 700;
+    font-size: .85rem;
+    line-height: 1.2;
+}
+
+.hc-company > div:nth-child(2) > small {
+    color: var(--text3);
+    font-size: .72rem;
+}
+
+.hc-company .match-badge {
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .co-logo {
@@ -580,6 +615,12 @@ td,
     bottom: 10px;
     left: 20px;
     width: 200px;
+}
+
+.hcf-4 {
+    bottom: 80px;
+    left: 0;
+    width: 160px;
 }
 
 .hcf-icon {

@@ -7,15 +7,10 @@ if (!function_exists('messaging_e')) {
 }
 
 $messagingApiUrl = $baseUrl . '/pages/common/messaging_api.php';
-
-$bannerTitle = 'Messages';
-$bannerDescription = 'Communicate with employers and advisers securely through SkillHive messaging.';
-$bannerShowToggle = true;
-include __DIR__ . '/../../../components/student_banner.php';
 ?>
 
-<div class="feed-main" style="max-width:1400px;">
-  <div class="panel-card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;height:700px;border-radius:8px;">
+<div style="height:calc(100vh - 20px);">
+  <div style="display:flex;flex-direction:column;height:100%;">
     <div style="padding:12px 16px;border-bottom:1px solid #e5e7eb;background:#ffffff;display:flex;align-items:center;gap:10px;">
       <i class="fas fa-search" style="color:#9ca3af;"></i>
       <input type="text" id="msgGlobalSearch" placeholder="Search people and messages..."

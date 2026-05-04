@@ -125,118 +125,21 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
 <style>
   .endorsement-summary-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
     margin-bottom: 24px;
   }
 
-  .endorsement-stat-card {
-    background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-    transition: all var(--transition);
-    min-height: 132px;
+  @media (max-width: 1180px) {
+    .endorsement-summary-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
-  .endorsement-stat-card:hover {
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-    transform: translateY(-4px);
-  }
-
-  .endorsement-stat-card::before {
-    content: '';
-    position: absolute;
-    top: -28px;
-    right: -20px;
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    pointer-events: none;
-    opacity: 0.08;
-    background: #162550;
-  }
-
-  .endorsement-stat-card::after {
-    content: '';
-    position: absolute;
-    top: 36px;
-    right: -70px;
-    width: 240px;
-    height: 240px;
-    border-radius: 50%;
-    pointer-events: none;
-    opacity: 0.06;
-    background: #162550;
-  }
-
-  .endorsement-stat-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    position: relative;
-    z-index: 2;
-  }
-
-  .endorsement-stat-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.15rem;
-    flex-shrink: 0;
-  }
-
-  .endorsement-stat-card.pending .endorsement-stat-icon {
-    background: rgba(59, 130, 246, 0.14);
-    color: #12b3ac;
-  }
-
-  .endorsement-stat-card.approved .endorsement-stat-icon {
-    background: rgba(16, 185, 129, 0.14);
-    color: #059669;
-  }
-
-  .endorsement-stat-card.rejected .endorsement-stat-icon {
-    background: rgba(239, 68, 68, 0.14);
-    color: #dc2626;
-  }
-
-  .endorsement-stat-card.total .endorsement-stat-icon {
-    background: rgba(111, 66, 193, 0.14);
-    color: #12b3ac;
-  }
-
-  .endorsement-stat-meta {
-    text-align: right;
-    min-width: 0;
-  }
-
-  .endorsement-stat-label {
-    font-size: .79rem;
-    color: var(--text2);
-    margin-bottom: 4px;
-    font-weight: 600;
-  }
-
-  .endorsement-stat-value {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 2.35rem;
-    font-weight: 800;
-    color: var(--text);
-    line-height: 1;
-  }
-
-  .endorsement-stat-note {
-    margin-top: 5px;
-    font-size: .74rem;
-    color: var(--text3);
-    font-weight: 600;
+  @media (max-width: 720px) {
+    .endorsement-summary-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   .endorsement-tabs {
@@ -432,9 +335,11 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
   }
 
   @media (max-width: 768px) {
-    .endorsement-summary-grid {
-      grid-template-columns: 1fr;
+    .endorsement-table-card .app-table td,
+    .endorsement-table-card .app-table th {
+      font-size:.86rem;
     }
+  }
 
     .endorsement-stat-card {
       min-height: 0;
@@ -451,11 +356,9 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
   }
 </style>
 
-  <div style="background:linear-gradient(90deg, #050505 0%, #12b3ac 40%, rgba(0, 0, 0, 0.38) 100%), url('/Skillhive/assets/media/element%203.png') right center / auto 100% no-repeat;border-radius:16px;padding:28px;margin-bottom:20px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0, 0, 0, 0.44);">
-    <div style="z-index:2;flex:1;">
-      <h2 style="font-size:1.8rem;font-weight:900;margin:0 0 12px 0;line-height:1.2;color:white;">Endorsement Review Hub</h2>
-      <p style="font-size:0.95rem;margin:0;line-height:1.6;color:#e0e0e0;">Endorsement confirms that a student is academically prepared and has the required documents for internship deployment. Review each request carefully to ensure every endorsed student is ready for placement.</p>
-    </div>
+  <div class="analytics-title-header" style="margin-bottom:32px;">
+    <h2 class="analytics-page-title" style="font-size:2rem;">Endorsement Review Hub</h2>
+    <p class="analytics-page-subtitle" style="font-size:0.95rem;margin-top:10px;">Endorsement confirms that a student is academically prepared and has the required documents for internship deployment.</p>
   </div>
 
   <?php if ($errorMessage !== ''): ?>
@@ -464,45 +367,45 @@ $resolveEndorsementFileUrl = static function (?string $file) use ($baseUrl): str
     </div>
   <?php endif; ?>
 
-  <div class="endorsement-summary-grid">
-    <div class="endorsement-stat-card pending">
-      <div class="endorsement-stat-row">
-        <div class="endorsement-stat-icon"><i class="fas fa-hourglass-half"></i></div>
-        <div class="endorsement-stat-meta">
-          <div class="endorsement-stat-label">Pending Review</div>
-          <div class="endorsement-stat-value"><?php echo $pendingCount; ?></div>
-          <div class="endorsement-stat-note">Needs adviser action</div>
+  <div class="stat-cards">
+    <div class="stat-card adviser-stat-pending">
+      <div class="stat-card-icon"><img src="/SkillHive/assets/media/Active%20Posting.png" alt="Pending Review"></div>
+      <div class="stat-card-info">
+        <div class="stat-card-num-row">
+          <div class="stat-card-trend neutral"><?php echo $pendingCount; ?> pending</div>
+          <div class="stat-card-num"><?php echo $pendingCount; ?></div>
         </div>
+        <div class="stat-card-label">Pending Review</div>
       </div>
     </div>
-    <div class="endorsement-stat-card approved">
-      <div class="endorsement-stat-row">
-        <div class="endorsement-stat-icon"><i class="fas fa-check-circle"></i></div>
-        <div class="endorsement-stat-meta">
-          <div class="endorsement-stat-label">Approved</div>
-          <div class="endorsement-stat-value"><?php echo $approvedCount; ?></div>
-          <div class="endorsement-stat-note">Ready for employer step</div>
+    <div class="stat-card adviser-stat-approved">
+      <div class="stat-card-icon"><img src="/SkillHive/assets/media/Total%20Applicants.png" alt="Approved"></div>
+      <div class="stat-card-info">
+        <div class="stat-card-num-row">
+          <div class="stat-card-trend neutral"><?php echo $approvedCount; ?> approved</div>
+          <div class="stat-card-num"><?php echo $approvedCount; ?></div>
         </div>
+        <div class="stat-card-label">Approved</div>
       </div>
     </div>
-    <div class="endorsement-stat-card rejected">
-      <div class="endorsement-stat-row">
-        <div class="endorsement-stat-icon"><i class="fas fa-times-circle"></i></div>
-        <div class="endorsement-stat-meta">
-          <div class="endorsement-stat-label">Rejected</div>
-          <div class="endorsement-stat-value"><?php echo $rejectedCount; ?></div>
-          <div class="endorsement-stat-note">Returned with feedback</div>
+    <div class="stat-card adviser-stat-rejected">
+      <div class="stat-card-icon"><img src="/SkillHive/assets/media/Interviews.png" alt="Rejected"></div>
+      <div class="stat-card-info">
+        <div class="stat-card-num-row">
+          <div class="stat-card-trend neutral"><?php echo $rejectedCount; ?> rejected</div>
+          <div class="stat-card-num"><?php echo $rejectedCount; ?></div>
         </div>
+        <div class="stat-card-label">Rejected</div>
       </div>
     </div>
-    <div class="endorsement-stat-card total">
-      <div class="endorsement-stat-row">
-        <div class="endorsement-stat-icon"><i class="fas fa-layer-group"></i></div>
-        <div class="endorsement-stat-meta">
-          <div class="endorsement-stat-label">Total Endorsements</div>
-          <div class="endorsement-stat-value"><?php echo $totalThisTerm; ?></div>
-          <div class="endorsement-stat-note">All visible records</div>
+    <div class="stat-card adviser-stat-total">
+      <div class="stat-card-icon"><img src="/SkillHive/assets/media/Hiredd.png" alt="Total Endorsements"></div>
+      <div class="stat-card-info">
+        <div class="stat-card-num-row">
+          <div class="stat-card-trend neutral"><?php echo $totalThisTerm; ?> total</div>
+          <div class="stat-card-num"><?php echo $totalThisTerm; ?></div>
         </div>
+        <div class="stat-card-label">Total Endorsements</div>
       </div>
     </div>
   </div>

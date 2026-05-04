@@ -55,17 +55,21 @@ $atRiskStudents = $dashboardData['at_risk_students'];
 
   .adviser-dashboard-stats {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
   }
 
-  .adviser-stat-card,
   .adviser-dashboard-panel {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--card-shadow);
+    padding: 18px;
   }
+
+   .adviser-dashboard-panel {
+     background: var(--card);
+     border: 1px solid var(--border);
+     border-radius: var(--radius);
+     box-shadow: var(--card-shadow);
+   }
 
   .adviser-stat-card {
     padding: 18px;
@@ -496,8 +500,7 @@ $atRiskStudents = $dashboardData['at_risk_students'];
       grid-template-columns: 1fr;
     }
 
-    .adviser-dashboard-panel,
-    .adviser-stat-card {
+    .adviser-dashboard-panel {
       border-radius: 14px;
       padding: 18px;
     }
@@ -519,66 +522,53 @@ $atRiskStudents = $dashboardData['at_risk_students'];
 </style>
 
 <div class="adviser-dashboard-page">
+  <div class="analytics-title-header">
+    <h2 class="analytics-page-title">Dashboard</h2>
+    <p class="analytics-page-subtitle">Guide students through their journey, provide endorsements, monitor progress, and help them succeed in their internship placements.</p>
+  </div>
 
-<?php
-// Banner variables for adviser
-$bannerDate = date('l, jS F');
-$bannerGreeting = 'Good afternoon';
-$bannerUserName = $profile['first_name'] ?? 'Adviser';
-$bannerTitle = 'Empower Your Students';
-$bannerDescription = 'Guide students through their journey, provide endorsements, monitor progress, and help them succeed in their internship placements.';
-$bannerStats = [
-  ['value' => (int)($stats['my_students'] ?? 0), 'label' => 'My Students'],
-  ['value' => (int)($stats['placed_students'] ?? 0), 'label' => 'Placed'],
-  ['value' => (int)($stats['pending_review'] ?? 0), 'label' => 'Pending Review'],
-];
-$bannerShowMascot = false;
-$bannerImage = $baseUrl . '/assets/media/Banner.png';
-include __DIR__ . '/../../components/dashboard_banner.php';
-?>
-
-  <div class="adviser-dashboard-stats">
-    <div class="adviser-stat-card adviser-stat-students">
-      <div class="adviser-stat-card-icon"><i class="fas fa-user-graduate"></i></div>
-      <div class="adviser-stat-card-info">
-        <div class="adviser-stat-card-num-row">
-          <div class="adviser-stat-card-trend neutral"><?php echo (int)($stats['my_students'] ?? 0); ?> students</div>
-          <div class="adviser-stat-card-num"><?php echo (int)($stats['my_students'] ?? 0); ?></div>
+  <div class="stat-cards">
+    <div class="stat-card adviser-stat-students">
+      <div class="stat-card-icon"><img src="/SkillHive/assets/media/Active%20Posting.png" alt="Assigned Students"></div>
+      <div class="stat-card-info">
+        <div class="stat-card-num-row">
+          <div class="stat-card-trend neutral"><?php echo (int)($stats['my_students'] ?? 0); ?> students</div>
+          <div class="stat-card-num"><?php echo (int)($stats['my_students'] ?? 0); ?></div>
         </div>
-        <div class="adviser-stat-card-label">Assigned Students</div>
+        <div class="stat-card-label">Assigned Students</div>
       </div>
     </div>
 
-    <div class="adviser-stat-card adviser-stat-placed">
-      <div class="adviser-stat-card-icon"><i class="fas fa-circle-check"></i></div>
-      <div class="adviser-stat-card-info">
-        <div class="adviser-stat-card-num-row">
-          <div class="adviser-stat-card-trend neutral"><?php echo (int)($stats['placed_students'] ?? 0); ?> placed</div>
-          <div class="adviser-stat-card-num"><?php echo (int)($stats['placed_students'] ?? 0); ?></div>
+    <div class="stat-card adviser-stat-placed">
+      <div class="stat-card-icon"><img src="/SkillHive/assets/media/Total%20Applicants.png" alt="Placed Students"></div>
+      <div class="stat-card-info">
+        <div class="stat-card-num-row">
+          <div class="stat-card-trend neutral"><?php echo (int)($stats['placed_students'] ?? 0); ?> placed</div>
+          <div class="stat-card-num"><?php echo (int)($stats['placed_students'] ?? 0); ?></div>
         </div>
-        <div class="adviser-stat-card-label">Placed Students</div>
+        <div class="stat-card-label">Placed Students</div>
       </div>
     </div>
 
-    <div class="adviser-stat-card adviser-stat-risk">
-      <div class="adviser-stat-card-icon"><i class="fas fa-triangle-exclamation"></i></div>
-      <div class="adviser-stat-card-info">
-        <div class="adviser-stat-card-num-row">
-          <div class="adviser-stat-card-trend neutral"><?php echo (int)($stats['at_risk_students'] ?? 0); ?> at risk</div>
-          <div class="adviser-stat-card-num"><?php echo (int)($stats['at_risk_students'] ?? 0); ?></div>
+    <div class="stat-card adviser-stat-risk">
+      <div class="stat-card-icon"><img src="/SkillHive/assets/media/Interviews.png" alt="At Risk"></div>
+      <div class="stat-card-info">
+        <div class="stat-card-num-row">
+          <div class="stat-card-trend neutral"><?php echo (int)($stats['at_risk_students'] ?? 0); ?> at risk</div>
+          <div class="stat-card-num"><?php echo (int)($stats['at_risk_students'] ?? 0); ?></div>
         </div>
-        <div class="adviser-stat-card-label">At Risk</div>
+        <div class="stat-card-label">At Risk</div>
       </div>
     </div>
 
-    <div class="adviser-stat-card adviser-stat-partners">
-      <div class="adviser-stat-card-icon"><i class="fas fa-building"></i></div>
-      <div class="adviser-stat-card-info">
-        <div class="adviser-stat-card-num-row">
-          <div class="adviser-stat-card-trend neutral"><?php echo (int)($stats['partner_companies'] ?? 0); ?> partners</div>
-          <div class="adviser-stat-card-num"><?php echo (int)($stats['partner_companies'] ?? 0); ?></div>
+    <div class="stat-card adviser-stat-partners">
+      <div class="stat-card-icon"><img src="/SkillHive/assets/media/Hiredd.png" alt="Partner Companies"></div>
+      <div class="stat-card-info">
+        <div class="stat-card-num-row">
+          <div class="stat-card-trend neutral"><?php echo (int)($stats['partner_companies'] ?? 0); ?> partners</div>
+          <div class="stat-card-num"><?php echo (int)($stats['partner_companies'] ?? 0); ?></div>
         </div>
-        <div class="adviser-stat-card-label">Partner Companies</div>
+        <div class="stat-card-label">Partner Companies</div>
       </div>
     </div>
   </div>
