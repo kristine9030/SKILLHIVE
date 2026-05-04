@@ -333,7 +333,7 @@ if (is_array($savedCv) && !empty($savedCv)) {
     $initialCv['experiences'] = $experiences;
   }
 
-  if (!in_array($initialCv['language'], ['en', 'es', 'fr'], true)) {
+  if (!in_array($initialCv['language'], ['en'], true)) {
     $initialCv['language'] = 'en';
   }
 }
@@ -352,11 +352,6 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
     <div class="cv-form-card">
       <div class="cv-form-header">
         <h3 id="detailsCardTitle">Your Details</h3>
-        <select id="cvLanguage" class="cv-language-select">
-          <option value="en" selected>🇬🇧 English</option>
-          <option value="es">🇪🇸 Español</option>
-          <option value="fr">🇫🇷 Français</option>
-        </select>
       </div>
 
       <!-- Profile Picture -->
@@ -487,7 +482,6 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
     <!-- Actions -->
     <div class="cv-form-actions">
       <button type="button" class="cv-btn cv-btn-primary" id="saveCvBtn">Save CV</button>
-      <button type="button" class="cv-btn cv-btn-secondary" id="downloadPdfBtn">Download PDF</button>
     </div>
     <div class="cv-save-status" id="cvSaveStatus" aria-live="polite"></div>
   </div>
@@ -520,6 +514,9 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
         </div>
         <button type="button" class="cv-preview-zoom" id="zoomBtn">100%</button>
         <button type="button" class="cv-ctrl-reset" id="resetLayoutBtn" title="Reset font &amp; margins">&#8635;</button>
+        <button type="button" class="cv-preview-download-btn" id="downloadPdfBtn">
+          <i class="fas fa-download"></i> Download PDF
+        </button>
       </div>
     </div>
     <div class="cv-preview-container">
@@ -635,15 +632,6 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
 
 .cv-form-header h3 {
   margin: 0;
-}
-
-.cv-language-select {
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  background: white;
-  cursor: pointer;
 }
 
 .cv-form-group {
@@ -1077,6 +1065,26 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
   color: #6b7280;
 }
 
+.cv-preview-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #111827;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+.cv-preview-download-btn:hover {
+  background: #000000;
+}
+
 .cv-preview-container {
   flex: 1;
   overflow-y: auto;
@@ -1284,23 +1292,136 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
   white-space: pre-wrap;
 }
 
+/* ─── Responsive: Tablet landscape (≤1200px) ─────────────────────────── */
 @media (max-width: 1200px) {
   .cv-builder-container {
     grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
   }
 
+  /* Form becomes full-width, no longer needs a fixed scroll height */
   .cv-form-section {
     max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
   }
 
+  /* Preview pane: un-stick so it flows after the form */
+  .cv-preview-pane {
+    position: static;
+  }
+
+  /* Constrain the preview container height so the paper doesn't dwarf the viewport */
   .cv-preview-container {
-    max-height: 500px;
+    max-height: 520px;
   }
 }
 
+/* ─── Responsive: Tablet portrait (≤900px) ───────────────────────────── */
+@media (max-width: 900px) {
+  .cv-builder-container {
+    padding: 12px;
+    gap: 14px;
+  }
+
+  /* Preview header: allow controls to wrap onto a second line */
+  .cv-preview-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .cv-preview-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  /* Download button stretches across on its own line when controls wrap */
+  .cv-preview-download-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 14px;
+  }
+
+  /* Limit paper preview so it doesn't require excessive scrolling */
+  .cv-preview-container {
+    max-height: 460px;
+  }
+}
+
+/* ─── Responsive: Mobile (≤680px) ───────────────────────────────────── */
 @media (max-width: 680px) {
+  .cv-builder-container {
+    padding: 8px;
+    gap: 12px;
+    border-radius: 0;
+  }
+
+  /* Multi-column form rows → single column */
   .cv-form-row,
-  .cv-experience-grid,
+  .cv-experience-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Form cards: tighten spacing */
+  .cv-form-card {
+    padding: 14px 12px;
+    border-radius: 10px;
+  }
+
+  /* Profile picture upload area: stack vertically */
+  .cv-profile-upload-area {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  /* Preview header: compact, stack page label above controls */
+  .cv-preview-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 10px;
+  }
+
+  /* All controls fill the row */
+  .cv-preview-controls {
+    width: 100%;
+    gap: 6px;
+  }
+
+  /* Size / Font / Margin groups: let them wrap naturally */
+  .cv-preview-control-group {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* Zoom and reset buttons: auto-size */
+  .cv-preview-zoom,
+  .cv-ctrl-reset {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Download button: full-width, prominent */
+  .cv-preview-download-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    border-radius: 8px;
+  }
+
+  /* Preview container: shorter on mobile */
+  .cv-preview-container {
+    max-height: 380px;
+    padding: 6px;
+  }
+
+  /* CV paper preview grid columns → single column */
   .cv-preview-contact-grid,
   .cv-preview-entry-row {
     grid-template-columns: 1fr;
@@ -1310,8 +1431,50 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
     margin-bottom: -2px;
   }
 
+  /* Form actions: single column, full-width buttons */
   .cv-form-actions {
     flex-direction: column;
+  }
+
+  .cv-btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Add-section buttons: full width */
+  .cv-btn-add-section {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* ─── Responsive: Small mobile (≤420px) ─────────────────────────────── */
+@media (max-width: 420px) {
+  .cv-builder-container {
+    padding: 6px;
+  }
+
+  .cv-preview-header {
+    padding: 8px;
+  }
+
+  /* Hide the verbose page-size labels on very small screens, keep only value */
+  .cv-page-size-select {
+    max-width: 90px;
+  }
+
+  .cv-ctrl-label {
+    display: none;
+  }
+
+  .cv-preview-container {
+    max-height: 320px;
+    padding: 4px;
+  }
+
+  .cv-form-card {
+    padding: 12px 10px;
   }
 }
 </style>
@@ -1324,7 +1487,6 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
   const MAX_PROFILE_PICTURE_BYTES = 2 * 1024 * 1024;
 
   const form = {
-    cvLanguage: document.getElementById('cvLanguage'),
     firstName: document.getElementById('firstName'),
     lastName: document.getElementById('lastName'),
     email: document.getElementById('email'),
@@ -1418,38 +1580,6 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
       educationHeading: 'Education',
       skillsHeading: 'Books',
       experienceHeading: 'Professional Appointments'
-    },
-    es: {
-      subtitle: 'Crea un CV profesional con vista previa en vivo',
-      detailsTitle: 'Tus datos',
-      bioTitle: 'Resumen corto',
-      skillsTitle: 'Habilidades',
-      experienceTitle: 'Experiencia',
-      addSkill: '+ Agregar habilidad',
-      addExperience: '+ Agregar experiencia',
-      saveCv: 'Guardar CV',
-      downloadPdf: 'Descargar PDF',
-      pageLabel: 'Pagina 1 de 1',
-      summaryHeading: 'Resumen',
-      educationHeading: 'Educacion',
-      skillsHeading: 'Publicaciones',
-      experienceHeading: 'Trayectoria profesional'
-    },
-    fr: {
-      subtitle: 'Creez un CV professionnel avec apercu en direct',
-      detailsTitle: 'Vos informations',
-      bioTitle: 'Courte biographie',
-      skillsTitle: 'Competences',
-      experienceTitle: 'Experience',
-      addSkill: '+ Ajouter une competence',
-      addExperience: '+ Ajouter une experience',
-      saveCv: 'Enregistrer le CV',
-      downloadPdf: 'Telecharger le PDF',
-      pageLabel: 'Page 1 sur 1',
-      summaryHeading: 'Resume',
-      educationHeading: 'Formation',
-      skillsHeading: 'Publications',
-      experienceHeading: 'Parcours professionnel'
     }
   };
 
@@ -1605,7 +1735,7 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
     state.linkedin = normalizeString(form.linkedin.value);
     state.twitter = normalizeString(form.twitter.value);
     state.educationDates = normalizeString(form.educationDates.value);
-    state.language = normalizeString(form.cvLanguage.value || 'en').toLowerCase();
+    state.language = 'en';
 
     const bioText = String(form.bio.value == null ? '' : form.bio.value).trim();
     state.bio = bioText.length > 200 ? bioText.slice(0, 200) : bioText;
@@ -1615,7 +1745,6 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
 
     if (!Object.prototype.hasOwnProperty.call(languagePacks, state.language)) {
       state.language = 'en';
-      form.cvLanguage.value = 'en';
     }
   }
 
@@ -1633,7 +1762,6 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
     form.twitter.value = state.twitter;
     form.educationDates.value = state.educationDates;
     form.bio.value = state.bio;
-    form.cvLanguage.value = state.language;
     ensureJobTitleOption(state.jobTitle);
     updateProfilePictureDisplays(state.profilePicture);
   }
@@ -2387,18 +2515,6 @@ $resumeAiEndpointUrl = (isset($baseUrl) && is_string($baseUrl) && trim($baseUrl)
 
   function bindUiEvents() {
     bindBaseFormEvents();
-
-    if (form.cvLanguage) {
-      form.cvLanguage.addEventListener('change', function() {
-        state.language = normalizeString(form.cvLanguage.value || 'en').toLowerCase();
-        if (!Object.prototype.hasOwnProperty.call(languagePacks, state.language)) {
-          state.language = 'en';
-        }
-        applyLanguage();
-        updatePreview();
-        scheduleAutoSave();
-      });
-    }
 
     if (ui.profilePictureContainer && form.profilePicture) {
       ui.profilePictureContainer.addEventListener('click', function() {
