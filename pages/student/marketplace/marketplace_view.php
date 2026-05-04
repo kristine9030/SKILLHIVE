@@ -450,12 +450,14 @@ function marketplace_render(array $data): void
 
         <div class="market-filter-group" style="margin-top:0;padding-top:0;border-top:none">
           <div class="market-filter-title">Category</div>
-          <input class="market-input" list="industryOptions" name="industry" placeholder="Type or choose industry" value="<?php echo marketplace_e($currentFilters['industry']); ?>">
-          <datalist id="industryOptions">
+          <select class="market-select" name="industry" onchange="document.getElementById('marketFilterForm').submit();">
+            <option value="">All categories</option>
             <?php foreach ($industries as $industry): ?>
-              <option value="<?php echo marketplace_e($industry); ?>"></option>
+              <option value="<?php echo marketplace_e($industry); ?>" <?php echo $currentFilters['industry'] === $industry ? 'selected' : ''; ?>>
+                <?php echo marketplace_e($industry); ?>
+              </option>
             <?php endforeach; ?>
-          </datalist>
+          </select>
         </div>
 
         <div class="market-filter-group">
@@ -476,17 +478,19 @@ function marketplace_render(array $data): void
 
         <div class="market-filter-group">
           <div class="market-filter-title">Location</div>
-          <input class="market-input" list="locationOptions" name="location" placeholder="Type or choose location" value="<?php echo marketplace_e($currentFilters['location']); ?>">
-          <datalist id="locationOptions">
+          <select class="market-select" name="location" onchange="document.getElementById('marketFilterForm').submit();">
+            <option value="">All locations</option>
             <?php foreach ($locations as $location): ?>
-              <option value="<?php echo marketplace_e($location); ?>"></option>
+              <option value="<?php echo marketplace_e($location); ?>" <?php echo $currentFilters['location'] === $location ? 'selected' : ''; ?>>
+                <?php echo marketplace_e($location); ?>
+              </option>
             <?php endforeach; ?>
-          </datalist>
+          </select>
         </div>
 
         <div class="market-filter-group">
           <div class="market-filter-title">Duration</div>
-          <select class="market-select" name="duration">
+          <select class="market-select" name="duration" onchange="document.getElementById('marketFilterForm').submit();">
             <option value="" <?php echo ($currentFilters['duration'] ?? '') === '' ? 'selected' : ''; ?>>Any length</option>
             <option value="short" <?php echo ($currentFilters['duration'] ?? '') === 'short' ? 'selected' : ''; ?>>Short (1-8 weeks)</option>
             <option value="medium" <?php echo ($currentFilters['duration'] ?? '') === 'medium' ? 'selected' : ''; ?>>Medium (9-16 weeks)</option>
@@ -496,7 +500,7 @@ function marketplace_render(array $data): void
 
         <div class="market-filter-group">
           <div class="market-filter-title">Allowance</div>
-          <select class="market-select" name="allowance_range">
+          <select class="market-select" name="allowance_range" onchange="document.getElementById('marketFilterForm').submit();">
             <option value="" <?php echo ($currentFilters['allowance_range'] ?? '') === '' ? 'selected' : ''; ?>>Any allowance</option>
             <option value="unpaid" <?php echo ($currentFilters['allowance_range'] ?? '') === 'unpaid' ? 'selected' : ''; ?>>Unpaid</option>
             <option value="low" <?php echo ($currentFilters['allowance_range'] ?? '') === 'low' ? 'selected' : ''; ?>>Low (P1 - P3,000)</option>
@@ -976,6 +980,9 @@ document.querySelectorAll('[data-radio-group]').forEach(function (group) {
       if (input) {
         input.checked = true;
       }
+      // Auto-submit when a work setup tile is selected
+      var form = document.getElementById('marketFilterForm');
+      if (form) { form.submit(); }
     });
   });
 });
