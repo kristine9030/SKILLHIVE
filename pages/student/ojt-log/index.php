@@ -35,7 +35,7 @@ $ojtAjaxUrl = (isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '' ? rtrim
 <?php if ($successMsg): ?><div class="alert alert-success"><?php echo htmlspecialchars($successMsg); ?></div><?php endif; ?>
 
 <!-- Log Entry Modal -->
-<div id="logModal" class="modal-overlay" aria-hidden="true" onclick="if(event.target===this){closeOjtModal();}">
+<div id="logModal" class="modal-overlay" inert hidden onclick="if(event.target===this){closeOjtModal();}" role="presentation">
   <div class="modal ojt-log-modal" role="dialog" aria-modal="true" aria-labelledby="ojtModalTitle">
     <div class="modal-header ojt-log-modal-header">
       <h3 id="ojtModalTitle" class="modal-title">Log OJT Entry</h3>
@@ -45,7 +45,7 @@ $ojtAjaxUrl = (isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '' ? rtrim
       <input type="hidden" name="log_entry" value="1">
       <div class="ojt-field ojt-field-date">
         <label for="log_date">Date</label>
-        <input type="date" name="log_date" class="form-control" value="<?php echo date('Y-m-d'); ?>" required>
+        <input type="date" name="log_date" id="ojtLogDate" class="form-control" value="<?php echo date('Y-m-d'); ?>" max="<?php echo date('Y-m-d'); ?>" required>
       </div>
       <div class="ojt-field ojt-field-date-warning" id="ojtDateWarning" style="display:none;">
         <div class="ojt-warning-banner">
@@ -54,8 +54,8 @@ $ojtAjaxUrl = (isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '' ? rtrim
         </div>
       </div>
       <div class="ojt-field">
-        <label for="accomplishment">Accomplishment / Task</label>
-        <textarea name="accomplishment" class="form-control" rows="3" required></textarea>
+        <label for="accomplishment">Journal Log</label>
+        <textarea name="accomplishment" class="form-control" rows="3" placeholder="Describe what you did, learned, or experienced today..." required></textarea>
       </div>
       <div class="ojt-field">
         <label>Time Rendered</label>
@@ -1264,6 +1264,16 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
 </div>
 
 <script>
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   var ojtCalendarEntries = <?php echo $calendarEntriesJson; ?>;
   var ojtCalendarState = {
     year: (new Date()).getFullYear(),
@@ -1274,19 +1284,89 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
   function openOjtModal(source) {
     var modal = document.getElementById('logModal');
     if (!modal) return;
+
+    var today = new Date();
+    var todayKey = formatOjtCalendarDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+    var dateInput = modal.querySelector('.ojt-log-form input[name="log_date"]');
     var dateField = modal.querySelector('.ojt-field-date');
+    var warningEl = document.getElementById('ojtDateWarning');
+    var warningTextEl = document.getElementById('ojtDateWarningText');
+
     if (dateField) {
       dateField.style.display = (source === 'calendar') ? 'none' : '';
     }
+
+    // Always enforce max = today
+    if (dateInput) {
+      dateInput.max = todayKey;
+    }
+
+    // If opening from calendar, set the selected date and validate it
+    if (source === 'calendar' && ojtCalendarState.selectedDate) {
+      var selectedDate = ojtCalendarState.selectedDate;
+
+      // Block future dates — should not be reachable via calendar, but guard anyway
+      if (selectedDate > todayKey) {
+        alert('You cannot log entries for future dates.');
+        return;
+      }
+
+      if (dateInput) {
+        dateInput.value = selectedDate;
+      }
+
+      // Show past-date warning
+      if (selectedDate < todayKey) {
+        if (warningEl && warningTextEl) {
+          warningTextEl.textContent = 'You are logging an entry for a past date (' + formatDateDisplay(selectedDate) + '). Please make sure the information is accurate.';
+          warningEl.style.display = '';
+        }
+      } else {
+        if (warningEl) warningEl.style.display = 'none';
+      }
+    } else if (dateInput) {
+      // Manual date input — check on change
+      if (warningEl) warningEl.style.display = 'none';
+      dateInput.addEventListener('change', function() {
+        var val = this.value;
+        if (!val) return;
+        if (val > todayKey) {
+          this.value = todayKey;
+          val = todayKey;
+        }
+        if (val < todayKey) {
+          if (warningEl && warningTextEl) {
+            warningTextEl.textContent = 'You are logging an entry for a past date (' + formatDateDisplay(val) + '). Please make sure the information is accurate.';
+            warningEl.style.display = '';
+          }
+        } else {
+          if (warningEl) warningEl.style.display = 'none';
+        }
+      }, { once: true });
+    }
+
     modal.classList.add('open');
-    modal.setAttribute('aria-hidden', 'false');
+    modal.removeAttribute('inert');
+    modal.removeAttribute('hidden');
+    // Move focus to the close button for accessibility
+    var closeBtn = modal.querySelector('.modal-close');
+    if (closeBtn) { closeBtn.focus(); }
+  }
+
+  function formatDateDisplay(dateStr) {
+    var d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   }
 
   function closeOjtModal() {
     var modal = document.getElementById('logModal');
     if (!modal) return;
     modal.classList.remove('open');
-    modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('inert', '');
+    modal.setAttribute('hidden', '');
+    // Return focus to the trigger button
+    var trigger = document.querySelector('[onclick*="openOjtModal"]');
+    if (trigger) { trigger.focus(); }
   }
 
   (function bindFileInputLabel() {
@@ -1500,6 +1580,14 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
     var parsed = parseOjtCalendarDateKey(dateKey);
     if (!parsed) return;
 
+    var today = new Date();
+    var todayKey = formatOjtCalendarDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+    // Block future dates from being selected
+    if (dateKey > todayKey) {
+      return;
+    }
+
     ojtCalendarState.selectedDate = dateKey;
     ojtCalendarState.year = parsed.year;
     ojtCalendarState.month = parsed.month;
@@ -1511,6 +1599,7 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
 
     renderOjtCalendar();
     updateOjtCalendarSelectedInfo();
+    document.dispatchEvent(new Event('ojtDateSelected'));
   }
 
   function updateOjtCalendarSelectedInfo() {
@@ -1563,19 +1652,36 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
 
       fetch('<?php echo $ojtAjaxUrl; ?>?action=get_entries&date=' + encodeURIComponent(selected))
         .then(function(response) {
-          return response.json();
+          return response.text().then(function(txt) {
+            try {
+              var data = JSON.parse(txt);
+              return { ok: response.ok, data: data };
+            } catch(e) {
+              throw new Error('Server returned non-JSON (HTTP ' + response.status + '): ' + txt.substring(0, 300));
+            }
+          });
         })
-        .then(function(data) {
+        .then(function(result) {
+          var data = result.data;
           if (data.ok && data.entries && data.entries.length > 0) {
             renderJournalEntries(journalEl, data.entries);
-          } else if (data.message) {
-            journalEl.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#94a3b8"><i class="fas fa-exclamation-circle" style="font-size:2rem;margin-bottom:12px;display:block"></i>' + escapeHtml(data.message) + '</div>';
           } else {
-            journalEl.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#94a3b8"><i class="fas fa-book-open" style="font-size:3rem;color:#cbd5e1;margin-bottom:16px;display:block"></i><div style="font-size:.9rem;font-weight:600;color:#64748b;margin-bottom:4px">No journal yet</div><div style="font-size:.8rem">No entries for this date. <a href="#" onclick="openOjtModal(\'calendar\');return false;" style="color:#12b3ac;text-decoration:none;font-weight:600">Add one?</a></div></div>';
+            var dateLabel2 = label || 'this date';
+            journalEl.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;min-height:160px">'
+              + '<i class="fas fa-book-open" style="font-size:2.2rem;color:#cbd5e1;margin-bottom:14px;display:block"></i>'
+              + '<div style="font-size:.9rem;font-weight:600;color:#64748b;margin-bottom:6px">No journal log for this day</div>'
+              + '<div style="font-size:.8rem;color:#94a3b8;margin-bottom:14px">There are no entries recorded for <strong style="color:#475569">' + escapeHtml(dateLabel2) + '</strong>.</div>'
+              + '<button type="button" onclick="openOjtModal(\'calendar\')" style="border:none;border-radius:10px;padding:9px 18px;background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;">+ Add a log entry</button>'
+              + '</div>';
           }
         })
         .catch(function(error) {
-          journalEl.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#94a3b8"><i class="fas fa-exclamation-circle" style="font-size:2rem;margin-bottom:12px;display:block"></i>Failed to load entries.<br><span style="font-size:.75rem">Please try again.</span></div>';
+          journalEl.innerHTML = '<div style="text-align:center;padding:32px 16px;color:#94a3b8">'
+            + '<i class="fas fa-exclamation-circle" style="font-size:2rem;color:#fca5a5;margin-bottom:12px;display:block"></i>'
+            + '<div style="font-size:.9rem;font-weight:600;color:#64748b;margin-bottom:6px">Failed to load entries</div>'
+            + '<div style="font-size:.72rem;color:#94a3b8;word-break:break-all;max-height:120px;overflow:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;text-align:left;margin-top:6px">'
+            + escapeHtml(error.message || 'Unknown error') + '</div>'
+            + '</div>';
         });
     }
   }
@@ -1645,12 +1751,14 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
       var dateKey = formatOjtCalendarDateKey(year, month, day);
       var dayEntry = ojtCalendarEntries[dateKey] || null;
       var hasEntry = !!dayEntry;
+      var isFuture = dateKey > todayKey;
 
       var cell = document.createElement('div');
       var classNames = ['ojt-calendar-cell'];
       if (hasEntry) classNames.push('has-entry');
       if (dateKey === todayKey) classNames.push('is-today');
       if (dateKey === ojtCalendarState.selectedDate) classNames.push('is-selected');
+      if (isFuture) classNames.push('is-future');
       cell.className = classNames.join(' ');
 
       var btn = document.createElement('button');
@@ -1658,12 +1766,17 @@ if (!is_string($calendarEntriesJson) || $calendarEntriesJson === '') {
       btn.className = 'ojt-calendar-cell-btn';
       btn.setAttribute('data-date', dateKey);
       btn.innerHTML = '<div class="ojt-calendar-day-number">' + day + '</div>';
-      btn.addEventListener('click', function(event) {
-        var targetDate = event.currentTarget.getAttribute('data-date');
-        if (targetDate) {
-          ojtCalendarSelectDate(targetDate);
-        }
-      });
+      if (!isFuture) {
+        btn.addEventListener('click', function(event) {
+          var targetDate = event.currentTarget.getAttribute('data-date');
+          if (targetDate) {
+            ojtCalendarSelectDate(targetDate);
+          }
+        });
+      } else {
+        btn.disabled = true;
+        btn.style.cursor = 'not-allowed';
+      }
 
       cell.appendChild(btn);
 

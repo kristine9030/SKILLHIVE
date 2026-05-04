@@ -1,111 +1,99 @@
 <?php
+// Capture any PHP errors/warnings as JSON instead of HTML
+ini_set('display_errors', 0);
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+
+// Buffer output so any stray PHP warnings don't corrupt JSON
+ob_start();
 
 session_start();
 
 require_once __DIR__ . '/../../../backend/db_connect.php';
+require_once __DIR__ . '/ojt_log_helpers.php';
+require_once __DIR__ . '/ojt_log_submit.php';
 
 $studentId = 0;
 if (isset($_SESSION['user_id'])) {
-    $studentId = (int)$_SESSION['user_id'];
+    $studentId = (int) $_SESSION['user_id'];
 }
 
-// Log for debugging
-$log = date('Y-m-d H:i:s') . " - studentId=$studentId, method=" . $_SERVER['REQUEST_METHOD'] . ", action=" . (isset($_GET['action']) ? $_GET['action'] : 'none') . "\n";
-file_put_contents(__DIR__ . '/debug.log', $log, FILE_APPEND);
-
+// Discard any stray output buffered before headers
+ob_clean();
 header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    echo json_encode(array('ok' => false, 'message' => 'Invalid request method'));
+// ── POST: submit a new log entry ──────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!$studentId) {
+        http_response_code(401);
+        echo json_encode(['ok' => false, 'message' => 'Not logged in']);
+        exit;
+    }
+
+    $ojt = ojt_get_or_create_record($pdo, $studentId);
+    ojt_log_handle_submit($pdo, $ojt);
     exit;
 }
 
-$action = '';
-if (isset($_GET['action'])) {
-    $action = $_GET['action'];
-}
-if ($action !== 'get_entries') {
-    echo json_encode(array('ok' => false, 'message' => 'Invalid action'));
-    exit;
-}
+// ── GET: fetch entries for a date ─────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $action = isset($_GET['action']) ? trim($_GET['action']) : '';
 
-if (!$studentId) {
-    echo json_encode(array('ok' => false, 'message' => 'Not logged in. user_id=' . $studentId));
-    exit;
-}
+    if ($action !== 'get_entries') {
+        echo json_encode(['ok' => false, 'message' => 'Invalid action: ' . htmlspecialchars($action)]);
+        exit;
+    }
 
-$date = '';
-if (isset($_GET['date'])) {
-    $date = trim($_GET['date']);
-}
-if (!$date) {
-    echo json_encode(array('ok' => false, 'message' => 'No date provided'));
-    exit;
-}
+    if (!$studentId) {
+        echo json_encode(['ok' => false, 'message' => 'Not logged in - no session user_id']);
+        exit;
+    }
 
-// Get OJT record
-$stmt = $pdo->prepare('SELECT * FROM ojt_record WHERE student_id = ? ORDER BY record_id DESC LIMIT 1');
-$stmt->execute(array($studentId));
-$ojt = $stmt->fetch(PDO::FETCH_ASSOC);
+    $date = isset($_GET['date']) ? trim($_GET['date']) : '';
 
-if (!$ojt) {
-    echo json_encode(array('ok' => true, 'entries' => array()));
-    exit;
-}
+    if (!$date) {
+        echo json_encode(['ok' => false, 'message' => 'No date provided']);
+        exit;
+    }
 
-// Get entries
-$sql = 'SELECT log_id, log_date, start_time, end_time, hours_rendered, accomplishment, mood_tag, file_path FROM daily_log WHERE record_id = ? AND log_date = ? ORDER BY start_time ASC';
-$stmt = $pdo->prepare($sql);
-$stmt->execute(array($ojt['record_id'], $date));
-$entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        echo json_encode(['ok' => false, 'message' => 'Invalid date format: ' . htmlspecialchars($date)]);
+        exit;
+    }
 
-// Log success
-file_put_contents(__DIR__ . '/debug.log', date('Y-m-d H:i:s') . " - Success, entries=" . count($entries) . "\n", FILE_APPEND);
+    try {
+        // Get OJT record
+        $stmt = $pdo->prepare(
+            'SELECT * FROM ojt_record WHERE student_id = ? ORDER BY record_id DESC LIMIT 1'
+        );
+        $stmt->execute([$studentId]);
+        $ojt = $stmt->fetch(PDO::FETCH_ASSOC);
 
-echo json_encode(array('ok' => true, 'entries' => $entries));
-exit;
-}
+        if (!$ojt) {
+            echo json_encode(['ok' => true, 'entries' => [], 'debug' => 'No OJT record found for student ' . $studentId]);
+            exit;
+        }
 
-$action = '';
-if (isset($_GET['action'])) {
-    $action = $_GET['action'];
-}
-if ($action !== 'get_entries') {
-    echo json_encode(array('ok' => false, 'message' => 'Invalid action'));
-    exit;
-}
+        // Fetch daily log entries for the selected date
+        $stmt = $pdo->prepare(
+            'SELECT log_id, log_date, start_time, end_time, hours_rendered,
+                    accomplishment, mood_tag, task_file AS file_path
+            FROM daily_log
+            WHERE record_id = ? AND log_date = ?
+            ORDER BY log_id ASC'
+        );
+        $stmt->execute([$ojt['record_id'], $date]);
+        $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-if (!$studentId) {
-    echo json_encode(array('ok' => false, 'message' => 'Not logged in. user_id=' . $studentId));
-    exit;
-}
+        echo json_encode(['ok' => true, 'entries' => $entries]);
+        exit;
 
-$date = '';
-if (isset($_GET['date'])) {
-    $date = trim($_GET['date']);
-}
-if (!$date) {
-    echo json_encode(array('ok' => false, 'message' => 'No date provided'));
-    exit;
+    } catch (Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'message' => 'DB error: ' . $e->getMessage()]);
+        exit;
+    }
 }
 
-// Get OJT record
-$stmt = $pdo->prepare('SELECT * FROM ojt_record WHERE student_id = ? ORDER BY record_id DESC LIMIT 1');
-$stmt->execute(array($studentId));
-$ojt = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$ojt) {
-    echo json_encode(array('ok' => true, 'entries' => array()));
-    exit;
-}
-
-// Get entries
-$sql = 'SELECT log_id, log_date, start_time, end_time, hours_rendered, accomplishment, mood_tag, file_path FROM daily_log WHERE record_id = ? AND log_date = ? ORDER BY start_time ASC';
-$stmt = $pdo->prepare($sql);
-$stmt->execute(array($ojt['record_id'], $date));
-$entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-echo json_encode(array('ok' => true, 'entries' => $entries));
+http_response_code(405);
+echo json_encode(['ok' => false, 'message' => 'Method not allowed: ' . $_SERVER['REQUEST_METHOD']]);
 exit;
