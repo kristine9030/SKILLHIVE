@@ -58,71 +58,6 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
   ? (bool)$moduleSettings['show_companies_banner']
   : true;
 
-$exportMode = trim((string)($_GET['export'] ?? ''));
-if (($adviserId > 0) && ($exportMode === 'csv')) {
-  header('Content-Type: text/csv; charset=UTF-8');
-  header('Content-Disposition: attachment; filename="adviser-company-verification-report.csv"');
-
-  $output = fopen('php://output', 'w');
-  if ($output !== false) {
-    fputcsv($output, ['Company', 'Industry', 'Submitted', 'Documents', 'Risk', 'Suggested Action']);
-    foreach ($rows as $row) {
-      $documents = adviser_companies_documents_meta($row);
-      $risk = adviser_companies_risk_meta($row);
-      $actionMeta = adviser_companies_action_meta($row);
-
-      fputcsv($output, [
-        trim((string)($row['company_name'] ?? 'Company')),
-        trim((string)($row['industry'] ?? 'Unspecified')),
-        adviser_companies_format_date((string)($row['created_at'] ?? '')),
-        $documents['label'],
-        $risk['label'],
-        $actionMeta['label'],
-      ]);
-    }
-    fclose($output);
-  }
-  exit;
-}
-
-if (($adviserId > 0) && ($exportMode === 'doc')) {
-  header('Content-Type: application/msword; charset=UTF-8');
-  header('Content-Disposition: attachment; filename="adviser-company-verification-report.doc"');
-
-  $logoUrl = $baseUrl . '/assets/media/skillhive-logo.png';
-
-  echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Adviser Company Verification Report</title>';
-  echo '<style>body{font-family:Arial,sans-serif;color:#111;padding:18px}.report-head{display:flex;align-items:center;gap:12px;border-bottom:2px solid #e5e7eb;padding-bottom:10px;margin-bottom:14px}.report-logo{width:46px;height:46px;object-fit:cover;border-radius:10px}.report-brand{font-size:11px;color:#6b7280;letter-spacing:.08em;text-transform:uppercase}.report-title{font-size:22px;margin:4px 0 0}.report-sub{margin:10px 0 14px;color:#444}table{width:100%;border-collapse:collapse}th,td{border:1px solid #d1d5db;padding:8px 10px;font-size:12px;text-align:left;vertical-align:top}th{background:#f3f4f6;font-weight:700}</style>';
-  echo '</head><body>';
-  echo '<div class="report-head">';
-  echo '<img class="report-logo" src="' . adviser_companies_escape($logoUrl) . '" alt="SkillHive Logo">';
-  echo '<div><div class="report-brand">SkillHive Adviser</div><h1 class="report-title">Partner Companies Report</h1></div>';
-  echo '</div>';
-  echo '<p class="report-sub">Generated on ' . adviser_companies_escape(date('M j, Y g:i A')) . '</p>';
-  echo '<table><thead><tr><th>Company</th><th>Industry</th><th>Submitted</th><th>Documents</th><th>Risk</th><th>Suggested Action</th></tr></thead><tbody>';
-
-  if (empty($rows)) {
-    echo '<tr><td colspan="6">No matching companies found.</td></tr>';
-  } else {
-    foreach ($rows as $row) {
-      $documents = adviser_companies_documents_meta($row);
-      $risk = adviser_companies_risk_meta($row);
-      $actionMeta = adviser_companies_action_meta($row);
-
-      echo '<tr>';
-      echo '<td>' . adviser_companies_escape(trim((string)($row['company_name'] ?? 'Company'))) . '</td>';
-      echo '<td>' . adviser_companies_escape(trim((string)($row['industry'] ?? 'Unspecified'))) . '</td>';
-      echo '<td>' . adviser_companies_escape(adviser_companies_format_date((string)($row['created_at'] ?? ''))) . '</td>';
-      echo '<td>' . adviser_companies_escape((string)$documents['label']) . '</td>';
-      echo '<td>' . adviser_companies_escape((string)$risk['label']) . '</td>';
-      echo '<td>' . adviser_companies_escape((string)$actionMeta['label']) . '</td>';
-      echo '</tr>';
-    }
-  }
-
-  echo '</tbody></table></body></html>';
-  exit;
-}
 ?>
 
 <style>
@@ -610,12 +545,11 @@ if (($adviserId > 0) && ($exportMode === 'doc')) {
           id="adviserCompaniesExportDocLink"
           data-export-link="companies"
           class="adviser-companies-export"
-          href="<?php echo $baseUrl; ?>/layout.php?<?php echo adviser_companies_escape(http_build_query([
-              'page' => 'adviser/companies',
+          href="<?php echo $baseUrl; ?>/pages/adviser/companies/export.php?<?php echo adviser_companies_escape(http_build_query([
+              'format' => 'doc',
               'industry' => $selected['industry'] ?? '',
               'status' => $selected['status'] ?? '',
               'search' => $selected['search'] ?? '',
-              'export' => 'doc',
           ])); ?>"
         >
           <i class="fas fa-file-lines"></i>
@@ -626,12 +560,11 @@ if (($adviserId > 0) && ($exportMode === 'doc')) {
           id="adviserCompaniesExportCsvLink"
           data-export-link="companies"
           class="adviser-companies-export secondary"
-          href="<?php echo $baseUrl; ?>/layout.php?<?php echo adviser_companies_escape(http_build_query([
-              'page' => 'adviser/companies',
+          href="<?php echo $baseUrl; ?>/pages/adviser/companies/export.php?<?php echo adviser_companies_escape(http_build_query([
+              'format' => 'csv',
               'industry' => $selected['industry'] ?? '',
               'status' => $selected['status'] ?? '',
               'search' => $selected['search'] ?? '',
-              'export' => 'csv',
           ])); ?>"
         >
           <i class="fas fa-file-csv"></i>
