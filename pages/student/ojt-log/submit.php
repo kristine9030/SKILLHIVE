@@ -29,6 +29,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Block submissions if the student account is Inactive or Archived.
+    try {
+        $acctStmt = $pdo->prepare(
+            "SELECT COALESCE(account_status, 'Active') AS account_status FROM student WHERE student_id = ? LIMIT 1"
+        );
+        $acctStmt->execute([$studentId]);
+        $acctStatus = strtolower((string)($acctStmt->fetchColumn() ?: 'active'));
+        if ($acctStatus === 'inactive' || $acctStatus === 'archived') {
+            http_response_code(403);
+            echo json_encode([
+                'ok'      => false,
+                'message' => 'Your account has been ' . ucfirst($acctStatus) . ' by your adviser. Timesheet submission is no longer available.',
+            ]);
+            exit;
+        }
+    } catch (Throwable $_e) {
+        // If column doesn't exist yet (pre-migration), allow submission to continue.
+    }
+
     $ojt = ojt_get_or_create_record($pdo, $studentId);
     ojt_log_handle_submit($pdo, $ojt);
     exit;

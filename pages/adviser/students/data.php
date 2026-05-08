@@ -7,6 +7,7 @@
 require_once __DIR__ . '/formatters.php';
 require_once __DIR__ . '/filters_query.php';
 require_once __DIR__ . '/students_query.php';
+require_once __DIR__ . '/account_status_actions.php';
 
 if (!function_exists('getAdviserStudentsPageData')) {
     function getAdviserStudentsPageData(PDO $pdo, int $adviserId, array $filters = []): array

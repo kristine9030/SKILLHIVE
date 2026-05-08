@@ -271,3 +271,31 @@ if (!function_exists('adviser_students_moa_label')) {
         return 'MOA ' . ucwords($raw);
     }
 }
+
+if (!function_exists('adviser_students_account_status_badge_class')) {
+    /**
+     * Returns a CSS class suffix for account_status badges.
+     * Active → success (green), Inactive → warning (amber), Archived → muted (grey).
+     */
+    function adviser_students_account_status_badge_class(string $status): string
+    {
+        switch (strtolower(trim($status))) {
+            case 'active':   return 'acct-badge--active';
+            case 'inactive': return 'acct-badge--inactive';
+            case 'archived': return 'acct-badge--archived';
+            default:         return 'acct-badge--active';
+        }
+    }
+}
+
+if (!function_exists('adviser_students_account_status_icon')) {
+    function adviser_students_account_status_icon(string $status): string
+    {
+        switch (strtolower(trim($status))) {
+            case 'active':   return 'fa-circle-check';
+            case 'inactive': return 'fa-ban';
+            case 'archived': return 'fa-box-archive';
+            default:         return 'fa-circle-check';
+        }
+    }
+}

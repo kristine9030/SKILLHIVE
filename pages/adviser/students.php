@@ -9,6 +9,7 @@ $currentFilters = [
     'search' => trim((string)($_GET['search'] ?? '')),
     'department' => trim((string)($_GET['department'] ?? '')),
     'status' => trim((string)($_GET['status'] ?? '')),
+    'account_status' => trim((string)($_GET['account_status'] ?? '')),
 ];
 
 $pageData = [
@@ -34,6 +35,7 @@ $shouldOpenAddStudentModal = false;
 $bulkImportResult = null;
 $bulkImportSummaryMessage = '';
 $shouldOpenBulkImportModal = false;
+$accountStatusActionResult = null;
 $staticProgramLabel = adviser_students_static_program_label();
 $staticDepartmentLabel = adviser_students_static_department_label();
 $trackOptions = adviser_students_track_options();
@@ -105,6 +107,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
       $rows = $pageData['rows'];
     }
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'update_account_status') {
+    $targetStudentId = (int)($_POST['student_id'] ?? 0);
+    $newStatus       = trim((string)($_POST['new_status'] ?? ''));
+    $reason          = trim((string)($_POST['reason'] ?? ''));
+
+    $accountStatusActionResult = adviser_account_status_update($pdo, $adviserId, $targetStudentId, $newStatus, $reason);
+
+    if ($accountStatusActionResult['success']) {
+        $statusLabel = $accountStatusActionResult['new_status'];
+        $_SESSION['status'] = 'Student account status updated to ' . $statusLabel . '.';
+        header('Location: ' . $baseUrl . '/layout.php?page=adviser/students');
+        exit;
+    }
+    // On failure, fall through to re-render page with the error stored in $accountStatusActionResult.
+}
 ?>
 
 <style>
@@ -144,6 +162,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
   .adv-row-btn.is-icon { width:38px; min-width:38px; padding:0; border-color:var(--border); background:var(--card); color:var(--text); }
   .adv-row-btn.is-icon[aria-disabled="true"] { opacity:.55; cursor:default; }
   .adv-empty { padding:34px 18px; text-align:center; color:var(--text3); font-size:.9rem; }
+  /* ── Account Status Badges ─────────────────────────────────────── */
+  .acct-badge { display:inline-flex; align-items:center; gap:5px; min-height:24px; padding:2px 10px; border-radius:999px; font-size:.72rem; font-weight:700; letter-spacing:.02em; white-space:nowrap; }
+  .acct-badge--active   { background:#dcfce7; color:#15803d; }
+  .acct-badge--inactive { background:#fef3c7; color:#b45309; }
+  .acct-badge--archived { background:#f3f4f6; color:#6b7280; }
+  /* ── Account Status Modal ──────────────────────────────────────── */
+  .acct-modal { width:min(480px,100%); background:#fff; border-radius:24px; box-shadow:0 24px 70px rgba(15,23,42,.26); padding:26px 28px; border:1px solid rgba(229,231,235,.9); }
+  .acct-modal-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:18px; }
+  .acct-modal-title { margin:0; font-size:1.1rem; font-weight:800; color:var(--text); }
+  .acct-modal-sub { margin:4px 0 0; font-size:.85rem; color:var(--text3); }
+  .acct-modal-close { width:34px; height:34px; flex:0 0 auto; border-radius:999px; border:1px solid var(--border); background:var(--card); color:var(--text3); font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .acct-status-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:16px 0; }
+  .acct-status-option { position:relative; }
+  .acct-status-option input[type="radio"] { position:absolute; opacity:0; pointer-events:none; }
+  .acct-status-label { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 10px; border-radius:16px; border:2px solid var(--border); background:var(--card); cursor:pointer; transition:border-color .15s, background .15s; text-align:center; }
+  .acct-status-option input:checked + .acct-status-label { border-color:#111; background:#f8f8f8; }
+  .acct-status-label i { font-size:1.3rem; }
+  .acct-status-label .acct-opt-name { font-size:.82rem; font-weight:700; color:var(--text); }
+  .acct-status-label .acct-opt-desc { font-size:.72rem; color:var(--text3); line-height:1.3; }
+  .acct-status-option.opt-active   .acct-status-label i { color:#15803d; }
+  .acct-status-option.opt-inactive .acct-status-label i { color:#b45309; }
+  .acct-status-option.opt-archived .acct-status-label i { color:#6b7280; }
+  .acct-reason-group { margin-top:12px; }
+  .acct-reason-label { display:block; font-size:.83rem; font-weight:700; color:var(--text); margin-bottom:6px; }
+  .acct-reason-input { width:100%; border:1px solid var(--border); border-radius:12px; background:var(--card); color:var(--text); font-size:.88rem; padding:10px 14px; outline:0; box-sizing:border-box; resize:vertical; min-height:70px; }
+  .acct-modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+  .acct-warn-box { background:#fef3c7; border:1px solid #fde68a; border-radius:10px; padding:10px 14px; margin-top:12px; font-size:.81rem; color:#92400e; display:flex; gap:8px; align-items:flex-start; }
+  .acct-warn-box i { flex:0 0 auto; margin-top:1px; }
   .adv-modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,.35); backdrop-filter:blur(8px); display:none; align-items:center; justify-content:center; z-index:1250; padding:18px; }
   .adv-modal-overlay.open { display:flex; }
   .adv-add-modal { width:min(520px,100%); background:#fff; border-radius:24px; box-shadow:0 24px 70px rgba(15,23,42,.26); padding:26px 28px; border:1px solid rgba(229,231,235,.9); }
@@ -202,6 +248,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
           <option value="<?php echo adviser_students_escape($statusOption); ?>" <?php echo ($selected['status'] ?? '') === $statusOption ? 'selected' : ''; ?>><?php echo adviser_students_escape($statusOption); ?></option>
         <?php endforeach; ?>
       </select>
+
+      <select id="advStudentAccountStatusFilter" class="adv-select" name="account_status" aria-label="Filter by account status">
+        <option value="">All Account Status</option>
+        <option value="Active" <?php echo ($currentFilters['account_status'] ?? '') === 'Active' ? 'selected' : ''; ?>>Active</option>
+        <option value="Inactive" <?php echo ($currentFilters['account_status'] ?? '') === 'Inactive' ? 'selected' : ''; ?>>Inactive</option>
+        <option value="Archived" <?php echo ($currentFilters['account_status'] ?? '') === 'Archived' ? 'selected' : ''; ?>>Archived</option>
+      </select>
     </div>
 
     <div class="adv-toolbar-right">
@@ -252,6 +305,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
               $requirementsPending = (int)($row['requirements_pending'] ?? 0);
               $requirementsCompletion = (int)($row['requirements_completion'] ?? 0);
               $internshipId = isset($row['internship_id']) ? (int)$row['internship_id'] : 0;
+              $accountStatus = (string)($row['account_status'] ?? 'Active');
+              $accountStatusReason = (string)($row['account_status_reason'] ?? '');
               $searchText = implode(' ', [
                 $studentName,
                 (string)($row['student_number'] ?? ''),
@@ -272,6 +327,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
                     <div>
                       <p class="adv-name"><?php echo adviser_students_escape($studentName !== '' ? $studentName : 'Unnamed Student'); ?></p>
                       <p class="adv-subtext"><?php echo adviser_students_escape($yearProgram); ?></p>
+                      <?php if ($accountStatus !== 'Active'): ?>
+                        <span class="acct-badge <?php echo adviser_students_escape(adviser_students_account_status_badge_class($accountStatus)); ?>" title="<?php echo adviser_students_escape($accountStatusReason); ?>">
+                          <i class="fas <?php echo adviser_students_escape(adviser_students_account_status_icon($accountStatus)); ?>"></i>
+                          <?php echo adviser_students_escape($accountStatus); ?>
+                        </span>
+                      <?php endif; ?>
                     </div>
                   </div>
                 </td>
@@ -286,7 +347,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
                     <span class="adv-req-count js-req-progress-text <?php echo ($totalRequirements > 0 && $requirementsSubmitted >= $totalRequirements) ? 'is-success' : ''; ?>" data-student-id="<?php echo $studentId; ?>" data-total="<?php echo $totalRequirements > 0 ? $totalRequirements : 0; ?>">
                       <?php echo $requirementsSubmitted; ?>/<?php echo $totalRequirements > 0 ? $totalRequirements : 0; ?>
                     </span>
-                    <button class="adv-req-link" type="button" onclick="openRequirementsModal(document.getElementById('<?php echo adviser_students_escape($buttonId); ?>'))">View</button>
                   </div>
                 </td>
                 <td>
@@ -306,6 +366,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
                     >
                       <i class="fas fa-clipboard-list"></i>
                       Requirements
+                    </button>
+                    <button
+                      class="adv-row-btn is-icon js-open-acct-status-btn"
+                      type="button"
+                      title="Manage Account Status"
+                      onclick="openAccountStatusModal(this)"
+                      data-student-id="<?php echo $studentId; ?>"
+                      data-student-name="<?php echo adviser_students_escape($studentName !== '' ? $studentName : 'Student'); ?>"
+                      data-current-status="<?php echo adviser_students_escape($accountStatus); ?>"
+                      data-current-reason="<?php echo adviser_students_escape($accountStatusReason); ?>"
+                      data-completion-status="<?php echo adviser_students_escape((string)($row['completion_status'] ?? '')); ?>"
+                    >
+                      <i class="fas fa-user-shield"></i>
                     </button>
                   </div>
                 </td>
@@ -519,6 +592,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'bulk_add_students'
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════
+     Account Status Modal
+     Adviser manages Inactive / Archived / Active status.
+     Students cannot log in or submit timesheets when
+     Inactive or Archived. Adviser & employer retain
+     full read-only access to all past records.
+     ═══════════════════════════════════════════════════════ -->
+<div id="accountStatusModal" class="adv-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="acctModalTitle">
+  <div class="acct-modal">
+    <div class="acct-modal-header">
+      <div>
+        <h3 class="acct-modal-title" id="acctModalTitle">Manage Account Status</h3>
+        <p class="acct-modal-sub" id="acctModalSub">Choose the appropriate status for this student.</p>
+      </div>
+      <button type="button" class="acct-modal-close" onclick="closeAccountStatusModal()" aria-label="Close">&times;</button>
+    </div>
+
+    <?php if (!empty($accountStatusActionResult) && !$accountStatusActionResult['success']): ?>
+      <div class="acct-warn-box" style="background:#fee2e2;border-color:#fca5a5;color:#991b1b;">
+        <i class="fas fa-exclamation-circle"></i>
+        <span><?php echo htmlspecialchars((string)($accountStatusActionResult['error'] ?? 'An error occurred.'), ENT_QUOTES, 'UTF-8'); ?></span>
+      </div>
+    <?php endif; ?>
+
+    <form id="accountStatusForm" method="POST">
+      <input type="hidden" name="action" value="update_account_status">
+      <input type="hidden" name="student_id" id="acctStudentId" value="">
+
+      <div class="acct-status-grid">
+        <div class="acct-status-option opt-active">
+          <input type="radio" name="new_status" id="acctStatusActive" value="Active">
+          <label class="acct-status-label" for="acctStatusActive">
+            <i class="fas fa-circle-check"></i>
+            <span class="acct-opt-name">Active</span>
+            <span class="acct-opt-desc">Student can log in and submit timesheets normally.</span>
+          </label>
+        </div>
+        <div class="acct-status-option opt-inactive">
+          <input type="radio" name="new_status" id="acctStatusInactive" value="Inactive">
+          <label class="acct-status-label" for="acctStatusInactive">
+            <i class="fas fa-ban"></i>
+            <span class="acct-opt-name">Inactive</span>
+            <span class="acct-opt-desc">Login and timesheet blocked. Use for drop/shift requests.</span>
+          </label>
+        </div>
+        <div class="acct-status-option opt-archived">
+          <input type="radio" name="new_status" id="acctStatusArchived" value="Archived">
+          <label class="acct-status-label" for="acctStatusArchived">
+            <i class="fas fa-box-archive"></i>
+            <span class="acct-opt-name">Archived</span>
+            <span class="acct-opt-desc">Login blocked. Use when OJT is complete or program ended.</span>
+          </label>
+        </div>
+      </div>
+
+      <div id="acctWarnBox" class="acct-warn-box" style="display:none;">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span id="acctWarnText"></span>
+      </div>
+
+      <div class="acct-reason-group">
+        <label class="acct-reason-label" for="acctReason">
+          Reason <span style="font-weight:400;color:var(--text3);">(optional — shown to student on blocked login)</span>
+        </label>
+        <textarea class="acct-reason-input" id="acctReason" name="reason" maxlength="255" placeholder="e.g. Student filed a dropping request on May 5, 2026."></textarea>
+      </div>
+
+      <p style="font-size:.76rem;color:var(--text3);margin:10px 0 0;">
+        <i class="fas fa-shield-halved" style="margin-right:4px;"></i>
+        Adviser and employer always retain full <strong>read-only</strong> access to the student's past records, hours, and evaluations regardless of account status.
+      </p>
+
+      <div class="acct-modal-footer">
+        <button type="button" class="adv-btn is-secondary" onclick="closeAccountStatusModal()">Cancel</button>
+        <button type="submit" class="adv-btn" id="acctSaveBtn">
+          <i class="fas fa-save"></i> Save Status
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 function openAddStudentModal() {
     var modal = document.getElementById('addStudentModal');
@@ -544,6 +699,83 @@ function closeBulkImportModal() {
   if (!modal) return;
   modal.classList.remove('open');
 }
+
+/* ─── Account Status Modal ─────────────────────────────────── */
+function openAccountStatusModal(btn) {
+  var modal = document.getElementById('accountStatusModal');
+  if (!modal) return;
+
+  var studentId      = btn.getAttribute('data-student-id') || '';
+  var studentName    = btn.getAttribute('data-student-name') || 'Student';
+  var currentStatus  = btn.getAttribute('data-current-status') || 'Active';
+  var currentReason  = btn.getAttribute('data-current-reason') || '';
+  var completionSt   = (btn.getAttribute('data-completion-status') || '').toLowerCase();
+
+  // Populate modal
+  document.getElementById('acctStudentId').value = studentId;
+  document.getElementById('acctModalSub').textContent = 'Managing account for: ' + studentName;
+  document.getElementById('acctReason').value = currentReason;
+
+  // Pre-select current status radio
+  var radios = modal.querySelectorAll('input[name="new_status"]');
+  radios.forEach(function(r) {
+    r.checked = (r.value === currentStatus);
+  });
+
+  // Show contextual warning when completion_status is already dropped/completed
+  updateAccountStatusWarning(completionSt, currentStatus);
+
+  // Attach change listener to radios for live warning update
+  radios.forEach(function(r) {
+    r.addEventListener('change', function() {
+      updateAccountStatusWarning(completionSt, r.value);
+    });
+  });
+
+  modal.classList.add('open');
+}
+
+function updateAccountStatusWarning(completionStatus, selectedStatus) {
+  var warnBox  = document.getElementById('acctWarnBox');
+  var warnText = document.getElementById('acctWarnText');
+  if (!warnBox || !warnText) return;
+
+  var msg = '';
+  if (selectedStatus === 'Inactive') {
+    msg = 'Setting to Inactive will immediately block this student from logging in and submitting timesheets. Their adviser and employer records remain fully readable.';
+  } else if (selectedStatus === 'Archived') {
+    msg = 'Setting to Archived will permanently block login for this student. All past records, OJT hours, and evaluations remain readable by you and the employer.';
+    if (completionStatus === 'completed') {
+      msg = 'This student\'s OJT is marked Completed. Archiving is the recommended action. All past records are preserved for you and the employer.';
+    }
+  } else if (selectedStatus === 'Active' && (completionStatus === 'completed' || completionStatus === 'dropped')) {
+    msg = 'Re-activating allows this student to log in and submit timesheets again. Use with care if OJT is already completed or dropped.';
+  }
+
+  if (msg) {
+    warnText.textContent = msg;
+    warnBox.style.display = 'flex';
+  } else {
+    warnBox.style.display = 'none';
+  }
+}
+
+function closeAccountStatusModal() {
+  var modal = document.getElementById('accountStatusModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+}
+
+// Close modal on backdrop click
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('accountStatusModal');
+    if (!modal) return;
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) closeAccountStatusModal();
+    });
+  });
+})();
 
 function bindAddStudentFormSubmission() {
   var form = document.getElementById('addStudentForm');

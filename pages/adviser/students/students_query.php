@@ -26,6 +26,8 @@ if (!function_exists('adviser_students_get_rows')) {
                 s.year_level,
                 ' . $academicYearSelect . '
                 s.availability_status,
+                COALESCE(s.account_status, "Active") AS account_status,
+                COALESCE(s.account_status_reason, "") AS account_status_reason,
                 o.record_id,
                 o.internship_id,
                 o.hours_required,
@@ -124,6 +126,12 @@ if (!function_exists('adviser_students_get_rows')) {
             $params[':completion_status'] = $status;
         }
 
+        $accountStatus = trim((string)($filters['account_status'] ?? ''));
+        if ($accountStatus !== '') {
+            $sql .= ' AND COALESCE(s.account_status, "Active") = :account_status';
+            $params[':account_status'] = $accountStatus;
+        }
+
         $search = trim((string)($filters['search'] ?? ''));
         if ($search !== '') {
             $sql .= ' AND (
@@ -145,6 +153,15 @@ if (!function_exists('adviser_students_get_rows')) {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Graceful fallback: if account_status columns don't exist yet, default to Active.
+        foreach ($rows as &$row) {
+            if (!array_key_exists('account_status', $row)) {
+                $row['account_status'] = 'Active';
+                $row['account_status_reason'] = '';
+            }
+        }
+        unset($row);
 
         foreach ($rows as &$row) {
             $progress = adviser_students_progress_percent($row['hours_completed'] ?? 0, $row['hours_required'] ?? 0);
