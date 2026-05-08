@@ -109,16 +109,22 @@ function login($email, $password) {
     // 3️⃣ Check Student table
     if (!$user) {
         try {
-            $stmt = $pdo->prepare("SELECT student_id AS id, first_name, last_name, email, password_hash, student_number, program, department, year_level, COALESCE(must_change_password, 0) AS must_change_password, 'student' AS role FROM student WHERE email = ?");
+            $stmt = $pdo->prepare("SELECT student_id AS id, first_name, last_name, email, password_hash, student_number, program, department, year_level, COALESCE(must_change_password, 0) AS must_change_password, COALESCE(account_status, 'Active') AS account_status, COALESCE(account_status_reason, '') AS account_status_reason, 'student' AS role FROM student WHERE email = ?");
             $stmt->execute([$email]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (Throwable $e) {
-            // Backward compatibility if column is missing or migration could not run.
-            $stmt = $pdo->prepare("SELECT student_id AS id, first_name, last_name, email, password_hash, student_number, program, department, year_level, 'student' AS role FROM student WHERE email = ?");
-            $stmt->execute([$email]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($user) {
-                $user['must_change_password'] = 0;
+            // Backward compatibility if account_status columns are missing (pre-migration).
+            try {
+                $stmt = $pdo->prepare("SELECT student_id AS id, first_name, last_name, email, password_hash, student_number, program, department, year_level, COALESCE(must_change_password, 0) AS must_change_password, 'student' AS role FROM student WHERE email = ?");
+                $stmt->execute([$email]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($user) {
+                    $user['must_change_password'] = 0;
+                    $user['account_status'] = 'Active';
+                    $user['account_status_reason'] = '';
+                }
+            } catch (Throwable $e2) {
+                // Non-fatal: leave $user as null.
             }
         }
     }
@@ -135,6 +141,29 @@ function login($email, $password) {
             $verificationStatus = strtolower(trim((string)($user['verification_status'] ?? '')));
             if ($verificationStatus !== 'approved') {
                 set_last_login_error('Employer account is pending admin verification. Login is allowed after approval.');
+                return false;
+            }
+        }
+
+        // Block Inactive or Archived student accounts managed by the adviser.
+        if (($user['role'] ?? '') === 'student') {
+            $accountStatus = strtolower(trim((string)($user['account_status'] ?? 'active')));
+            if ($accountStatus === 'inactive') {
+                $reason = trim((string)($user['account_status_reason'] ?? ''));
+                $msg = 'Your account has been deactivated. Please contact your internship adviser for assistance.';
+                if ($reason !== '') {
+                    $msg = 'Your account has been deactivated: ' . $reason . '. Please contact your internship adviser.';
+                }
+                set_last_login_error($msg);
+                return false;
+            }
+            if ($accountStatus === 'archived') {
+                $reason = trim((string)($user['account_status_reason'] ?? ''));
+                $msg = 'Your account has been archived. Your records are preserved and viewable by your adviser and employer.';
+                if ($reason !== '') {
+                    $msg = 'Your account has been archived: ' . $reason . '. Your records remain accessible to your adviser and employer.';
+                }
+                set_last_login_error($msg);
                 return false;
             }
         }
