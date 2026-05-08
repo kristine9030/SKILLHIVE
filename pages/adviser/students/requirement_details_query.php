@@ -323,11 +323,15 @@ if (!function_exists('adviser_students_get_requirements_modal_data')) {
 
             $submissionStmt = $pdo->prepare(
                 'SELECT
+                    sr.req_submission_id,
                     sr.requirement_id,
                     sr.status AS submission_status,
                     sr.submitted_at,
                     sr.reviewed_at,
-                    sr.deadline
+                    sr.deadline,
+                    sr.file_name,
+                    sr.file_mime,
+                    sr.file_size
                  FROM student_requirement sr
                  INNER JOIN (
                     SELECT requirement_id, MAX(req_submission_id) AS max_submission_id
@@ -398,8 +402,10 @@ if (!function_exists('adviser_students_get_requirements_modal_data')) {
                 $dateLabel = adviser_students_format_modal_date((string)($submissionRow['deadline'] ?? ''));
             }
 
+            $hasFile = !empty($submissionRow['file_name']);
             $phases[$phase][] = [
                 'requirement_id' => $requirementId,
+                'req_submission_id' => (int)($submissionRow['req_submission_id'] ?? 0),
                 'requirement_key' => $requirementKey,
                 'name' => $name,
                 'phase' => $phase,
@@ -407,6 +413,10 @@ if (!function_exists('adviser_students_get_requirements_modal_data')) {
                 'is_submitted' => $isSubmitted,
                 'date_label' => $dateLabel,
                 'can_toggle' => $requirementKey !== '',
+                'has_file' => $hasFile,
+                'file_name' => $hasFile ? (string)($submissionRow['file_name'] ?? '') : '',
+                'file_mime' => $hasFile ? (string)($submissionRow['file_mime'] ?? '') : '',
+                'file_size' => $hasFile ? (int)($submissionRow['file_size'] ?? 0) : 0,
             ];
         }
 
@@ -585,7 +595,6 @@ if (!function_exists('adviser_students_toggle_requirement_submission')) {
                         internship_id,
                         requirement_id,
                         status,
-                        file_path,
                         submitted_at,
                         reviewed_at,
                         reviewed_by,
@@ -598,7 +607,6 @@ if (!function_exists('adviser_students_toggle_requirement_submission')) {
                         :internship_id,
                         :requirement_id,
                         :status,
-                        NULL,
                         :submitted_at,
                         NULL,
                         NULL,
