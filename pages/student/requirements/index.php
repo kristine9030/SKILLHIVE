@@ -31,7 +31,12 @@ $reqStmt = $pdo->prepare(
         sr.deadline
      FROM requirement r
      LEFT JOIN student_requirement sr
-       ON sr.requirement_id = r.requirement_id AND sr.student_id = ?
+       ON sr.req_submission_id = (
+           SELECT MAX(sr2.req_submission_id)
+           FROM student_requirement sr2
+           WHERE sr2.requirement_id = r.requirement_id
+             AND sr2.student_id = ?
+       )
      WHERE r.applicable_to IN (\'Student\', \'Both\')
      ORDER BY r.sort_order ASC, r.requirement_id ASC'
 );

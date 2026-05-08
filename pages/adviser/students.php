@@ -585,7 +585,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'update_account_sta
 
     <div id="requirementsChecklist" style="display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto;padding-right:4px;"></div>
 
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap;">
+    <div id="requirementsReviewNotice" style="display:none;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:10px 14px;font-size:.8rem;color:#92400e;margin-top:14px;">
+      <i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i>Please view or download all uploaded files before saving changes.
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap;">
       <button type="button" class="adv-btn is-secondary" onclick="closeRequirementsModal()">Close</button>
       <button id="requirementsSaveBtn" type="button" class="adv-btn" onclick="saveRequirementsChanges()"><i class="fas fa-save"></i> Save Changes</button>
     </div>
@@ -919,11 +922,13 @@ function bindStudentTableLiveFilters() {
   }
 
 var requirementsEndpoint = '<?php echo $baseUrl; ?>/pages/adviser/students/requirements_data.php';
+var requirementsFileEndpoint = '<?php echo $baseUrl; ?>/pages/adviser/students/requirement_file.php';
 var requirementsContext = {
     studentId: 0,
     internshipId: '',
     canEdit: false,
-    activeButton: null
+    activeButton: null,
+    reviewedSubmissionIds: {}   // tracks which req_submission_ids the adviser has viewed/downloaded
 };
 
 function escapeHtml(value) {
@@ -935,43 +940,131 @@ function escapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
+function formatFileSize(bytes) {
+    if (!bytes || bytes <= 0) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return Math.round(bytes / 1024) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function markSubmissionReviewed(submissionId) {
+    if (submissionId > 0) {
+        requirementsContext.reviewedSubmissionIds[submissionId] = true;
+        updateSaveButtonReviewState();
+    }
+}
+
+function updateSaveButtonReviewState() {
+    var container = document.getElementById('requirementsChecklist');
+    var notice    = document.getElementById('requirementsReviewNotice');
+    var saveBtn   = document.getElementById('requirementsSaveBtn');
+    if (!container) return;
+
+    // Collect all submission ids that have files and are submitted/checked
+    var allReviewable = [];
+    container.querySelectorAll('[data-submission-id]').forEach(function(el) {
+        var sid = Number(el.getAttribute('data-submission-id') || 0);
+        if (sid > 0) allReviewable.push(sid);
+    });
+
+    if (allReviewable.length === 0) {
+        // No files to review — save is always allowed
+        if (notice) notice.style.display = 'none';
+        if (saveBtn) saveBtn.disabled = false;
+        return;
+    }
+
+    var allReviewed = allReviewable.every(function(sid) {
+        return !!requirementsContext.reviewedSubmissionIds[sid];
+    });
+
+    if (notice) notice.style.display = allReviewed ? 'none' : '';
+    if (saveBtn) saveBtn.disabled = !allReviewed;
+}
+
 function renderRequirementsChecklist(phases) {
     var container = document.getElementById('requirementsChecklist');
     if (!container) return;
 
     var orderedPhases = ['Pre-OJT', 'During OJT', 'Post-OJT'];
     var html = '';
-  var hasAnyRows = false;
+    var hasAnyRows = false;
 
     orderedPhases.forEach(function (phaseName) {
         var phaseRows = (phases && phases[phaseName]) ? phases[phaseName] : [];
 
-      if (!phaseRows.length) {
-        return;
-      }
+        if (!phaseRows.length) {
+            return;
+        }
 
-      hasAnyRows = true;
+        hasAnyRows = true;
+
+        // Phase label header
+        html += '<div style="font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;padding:2px 4px;margin-top:4px;">' + escapeHtml(phaseName) + '</div>';
 
         phaseRows.forEach(function (item) {
-            var isSubmitted = !!item.is_submitted;
+            var isSubmitted   = !!item.is_submitted;
             var canToggleItem = item.can_toggle !== false;
-            var boxBorder = isSubmitted ? '#bbf7d0' : '#e5e7eb';
-            var boxBg = isSubmitted ? '#f0fdf4' : '#fff';
-            var statusColor = isSubmitted ? '#16a34a' : '#12b3ac';
-            var statusText = item.status || (isSubmitted ? 'Submitted' : 'Pending');
-            var dateText = item.date_label ? item.date_label : statusText;
+            var hasFile       = !!item.has_file;
+            var submissionId  = Number(item.req_submission_id || 0);
+            var boxBorder     = isSubmitted ? '#bbf7d0' : '#e5e7eb';
+            var boxBg         = isSubmitted ? '#f0fdf4' : '#fff';
+            var statusColor   = isSubmitted ? '#16a34a' : '#9ca3af';
+            var statusText    = item.status || (isSubmitted ? 'Submitted' : 'Pending');
+            var dateText      = item.date_label ? item.date_label : statusText;
             var requirementId = Number(item.requirement_id || 0);
             var requirementKey = String(item.requirement_key || '');
+            var alreadyReviewed = hasFile && submissionId > 0 && !!requirementsContext.reviewedSubmissionIds[submissionId];
 
-            html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid ' + boxBorder + ';background:' + boxBg + ';border-radius:14px;padding:12px 14px;">';
-            html += '<div style="display:flex;align-items:center;gap:10px;">';
-            html += '<input type="checkbox" class="js-requirement-checkbox" data-requirement-id="' + requirementId + '" data-requirement-key="' + escapeHtml(requirementKey) + '" ' + (isSubmitted ? 'checked ' : '') + (canToggleItem ? '' : 'disabled ') + 'style="width:18px;height:18px;' + (canToggleItem ? 'cursor:pointer;' : 'cursor:default;') + (isSubmitted ? 'accent-color:#22c55e;' : '') + '">';
-            html += '<p style="font-size:.85rem;margin:0;color:#050505;">' + escapeHtml(item.name || 'Requirement') + '</p>';
+            html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border:1px solid ' + boxBorder + ';background:' + boxBg + ';border-radius:14px;padding:12px 14px;">';
+
+            // Left: checkbox + name
+            html += '<div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;">';
+            html += '<input type="checkbox" class="js-requirement-checkbox" data-requirement-id="' + requirementId + '" data-requirement-key="' + escapeHtml(requirementKey) + '" '
+                 + (isSubmitted ? 'checked ' : '')
+                 + (canToggleItem ? '' : 'disabled ')
+                 + 'style="width:18px;height:18px;margin-top:2px;flex-shrink:0;'
+                 + (canToggleItem ? 'cursor:pointer;' : 'cursor:default;')
+                 + (isSubmitted ? 'accent-color:#22c55e;' : '') + '">';
+            html += '<div style="flex:1;min-width:0;">';
+            html += '<p style="font-size:.85rem;margin:0 0 4px;color:#050505;font-weight:600;">' + escapeHtml(item.name || 'Requirement') + '</p>';
+
+            // File badge + action buttons
+            if (hasFile && submissionId > 0) {
+                var viewUrl     = requirementsFileEndpoint + '?req_submission_id=' + submissionId + '&action=view';
+                var downloadUrl = requirementsFileEndpoint + '?req_submission_id=' + submissionId + '&action=download';
+                var fileName    = escapeHtml(item.file_name || 'file');
+                var fileSize    = item.file_size ? ' (' + formatFileSize(item.file_size) + ')' : '';
+                var reviewedBadge = alreadyReviewed
+                    ? '<span style="background:#dcfce7;color:#16a34a;padding:2px 7px;border-radius:999px;font-size:.68rem;font-weight:700;"><i class="fas fa-check"></i> Reviewed</span>'
+                    : '';
+
+                html += '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:4px;">';
+                html += '<i class="fas fa-paperclip" style="color:#6b7280;font-size:.75rem;"></i>';
+                html += '<span style="font-size:.75rem;color:#374151;">' + fileName + fileSize + '</span>';
+                html += reviewedBadge;
+                html += '</div>';
+                html += '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">';
+                html += '<a href="' + viewUrl + '" target="_blank" data-submission-id="' + submissionId + '" onclick="markSubmissionReviewed(' + submissionId + ')" '
+                     + 'style="display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:600;color:#2563eb;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:4px 10px;text-decoration:none;cursor:pointer;">'
+                     + '<i class="fas fa-eye"></i> View</a>';
+                html += '<a href="' + downloadUrl + '" download data-submission-id="' + submissionId + '" onclick="markSubmissionReviewed(' + submissionId + ')" '
+                     + 'style="display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:600;color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:4px 10px;text-decoration:none;cursor:pointer;">'
+                     + '<i class="fas fa-download"></i> Download</a>';
+                html += '</div>';
+            } else if (isSubmitted) {
+                html += '<p style="font-size:.73rem;color:#9ca3af;margin:2px 0 0;">No file uploaded by student.</p>';
+            }
+
+            html += '</div>';  // end name col
+            html += '</div>';  // end left
+
+            // Right: phase chip + status
+            html += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;font-size:.72rem;flex-shrink:0;">';
+            html += '<span style="background:#e0e7ff;color:#4f46e5;padding:3px 9px;border-radius:999px;font-weight:700;white-space:nowrap;">' + escapeHtml(item.phase || phaseName) + '</span>';
+            html += '<span style="color:' + statusColor + ';font-weight:600;white-space:nowrap;">' + escapeHtml(dateText) + '</span>';
             html += '</div>';
-            html += '<div style="display:flex;align-items:center;gap:8px;font-size:.72rem;flex-wrap:wrap;justify-content:flex-end;">';
-            html += '<span style="background:#e0e7ff;color:#12b3ac;padding:4px 8px;border-radius:999px;font-weight:700;">' + escapeHtml(item.phase || phaseName) + '</span>';
-            html += '<span style="color:' + statusColor + ';font-weight:600;">' + escapeHtml(dateText) + '</span>';
-            html += '</div>';
+
             html += '</div>';
         });
     });
@@ -982,12 +1075,15 @@ function renderRequirementsChecklist(phases) {
 
     container.innerHTML = html;
 
-    var checkboxes = container.querySelectorAll('.js-requirement-checkbox');
-    checkboxes.forEach(function (checkbox) {
+    // Attach change handlers to checkboxes
+    container.querySelectorAll('.js-requirement-checkbox').forEach(function (checkbox) {
         checkbox.addEventListener('change', function () {
             toggleRequirementCheckbox(checkbox);
         });
     });
+
+    // Evaluate whether save should be enabled
+    updateSaveButtonReviewState();
 }
 
 function setRequirementsSummary(summary) {
@@ -1050,8 +1146,10 @@ function loadRequirementsData() {
         })
         .then(function (payload) {
             requirementsContext.canEdit = !!payload.can_edit;
-          var contextInternshipId = Number((payload && payload.internship_id_context) || 0);
-          requirementsContext.internshipId = contextInternshipId > 0 ? String(contextInternshipId) : '';
+            var contextInternshipId = Number((payload && payload.internship_id_context) || 0);
+            requirementsContext.internshipId = contextInternshipId > 0 ? String(contextInternshipId) : '';
+            // Reset reviewed state on fresh load so adviser must re-review on reload
+            requirementsContext.reviewedSubmissionIds = {};
             setRequirementsSummary(payload.summary || {});
             renderRequirementsChecklist(payload.phases || {});
         })
@@ -1154,6 +1252,7 @@ function openRequirementsModal(button) {
     requirementsContext.internshipId = internshipId;
     requirementsContext.canEdit = false;
     requirementsContext.activeButton = button;
+    requirementsContext.reviewedSubmissionIds = {};
 
     setRequirementsLoadingState();
     modal.style.display = 'flex';
@@ -1161,6 +1260,29 @@ function openRequirementsModal(button) {
 }
 
 function saveRequirementsChanges() {
+    // Guard: ensure all uploaded files have been reviewed/downloaded first
+    var container = document.getElementById('requirementsChecklist');
+    if (container) {
+        var allReviewable = [];
+        container.querySelectorAll('[data-submission-id]').forEach(function(el) {
+            var sid = Number(el.getAttribute('data-submission-id') || 0);
+            if (sid > 0) allReviewable.push(sid);
+        });
+        if (allReviewable.length > 0) {
+            var allReviewed = allReviewable.every(function(sid) {
+                return !!requirementsContext.reviewedSubmissionIds[sid];
+            });
+            if (!allReviewed) {
+                var notice = document.getElementById('requirementsReviewNotice');
+                if (notice) {
+                    notice.style.display = '';
+                    notice.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                return;
+            }
+        }
+    }
+
     var button = document.getElementById('requirementsSaveBtn');
     if (button) {
         button.disabled = true;
@@ -1173,7 +1295,7 @@ function saveRequirementsChanges() {
             button.disabled = false;
             button.innerHTML = '<i class="fas fa-save"></i> Save Changes';
         }
-    }, 250);
+    }, 300);
 }
 
 function closeRequirementsModal() {
