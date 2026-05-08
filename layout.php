@@ -4,13 +4,13 @@ session_start();
 
 $role = $_SESSION['role'] ?? null;
 if (!$role) {
-    header("Location: /SkillHive/pages/auth/login.php");
+    header("Location: /SKILLHIVE/pages/auth/login.php");
     exit;
 }
 
 require_once __DIR__ . '/backend/db_connect.php';
 
-$baseUrl = '/SkillHive';
+$baseUrl = '/SKILLHIVE';
 $userName = $_SESSION['user_name'] ?? 'User';
 $userEmail = $_SESSION['user_email'] ?? '';
 $userId = $_SESSION['user_id'] ?? 0;
@@ -146,6 +146,44 @@ if ($role === 'employer') {
             header('Location: ' . $baseUrl . '/layout.php?page=employer/dashboard');
             exit;
         }
+    }
+}
+
+// ── Account Status Gate (Inactive / Archived students) ───────────────────────
+// If the student account has been deactivated by the adviser while they are
+// already logged in, kick them out immediately on the next page load.
+if ($role === 'student' && !empty($_SESSION['student_id'])) {
+    try {
+        $acctCheckStmt = $pdo->prepare(
+            "SELECT COALESCE(account_status, 'Active') AS account_status,
+                    COALESCE(account_status_reason, '') AS account_status_reason
+             FROM student WHERE student_id = ? LIMIT 1"
+        );
+        $acctCheckStmt->execute([(int)$_SESSION['student_id']]);
+        $acctRow = $acctCheckStmt->fetch(PDO::FETCH_ASSOC);
+        if ($acctRow) {
+            $acctStatusNow = strtolower(trim((string)($acctRow['account_status'] ?? 'active')));
+            if ($acctStatusNow === 'inactive' || $acctStatusNow === 'archived') {
+                $acctReason = trim((string)($acctRow['account_status_reason'] ?? ''));
+                // Destroy session and redirect to login with a clear message.
+                session_unset();
+                session_destroy();
+                session_start();
+                if ($acctStatusNow === 'archived') {
+                    $_SESSION['login_error'] = 'Your account has been archived'
+                        . ($acctReason !== '' ? ': ' . $acctReason : '.')
+                        . ' Your records are preserved and viewable by your adviser and employer.';
+                } else {
+                    $_SESSION['login_error'] = 'Your account has been deactivated'
+                        . ($acctReason !== '' ? ': ' . $acctReason : '.')
+                        . ' Please contact your internship adviser.';
+                }
+                header('Location: ' . $baseUrl . '/pages/auth/login.php');
+                exit;
+            }
+        }
+    } catch (Throwable $_acctEx) {
+        // Column may not exist pre-migration — allow access to continue.
     }
 }
 

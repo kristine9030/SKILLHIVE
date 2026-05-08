@@ -2,5 +2,5 @@
 session_start();
 session_unset();
 session_destroy();
-header("Location: /Skillhive/index.php");
+header("Location: /SKILLHIVE/index.php");
 exit;

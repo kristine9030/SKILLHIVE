@@ -2,7 +2,7 @@
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']);
 $role = $_SESSION['role'] ?? null;
-$baseUrl = '/SkillHive';
+$baseUrl = '/SKILLHIVE';
 $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
 ?>
 <!DOCTYPE html>

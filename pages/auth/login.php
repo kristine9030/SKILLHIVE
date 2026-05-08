@@ -2,7 +2,7 @@
 session_start();
 require_once __DIR__ . '/../../backend/auth.php';
 
-$baseUrl = '/Skillhive';
+$baseUrl = '/SKILLHIVE';
 $logoAsset = $baseUrl . '/assets/media/skillhive-logo.png';
 
 $errors = [];
@@ -37,6 +37,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if (isset($_SESSION['status'])) {
     $statusMessage = $_SESSION['status'];
     unset($_SESSION['status']);
+}
+
+// Surface blocked-account messages set by layout.php when an already-logged-in
+// student has their account deactivated mid-session.
+if (isset($_SESSION['login_error']) && empty($errors)) {
+    $errors['email'] = $_SESSION['login_error'];
+    unset($_SESSION['login_error']);
 }
 
 function old_val($field, $default = '') {
@@ -210,6 +217,7 @@ body {
 .error-msg { font-size: .75rem; color: #138b84; margin-top: 5px; display: flex; align-items: center; gap: 4px; }
 .error-msg i { font-size: .7rem; }
 .alert-banner { width: 100%; background: rgba(19,120,115,.12); border: 1px solid rgba(19,120,115,.3); color: #138b84; padding: 10px 14px; border-radius: 10px; font-size: .82rem; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+.alert-banner--blocked { background: rgba(180,83,9,.08); border-color: rgba(180,83,9,.25); color: #92400e; }
 .alert-banner i { font-size: .85rem; }
 .success-banner { width: 100%; background: rgba(19,120,115,.12); border: 1px solid rgba(19,120,115,.3); color: #138b84; padding: 10px 14px; border-radius: 10px; font-size: .82rem; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
 .success-banner i { font-size: .85rem; }
@@ -260,7 +268,18 @@ body {
     <?php endif; ?>
 
     <?php if (!empty($errors)): ?>
-      <div class="alert-banner"><i class="fas fa-exclamation-triangle"></i> <?php echo get_error('email') ?: 'Please fix the errors below.'; ?></div>
+      <?php
+        $loginErrMsg = get_error('email') ?: 'Please fix the errors below.';
+        $isAccountBlocked = (
+            stripos($loginErrMsg, 'deactivated') !== false ||
+            stripos($loginErrMsg, 'archived') !== false ||
+            stripos($loginErrMsg, 'inactive') !== false
+        );
+      ?>
+      <div class="alert-banner<?php echo $isAccountBlocked ? ' alert-banner--blocked' : ''; ?>">
+        <i class="fas <?php echo $isAccountBlocked ? 'fa-user-slash' : 'fa-exclamation-triangle'; ?>"></i>
+        <?php echo $loginErrMsg; ?>
+      </div>
     <?php endif; ?>
 
     <form method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
