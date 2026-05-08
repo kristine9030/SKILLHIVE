@@ -137,159 +137,159 @@ if ($employerId > 0) {
 <?php endif; ?>
 
 <style>
+
+/* ── ojt Banner ─────────────────────────────────── */
 .ojt-banner {
-  background:
-    radial-gradient(circle at 95% 50%, rgba(6, 78, 59, 0.65) 0%, transparent 70%),
-    radial-gradient(circle at 85% 50%, rgba(15, 118, 110, 0.55) 0%, transparent 60%),
-    linear-gradient(90deg, #ffffff 0%, #f0fdfa 25%, #134e4a 60%, #0f766e 85%, #0d5f58 100%);
-  border-radius: 16px;
-  padding: 20px 28px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 32px 36px;
   margin: 0 0 16px 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  position: relative;
-  overflow: hidden;
-  color: #111827;
-  border: 1.5px solid rgba(15, 118, 110, 0.35);
-  box-shadow: 0 8px 32px rgba(15, 118, 110, 0.15), 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  gap: 20px;
+  background: linear-gradient(120deg, #0d5f58 0%, #0f766e 45%, #134e4a 100%);
+  box-shadow: 0 8px 32px rgba(15, 118, 110, 0.22), 0 2px 6px rgba(0,0,0,0.08);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.35s cubic-bezier(.4,0,.2,1);
 }
 
-.ojt-banner::before {
-  content: '';
+.ojt-banner .bnr-art-left {
   position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 550px;
-  height: 550px;
-  background-image: url('/SkillHive/assets/media/banner%20other.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 0.25;
   pointer-events: none;
+  border-radius: 50%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, #fff 0%, transparent 70%);
+  top: -80px;
+  left: -60px;
+  opacity: 0.12;
 }
 
-.ojt-banner::after {
-  content: '';
+.ojt-banner .bnr-art-right {
   position: absolute;
-  right: 20px;
-  top: 30%;
-  transform: translateY(-50%);
-  width: 500px;
-  height: 500px;
-  background-image: url('/SkillHive/assets/media/Banner.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 0.35;
   pointer-events: none;
+  border-radius: 50%;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, #5eead4 0%, transparent 70%);
+  bottom: -90px;
+  right: 60px;
+  opacity: 0.18;
 }
 
-.ojt-banner.collapsed {
-  padding: 8px 16px;
-  min-height: 0;
-}
-
-.ojt-banner.collapsed .ojt-main {
-  display: none;
-}
-
-.ojt-main {
-  display: flex;
-  align-items: center;
-  gap: 24px;
+.ojt-banner .bnr-body {
   position: relative;
   z-index: 1;
   flex: 1;
 }
 
-.ojt-info {
-  flex: 1;
-  border-left: 1.5px solid rgba(255, 255, 255, 0.25);
-  padding-left: 16px;
+.ojt-banner .bnr-meta {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 6px;
 }
 
-.ojt-date {
-  font-size: 12px;
-  font-weight: 100;
-  color: #9ca3af;
-  margin-bottom: 4px;
-  letter-spacing: 1px;
+.ojt-banner .bnr-heading {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 6px;
+  line-height: 1.2;
 }
 
-.ojt-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 2px;
-  text-transform: capitalize;
-  display: inline;
-}
-
-.ojt-desc {
+.ojt-banner .bnr-sub {
   font-size: 14px;
-  color: #6b7280;
+  color: rgba(255,255,255,0.7);
   line-height: 1.5;
-  max-width: 450px;
+  max-width: 520px;
+  margin-bottom: 18px;
 }
 
-.ojt-toggle {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(20, 184, 166, 0.15);
-  color: #0f766e;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+.ojt-banner .bnr-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ojt-banner .bnr-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  backdrop-filter: blur(4px);
+}
+
+.ojt-banner .bnr-collapse-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.75);
+  font-size: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 2;
-  font-size: 13px;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
 }
 
-.ojt-toggle:hover {
-  background: #fff;
-  border-color: rgba(20, 184, 166, 0.3);
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.1);
+.ojt-banner .bnr-collapse-btn:hover {
+  background: rgba(255,255,255,0.22);
+  color: #fff;
 }
 
-.ojt-expand-hint {
+.ojt-banner.bnr-collapsed {
   display: none;
-  text-align: center;
-  font-size: 13px;
-  color: #0f766e;
-  font-weight: 500;
-  opacity: 0.8;
+}
+
+.ojt-restore-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  margin: 0 0 16px 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   cursor: pointer;
-  padding: 4px 0;
-  width: 100%;
-  transition: opacity 0.2s ease;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  user-select: none;
 }
 
-.ojt-expand-hint:hover {
-  opacity: 1;
+.ojt-restore-bar:hover { background: #f9fafb; }
+
+.ojt-restore-bar .bnr-restore-date {
+  font-size: 12px;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-left: auto;
 }
 
-.ojt-banner.collapsed .ojt-expand-hint {
-  display: block;
-}
-
-.ojt-banner:not(.collapsed) .ojt-expand-hint {
-  display: none !important;
-}
+.ojt-restore-bar.bnr-visible { display: flex; }
 
 @media (max-width: 768px) {
-  .ojt-banner { flex-direction: column; text-align: center; }
+  .ojt-banner { padding: 24px 20px 20px; }
+  .ojt-banner .bnr-heading { font-size: 20px; }
+  .ojt-banner .bnr-sub { display: none; }
 }
 
 .search-filter-container {
@@ -543,29 +543,94 @@ if ($employerId > 0) {
 }
 </style>
 
-<div class="ojt-banner">
-  <div class="ojt-main">
-    <div class="ojt-info">
-      <div class="ojt-date"><?php echo date('l, jS F'); ?></div>
-      <div class="ojt-title">Good afternoon!</div>
-      <div class="ojt-desc">Manage your OJT students, track their progress, and update their internship details.</div>
+<div class="ojt-banner" id="ojtBanner">
+  <div class="bnr-art-left"></div>
+  <div class="bnr-art-right"></div>
+  <div class="bnr-body">
+    <div class="bnr-meta"><?php echo date('l, j F Y'); ?></div>
+    <div class="bnr-heading"><?php echo 'Good ' . (date('H') < 12 ? 'morning' : (date('H') < 18 ? 'afternoon' : 'evening')) . '!'; ?></div>
+    <div class="bnr-sub">Manage your OJT students, track their progress, and update their internship details.</div>
+    <div class="bnr-pills">
+      <span class="bnr-pill"><i class="fas fa-user-graduate"></i> Active Interns</span>
     </div>
   </div>
-  <button type="button" class="ojt-toggle" onclick="toggleOjtBanner()" title="Hide banner">
+  <button type="button" class="bnr-collapse-btn" onclick="toggleOjtBanner()" title="Collapse banner">
     <i class="fas fa-chevron-up"></i>
   </button>
-  <div class="ojt-expand-hint" onclick="toggleOjtBanner()">
-    <i class="fas fa-chevron-down"></i> Show banner
-  </div>
+</div>
+<div class="ojt-restore-bar" id="ojtRestoreBar" onclick="toggleOjtBanner()">
+  <span><i class="fas fa-graduation-cap" style="margin-right:6px;color:#0f766e;"></i>OJT Students</span>
+  <span class="bnr-restore-date"><?php echo date('l, j F'); ?></span>
+  <i class="fas fa-chevron-down" style="color:#9ca3af;font-size:12px;"></i>
 </div>
 
-<div class="stat-cards">
+
+<style>
+.ojt-stat-cards {
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.ojt-stat-cards .stat-card {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.ojt-stat-cards .stat-card-icon img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.ojt-stat-cards .stat-card-info { flex: 1; min-width: 0; }
+.ojt-stat-cards .stat-card-num-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ojt-stat-cards .stat-card-num {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1;
+}
+.ojt-stat-cards .stat-card-trend {
+  font-size: 11px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+.ojt-stat-cards .stat-card-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 3px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 900px) {
+  .ojt-stat-cards { display: grid; grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .ojt-stat-cards { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="ojt-stat-cards">
   <div class="stat-card employer-stat-postings">
     <div class="stat-card-icon"><img src="/SkillHive/assets/media/Total%20Evaluation.png" alt="Total Students"></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
-        <div class="stat-card-trend neutral">enrolled</div>
         <div class="stat-card-num"><?php echo $kpi['total']; ?></div>
+        <div class="stat-card-trend neutral">enrolled</div>
       </div>
       <div class="stat-card-label">Total OJT Students</div>
     </div>
@@ -574,8 +639,8 @@ if ($employerId > 0) {
     <div class="stat-card-icon"><img src="/SkillHive/assets/media/Rating.png" alt="Hours Completed"></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
-        <div class="stat-card-trend neutral">total hours</div>
         <div class="stat-card-num"><?php echo $kpi['hours_completed']; ?></div>
+        <div class="stat-card-trend neutral">total hours</div>
       </div>
       <div class="stat-card-label">Hours Completed</div>
     </div>
@@ -584,8 +649,8 @@ if ($employerId > 0) {
     <div class="stat-card-icon"><img src="/SkillHive/assets/media/Pendingg.png" alt="Ongoing"></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
-        <div class="stat-card-trend neutral">in progress</div>
         <div class="stat-card-num"><?php echo $kpi['ongoing']; ?></div>
+        <div class="stat-card-trend neutral">in progress</div>
       </div>
       <div class="stat-card-label">Ongoing</div>
     </div>
@@ -594,8 +659,8 @@ if ($employerId > 0) {
     <div class="stat-card-icon"><img src="/SkillHive/assets/media/Needs%20Evaluated.png" alt="Completed"></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
-        <div class="stat-card-trend neutral">finished</div>
         <div class="stat-card-num"><?php echo $kpi['completed']; ?></div>
+        <div class="stat-card-trend neutral">finished</div>
       </div>
       <div class="stat-card-label">Completed</div>
     </div>
@@ -815,6 +880,9 @@ function saveRow(button) {
 
 <script>
 function toggleOjtBanner() {
-  document.querySelector('.ojt-banner').classList.toggle('collapsed');
+  const banner = document.getElementById('ojtBanner');
+  const bar    = document.getElementById('ojtRestoreBar');
+  const isCollapsed = banner.classList.toggle('bnr-collapsed');
+  bar.classList.toggle('bnr-visible', isCollapsed);
 }
 </script>

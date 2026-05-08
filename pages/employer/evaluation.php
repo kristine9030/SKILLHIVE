@@ -194,163 +194,159 @@ if ($exportMode === 'csv' && $employerId > 0) {
 <?php endif; ?>
 
 <style>
+
+/* ── eval Banner ─────────────────────────────────── */
 .eval-banner {
-  background:
-    radial-gradient(circle at 95% 50%, rgba(6, 78, 59, 0.65) 0%, transparent 70%),
-    radial-gradient(circle at 85% 50%, rgba(15, 118, 110, 0.55) 0%, transparent 60%),
-    linear-gradient(90deg, #ffffff 0%, #f0fdfa 25%, #134e4a 60%, #0f766e 85%, #0d5f58 100%);
-  border-radius: 16px;
-  padding: 20px 28px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 32px 36px;
   margin: 0 0 16px 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  position: relative;
-  overflow: hidden;
-  color: #111827;
-  border: 1.5px solid rgba(15, 118, 110, 0.35);
-  box-shadow: 0 8px 32px rgba(15, 118, 110, 0.15), 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  gap: 20px;
+  background: linear-gradient(120deg, #0d5f58 0%, #0f766e 45%, #134e4a 100%);
+  box-shadow: 0 8px 32px rgba(15, 118, 110, 0.22), 0 2px 6px rgba(0,0,0,0.08);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.35s cubic-bezier(.4,0,.2,1);
 }
 
-.eval-banner::before {
-  content: '';
+.eval-banner .bnr-art-left {
   position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 550px;
-  height: 550px;
-  background-image: url('/SkillHive/assets/media/banner%20other.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 0.25;
   pointer-events: none;
+  border-radius: 50%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, #fff 0%, transparent 70%);
+  top: -80px;
+  left: -60px;
+  opacity: 0.12;
 }
 
-.eval-banner::after {
-  content: '';
+.eval-banner .bnr-art-right {
   position: absolute;
-  right: 20px;
-  top: 30%;
-  transform: translateY(-50%);
-  width: 500px;
-  height: 500px;
-  background-image: url('/SkillHive/assets/media/Banner.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 0.35;
   pointer-events: none;
+  border-radius: 50%;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, #5eead4 0%, transparent 70%);
+  bottom: -90px;
+  right: 60px;
+  opacity: 0.18;
 }
 
-.eval-banner.collapsed {
-  padding: 8px 16px;
-  min-height: 0;
-}
-
-.eval-banner.collapsed .eb-main {
-  display: none;
-}
-
-.eval-banner.collapsed .eb-toggle {
-  display: none;
-}
-
-.eb-main {
-  display: flex;
-  align-items: center;
-  gap: 24px;
+.eval-banner .bnr-body {
   position: relative;
   z-index: 1;
   flex: 1;
 }
 
-.eb-info {
-  flex: 1;
+.eval-banner .bnr-meta {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 6px;
 }
 
-.eb-date {
-  font-size: 12px;
-  font-weight: 100;
-  color: #9ca3af;
-  margin-bottom: 4px;
-  letter-spacing: 1px;
+.eval-banner .bnr-heading {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 6px;
+  line-height: 1.2;
 }
 
-  .eb-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 2px;
-    text-transform: capitalize;
-    display: inline;
-  }
-
-.eb-desc {
+.eval-banner .bnr-sub {
   font-size: 14px;
-  color: #6b7280;
+  color: rgba(255,255,255,0.7);
   line-height: 1.5;
-  max-width: 450px;
+  max-width: 520px;
+  margin-bottom: 18px;
 }
 
-.eb-toggle {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(20, 184, 166, 0.15);
-  color: #0f766e;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+.eval-banner .bnr-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.eval-banner .bnr-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  backdrop-filter: blur(4px);
+}
+
+.eval-banner .bnr-collapse-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.75);
+  font-size: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 2;
-  font-size: 13px;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
 }
 
-.eb-toggle:hover {
-  background: #fff;
-  border-color: rgba(20, 184, 166, 0.3);
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.1);
+.eval-banner .bnr-collapse-btn:hover {
+  background: rgba(255,255,255,0.22);
+  color: #fff;
 }
 
-.eb-expand-hint {
+.eval-banner.bnr-collapsed {
   display: none;
-  text-align: center;
-  font-size: 13px;
-  color: #0f766e;
-  font-weight: 500;
-  opacity: 0.8;
+}
+
+.eval-restore-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  margin: 0 0 16px 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   cursor: pointer;
-  padding: 4px 0;
-  width: 100%;
-  transition: opacity 0.2s ease;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  user-select: none;
 }
 
-.eb-expand-hint:hover {
-  opacity: 1;
+.eval-restore-bar:hover { background: #f9fafb; }
+
+.eval-restore-bar .bnr-restore-date {
+  font-size: 12px;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-left: auto;
 }
 
-.eval-banner.collapsed .eb-expand-hint {
-  display: block;
-}
+.eval-restore-bar.bnr-visible { display: flex; }
 
-.eval-banner:not(.collapsed) .eb-expand-hint {
-  display: none !important;
-}
-
-.eb-info {
-  flex: 1;
-  border-left: 1.5px solid rgba(255, 255, 255, 0.25);
-  padding-left: 16px;
+@media (max-width: 768px) {
+  .eval-banner { padding: 24px 20px 20px; }
+  .eval-banner .bnr-heading { font-size: 20px; }
+  .eval-banner .bnr-sub { display: none; }
 }
 
 @media (max-width: 768px) {
@@ -358,29 +354,112 @@ if ($exportMode === 'csv' && $employerId > 0) {
 }
 </style>
 
-<div class="eval-banner">
-  <div class="eb-main">
-    <div class="eb-info">
-      <div class="eb-date"><?php echo date('l, jS F'); ?></div>
-      <div class="eb-title">Good afternoon!</div>
-      <div class="eb-desc">Rate intern performance, provide feedback, and track evaluation history.</div>
+<div class="eval-banner" id="evalBanner">
+  <div class="bnr-art-left"></div>
+  <div class="bnr-art-right"></div>
+  <div class="bnr-body">
+    <div class="bnr-meta"><?php echo date('l, j F Y'); ?></div>
+    <div class="bnr-heading"><?php echo 'Good ' . (date('H') < 12 ? 'morning' : (date('H') < 18 ? 'afternoon' : 'evening')) . '!'; ?></div>
+    <div class="bnr-sub">Rate intern performance, provide feedback, and track evaluation history.</div>
+    <div class="bnr-pills">
+      <span class="bnr-pill"><i class="fas fa-clipboard-check"></i> Performance Reviews</span>
     </div>
   </div>
-  <button type="button" class="eb-toggle" onclick="toggleEvalBanner()" title="Hide banner">
+  <button type="button" class="bnr-collapse-btn" onclick="toggleEvalBanner()" title="Collapse banner">
     <i class="fas fa-chevron-up"></i>
   </button>
-  <div class="eb-expand-hint" onclick="toggleEvalBanner()">
-    <i class="fas fa-chevron-down"></i> Show banner
-  </div>
+</div>
+<div class="eval-restore-bar" id="evalRestoreBar" onclick="toggleEvalBanner()">
+  <span><i class="fas fa-star" style="margin-right:6px;color:#0f766e;"></i>Evaluations</span>
+  <span class="bnr-restore-date"><?php echo date('l, j F'); ?></span>
+  <i class="fas fa-chevron-down" style="color:#9ca3af;font-size:12px;"></i>
 </div>
 
-<div class="stat-cards">
+
+<style>
+.eval-stat-cards {
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.eval-stat-cards .stat-card {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.eval-stat-cards .stat-card-icon img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.eval-stat-cards .stat-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.eval-stat-cards .stat-card-num-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eval-stat-cards .stat-card-num {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1;
+}
+
+.eval-stat-cards .stat-card-trend {
+  font-size: 11px;
+  font-weight: 500;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.eval-stat-cards .stat-card-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 3px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+  .eval-stat-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .eval-stat-cards {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+<div class="eval-stat-cards">
   <div class="stat-card employer-stat-postings">
     <div class="stat-card-icon"><img src="/SkillHive/assets/media/Total%20Evaluation.png" alt="Total Evaluations"></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
-        <div class="stat-card-trend neutral"><?php echo (int)$summary['total_evaluations']; ?> total</div>
         <div class="stat-card-num"><?php echo (int)$summary['total_evaluations']; ?></div>
+        <div class="stat-card-trend neutral"><?php echo (int)$summary['total_evaluations'] === 1 ? 'evaluation' : 'evaluations'; ?></div>
       </div>
       <div class="stat-card-label">Total Evaluations</div>
     </div>
@@ -389,8 +468,8 @@ if ($exportMode === 'csv' && $employerId > 0) {
     <div class="stat-card-icon"><img src="/SkillHive/assets/media/Rating.png" alt="Average Rating"></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
-        <div class="stat-card-trend neutral">out of 5.0</div>
         <div class="stat-card-num"><?php echo number_format((float)$summary['average_rating'], 1); ?></div>
+        <div class="stat-card-trend neutral">out of 5.0</div>
       </div>
       <div class="stat-card-label">Average Rating</div>
     </div>
@@ -399,8 +478,8 @@ if ($exportMode === 'csv' && $employerId > 0) {
     <div class="stat-card-icon"><img src="/SkillHive/assets/media/Pendingg.png" alt="Pending"></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
-        <div class="stat-card-trend neutral">needs review</div>
         <div class="stat-card-num"><?php echo (int)$summary['pending']; ?></div>
+        <div class="stat-card-trend neutral">needs review</div>
       </div>
       <div class="stat-card-label">Pending</div>
     </div>
@@ -409,8 +488,8 @@ if ($exportMode === 'csv' && $employerId > 0) {
     <div class="stat-card-icon"><img src="/SkillHive/assets/media/Needs%20Evaluated.png" alt="Interns to Evaluate"></div>
     <div class="stat-card-info">
       <div class="stat-card-num-row">
-        <div class="stat-card-trend neutral"><?php echo count($internshipOptions); ?> postings</div>
         <div class="stat-card-num"><?php echo count($internOptions); ?></div>
+        <div class="stat-card-trend neutral"><?php echo count($internshipOptions); ?> posting<?php echo count($internshipOptions) !== 1 ? 's' : ''; ?></div>
       </div>
       <div class="stat-card-label">Interns to Evaluate</div>
     </div>
@@ -626,7 +705,10 @@ if ($exportMode === 'csv' && $employerId > 0) {
 
 <script>
 function toggleEvalBanner() {
-  document.querySelector('.eval-banner').classList.toggle('collapsed');
+  const banner = document.getElementById('evalBanner');
+  const bar    = document.getElementById('evalRestoreBar');
+  const isCollapsed = banner.classList.toggle('bnr-collapsed');
+  bar.classList.toggle('bnr-visible', isCollapsed);
 }
 
 var evalLabels = ['','Needs Improvement','Fair','Good','Very Good','Outstanding'];

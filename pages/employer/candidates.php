@@ -949,188 +949,159 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
   to { transform: rotate(360deg); }
 }
 
+
+/* ── candidates Banner ─────────────────────────────────── */
 .candidates-banner {
-  background:
-    radial-gradient(circle at 95% 50%, rgba(6, 78, 59, 0.65) 0%, transparent 70%),
-    radial-gradient(circle at 85% 50%, rgba(15, 118, 110, 0.55) 0%, transparent 60%),
-    linear-gradient(90deg, #ffffff 0%, #f0fdfa 25%, #134e4a 60%, #0f766e 85%, #0d5f58 100%);
-  border-radius: 16px;
-  padding: 20px 28px;
-  margin: 0 4px 16px 4px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
   position: relative;
   overflow: hidden;
-  color: #111827;
-  border: 1.5px solid rgba(15, 118, 110, 0.35);
-  box-shadow: 0 8px 32px rgba(15, 118, 110, 0.15), 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.candidates-banner::before {
-  content: '';
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 550px;
-  height: 550px;
-  background-image: url('/SkillHive/assets/media/banner%20other.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 0.25;
-  pointer-events: none;
-}
-
-.candidates-banner::after {
-  content: '';
-  position: absolute;
-  right: 20px;
-  top: 30%;
-  transform: translateY(-50%);
-  width: 500px;
-  height: 500px;
-  background-image: url('/SkillHive/assets/media/Banner.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 0.35;
-  pointer-events: none;
-}
-
-.candidates-banner.collapsed {
-  padding: 8px 16px;
-  min-height: 0;
-}
-
-.candidates-banner.collapsed .cb-main {
-  display: none;
-}
-
-.candidates-banner.collapsed .cb-toggle {
-  display: none;
-}
-
-.cb-main {
+  border-radius: 18px;
+  padding: 32px 36px;
+  margin: 0 0 16px 0;
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
+  background: linear-gradient(120deg, #0d5f58 0%, #0f766e 45%, #134e4a 100%);
+  box-shadow: 0 8px 32px rgba(15, 118, 110, 0.22), 0 2px 6px rgba(0,0,0,0.08);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: all 0.35s cubic-bezier(.4,0,.2,1);
+}
+
+.candidates-banner .bnr-art-left {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, #fff 0%, transparent 70%);
+  top: -80px;
+  left: -60px;
+  opacity: 0.12;
+}
+
+.candidates-banner .bnr-art-right {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, #5eead4 0%, transparent 70%);
+  bottom: -90px;
+  right: 60px;
+  opacity: 0.18;
+}
+
+.candidates-banner .bnr-body {
   position: relative;
   z-index: 1;
   flex: 1;
 }
 
-.cb-info {
-  flex: 1;
+.candidates-banner .bnr-meta {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 6px;
 }
 
-.cb-date {
-  font-size: 12px;
-  font-weight: 100;
-  color: #9ca3af;
-  margin-bottom: 4px;
-  letter-spacing: 1px;
+.candidates-banner .bnr-heading {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 6px;
+  line-height: 1.2;
 }
 
-.cb-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 2px;
-  text-transform: capitalize;
-  display: inline;
-}
-
-.cb-desc {
+.candidates-banner .bnr-sub {
   font-size: 14px;
-  color: #6b7280;
+  color: rgba(255,255,255,0.7);
   line-height: 1.5;
-  max-width: 450px;
+  max-width: 520px;
+  margin-bottom: 18px;
 }
 
-.cb-toggle {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(20, 184, 166, 0.15);
-  color: #0f766e;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+.candidates-banner .bnr-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.candidates-banner .bnr-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  backdrop-filter: blur(4px);
+}
+
+.candidates-banner .bnr-collapse-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.75);
+  font-size: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 2;
-  font-size: 13px;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
 }
 
-.cb-toggle:hover {
-  background: #fff;
-  border-color: rgba(20, 184, 166, 0.3);
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.1);
+.candidates-banner .bnr-collapse-btn:hover {
+  background: rgba(255,255,255,0.22);
+  color: #fff;
 }
 
-.cb-expand-hint {
+.candidates-banner.bnr-collapsed {
   display: none;
-  text-align: center;
-  font-size: 13px;
-  color: #0f766e;
-  font-weight: 500;
-  opacity: 0.8;
+}
+
+.candidates-restore-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  margin: 0 0 16px 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   cursor: pointer;
-  padding: 4px 0;
-  width: 100%;
-  transition: opacity 0.2s ease;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  user-select: none;
 }
 
-.cb-expand-hint:hover {
-  opacity: 1;
+.candidates-restore-bar:hover { background: #f9fafb; }
+
+.candidates-restore-bar .bnr-restore-date {
+  font-size: 12px;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-left: auto;
 }
 
-.candidates-banner.collapsed .cb-expand-hint {
-  display: block;
-}
-
-.candidates-banner:not(.collapsed) .cb-expand-hint {
-  display: none !important;
-}
-
-.cb-info {
-  flex: 1;
-  border-left: 1.5px solid rgba(255, 255, 255, 0.25);
-  padding-left: 16px;
-}
+.candidates-restore-bar.bnr-visible { display: flex; }
 
 @media (max-width: 768px) {
-  .candidates-topbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .candidates-topbar .filter-row {
-    flex-direction: column;
-  }
-  
-  .profile-top {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-  
-  .profile-stats {
-    justify-content: center;
-  }
-  
-  .profile-grid {
-    grid-template-columns: 1fr;
-  }
+  .candidates-banner { padding: 24px 20px 20px; }
+  .candidates-banner .bnr-heading { font-size: 20px; }
+  .candidates-banner .bnr-sub { display: none; }
 }
 
 .view-toggle {
@@ -1217,7 +1188,10 @@ $pipelineStatuses = ['Pending', 'Shortlisted', 'Interview Scheduled', 'Accepted'
 
 <script>
 function toggleCandidatesBanner() {
-  document.querySelector('.candidates-banner').classList.toggle('collapsed');
+  const banner = document.getElementById('candidatesBanner');
+  const bar    = document.getElementById('candidatesRestoreBar');
+  const isCollapsed = banner.classList.toggle('bnr-collapsed');
+  bar.classList.toggle('bnr-visible', isCollapsed);
 }
 
 function switchCandidateView(viewType) {
@@ -1241,20 +1215,25 @@ function switchCandidateView(viewType) {
 </script>
 
 <div class="candidates-page">
-  <div class="candidates-banner">
-    <div class="cb-main">
-      <div class="cb-info">
-        <div class="cb-date"><?php echo date('l, jS F'); ?></div>
-        <div class="cb-title">Good afternoon!</div>
-        <div class="cb-desc">Review, rank, and manage internship applicants for your posted positions.</div>
+  <div class="candidates-banner" id="candidatesBanner">
+    <div class="bnr-art-left"></div>
+    <div class="bnr-art-right"></div>
+    <div class="bnr-body">
+      <div class="bnr-meta"><?php echo date('l, j F Y'); ?></div>
+      <div class="bnr-heading"><?php echo 'Good ' . (date('H') < 12 ? 'morning' : (date('H') < 18 ? 'afternoon' : 'evening')) . '!'; ?></div>
+      <div class="bnr-sub">Review, rank, and manage internship applicants for your posted positions.</div>
+      <div class="bnr-pills">
+      <span class="bnr-pill"><i class="fas fa-file-alt"></i> All Applications</span>
       </div>
     </div>
-    <button type="button" class="cb-toggle" onclick="toggleCandidatesBanner()" title="Hide banner">
+    <button type="button" class="bnr-collapse-btn" onclick="toggleCandidatesBanner()" title="Collapse banner">
       <i class="fas fa-chevron-up"></i>
     </button>
-    <div class="cb-expand-hint" onclick="toggleCandidatesBanner()">
-      <i class="fas fa-chevron-down"></i> Show banner
-    </div>
+  </div>
+  <div class="candidates-restore-bar" id="candidatesRestoreBar" onclick="toggleCandidatesBanner()">
+    <span><i class="fas fa-users" style="margin-right:6px;color:#0f766e;"></i>Candidates</span>
+    <span class="bnr-restore-date"><?php echo date('l, j F'); ?></span>
+    <i class="fas fa-chevron-down" style="color:#9ca3af;font-size:12px;"></i>
   </div>
 
   <?php if ($errorMessage !== ''): ?>
