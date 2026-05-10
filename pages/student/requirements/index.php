@@ -477,10 +477,79 @@ $phaseOrder = ['Pre-OJT', 'During OJT', 'Post-OJT'];
     white-space: normal;
 }
 @media (max-width: 700px) {
-    .req-table thead { display:none; }
-    .req-table tr { display:block; border-bottom: 1px solid rgba(255,255,255,.06); padding: 12px 0; }
-    .req-table td { display:block; padding: 6px 16px; text-align:left !important; }
-    .req-table td:last-child > div { justify-content:flex-start !important; }
+    .alert-banner {
+        align-items: flex-start !important;
+        flex-direction: column;
+        gap: 6px !important;
+    }
+    .req-table-wrap {
+        overflow: visible !important;
+    }
+    .req-table,
+    .req-table tbody,
+    .req-table tr,
+    .req-table td {
+        display: block;
+        width: 100%;
+    }
+    .req-table thead {
+        display:none;
+    }
+    .req-table tr {
+        border: 1px solid #eef2f7 !important;
+        border-radius: 14px;
+        padding: 0;
+        margin-bottom: 12px;
+        overflow: hidden;
+        background: #ffffff;
+    }
+    .req-table td {
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr);
+        gap: 10px;
+        padding: 12px 14px !important;
+        text-align:left !important;
+        border-bottom: 1px solid #eef2f7;
+        white-space: normal;
+    }
+    .req-table td:last-child {
+        border-bottom: 0;
+    }
+    .req-table td::before {
+        color: #94a3b8;
+        content: "";
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        padding-top: 3px;
+        text-transform: uppercase;
+    }
+    .req-table td:nth-child(1)::before { content: "Requirement"; }
+    .req-table td:nth-child(2)::before { content: "Description"; }
+    .req-table td:nth-child(3)::before { content: "Status"; }
+    .req-table td:nth-child(4)::before { content: "Deadline"; }
+    .req-table td:nth-child(5)::before { content: "Actions"; }
+    .req-table td:last-child > div {
+        justify-content:flex-start !important;
+        flex-wrap: wrap;
+    }
+    .req-table td:last-child .btn {
+        flex: 1 1 118px;
+        justify-content: center;
+    }
+    #reqUploadModal .modal,
+    #reqPreviewModal .modal {
+        width: 100% !important;
+        height: auto !important;
+        max-height: calc(100vh - 24px) !important;
+    }
+    #reqPreviewModal .modal {
+        min-height: 70vh;
+    }
+    #reqPreviewModal [id="previewDownloadBtn"] {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
 }
 </style>
 

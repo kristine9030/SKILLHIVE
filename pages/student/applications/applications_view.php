@@ -344,7 +344,7 @@ function applications_render_view(array $ctx): void
           <?php foreach ($applications as $application): ?>
             <?php $companyName = (string) $application['company_name']; ?>
             <tr data-app-id="<?php echo (int) $application['application_id']; ?>" data-status="<?php echo applications_e((string) $application['status']); ?>"><?php // Marking for polling ?>
-              <td>
+              <td data-label="Company">
                 <div style="display:flex;align-items:center;gap:10px">
                   <div class="co-logo" style="background:<?php echo applications_company_gradient($companyName); ?>;width:32px;height:32px;font-size:.7rem"><?php echo applications_e(strtoupper(substr($companyName, 0, 1))); ?></div>
                   <div>
@@ -355,7 +355,7 @@ function applications_render_view(array $ctx): void
                   </div>
                 </div>
               </td>
-              <td>
+              <td data-label="Position">
                 <div style="font-weight:600;color:#111"><?php echo applications_e((string) $application['title']); ?></div>
                 <?php if ($application['compatibility_score'] !== null): ?>
                   <div style="font-size:.72rem;color:#94a3b8">Compatibility: <?php echo number_format((float) $application['compatibility_score'], 0); ?>%</div>
@@ -374,13 +374,13 @@ function applications_render_view(array $ctx): void
                   </div>
                 <?php endif; ?>
               </td>
-              <td><?php echo applications_e(date('M j, Y', strtotime((string) $application['application_date']))); ?></td>
-              <td>
+              <td data-label="Date Applied"><?php echo applications_e(date('M j, Y', strtotime((string) $application['application_date']))); ?></td>
+              <td data-label="Status">
                 <?php $appStatus = (string) $application['status']; ?>
                 <span class="status-pill <?php echo applications_status_class($appStatus); ?>"><?php echo applications_e($appStatus); ?></span>
                 <div style="margin-top:6px;font-size:.72rem;color:#64748b">Next: <?php echo applications_e(applications_next_step($appStatus)); ?></div>
               </td>
-              <td style="display:flex;gap:6px;flex-wrap:wrap">
+              <td data-label="Action" style="display:flex;gap:6px;flex-wrap:wrap">
                 <?php
                   $progressStep = applications_progress_step($appStatus);
                   $progressTitle = (string) $application['title'];

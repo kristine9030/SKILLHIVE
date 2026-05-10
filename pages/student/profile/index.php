@@ -399,6 +399,103 @@ $levelPercent = [
   .pf-header-actions { width:100%; margin-left:0; }
   .pf-meta-row { grid-template-columns:1fr; gap:10px; }
 }
+@media (max-width: 640px) {
+  .pf-cover { height:120px; }
+  .pf-header {
+    margin-left:0;
+    margin-right:0;
+    padding:0 16px 16px;
+    border-radius:16px;
+  }
+  .pf-header-top {
+    gap:12px;
+  }
+  .pf-avatar {
+    width:74px;
+    height:74px;
+  }
+  .pf-header-info {
+    flex:1 1 calc(100% - 90px);
+    padding-top:12px;
+  }
+  .pf-name {
+    font-size:1.08rem;
+    overflow-wrap:anywhere;
+  }
+  .pf-role-line,
+  .pf-follow-summary {
+    font-size:.8rem;
+  }
+  .pf-header-actions {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .pf-btn-edit,
+  .pf-btn-hire,
+  .pf-save-btn,
+  .pf-cancel-btn {
+    justify-content:center;
+    width:100%;
+  }
+  .pf-body {
+    padding:14px 0 22px;
+  }
+  .pf-card {
+    padding:14px;
+    border-radius:12px;
+  }
+  .pf-tab-bar,
+  .pf-filter-pills {
+    overflow-x:auto;
+  }
+  .pf-tab-btn,
+  .pf-filter-pill {
+    white-space:nowrap;
+  }
+  .pf-rec-link-box,
+  .pf-pending-item,
+  .pf-person-row,
+  .pf-rec-author {
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .pf-person-row > div[style*="flex:1"],
+  .pf-pending-item > div[style*="flex:1"] {
+    min-width:0;
+  }
+  .pf-type-pill,
+  .pf-follow-btn {
+    margin-left:auto;
+  }
+  .pf-portfolio-grid {
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+  .pf-avatar-grid {
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+  }
+  .pf-avatar-option {
+    width:100%;
+    aspect-ratio:1;
+    height:auto;
+  }
+  .pf-cover-grid {
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+  .pf-field-2col,
+  #pf-edit-overlay form[method="post"] {
+    grid-template-columns:1fr !important;
+  }
+  .pf-modal-head,
+  .pf-modal-scroll,
+  .pf-modal-foot {
+    padding-left:16px;
+    padding-right:16px;
+  }
+  .pf-modal-foot {
+    flex-direction:column-reverse;
+  }
+}
 </style>
 
 <?php if ($profileErrors): ?>

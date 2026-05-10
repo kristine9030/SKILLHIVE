@@ -216,7 +216,7 @@ $recommendedInternships = $recommendedStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 ?>
 
 <!-- Welcome Banner -->
-<div style="background:linear-gradient(135deg, #050505 0%, #050505 40%, #12b3ac 72%, #12b3ac 100%);border-radius:16px;padding:32px;margin-bottom:24px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(0, 0, 0, 0.46), 0 0 1px rgba(255, 255, 255, 0.1) inset;">
+<div class="student-dashboard-hero" style="background:linear-gradient(135deg, #050505 0%, #050505 40%, #12b3ac 72%, #12b3ac 100%);border-radius:16px;padding:32px;margin-bottom:24px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(0, 0, 0, 0.46), 0 0 1px rgba(255, 255, 255, 0.1) inset;">
   <div style="z-index:2;flex:1;">
     <h2 style="font-size:1.8rem;font-weight:800;margin:0 0 12px 0;line-height:1.2;">Welcome back, <?php echo htmlspecialchars($firstName); ?>! 👋</h2>
     <p style="font-size:1rem;margin:0 0 16px 0;opacity:0.95;line-height:1.4;">You're <?php echo number_format((float)($student['internship_readiness_score'] ?? 0), 0); ?>% ready for internship opportunities. Keep improving your profile!</p>

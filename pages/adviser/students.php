@@ -213,8 +213,123 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'update_account_sta
   .adv-bulk-summary strong { color:#12b3ac; }
   .adv-bulk-list { margin:10px 0 0; padding-left:18px; max-height:170px; overflow:auto; color:#7f1d1d; font-size:.79rem; line-height:1.45; }
   .adv-bulk-list.is-warning { color:#92400e; }
-  @media (max-width:640px) { .adv-search, .adv-select, .adv-btn { width:100%; max-width:none; } }
-  @media (max-width:640px) { .adv-add-grid { grid-template-columns:1fr; } .adv-add-modal { padding:22px 18px; border-radius:20px; } }
+  @media (max-width:760px) {
+    .adv-toolbar,
+    .adv-toolbar-left,
+    .adv-toolbar-right {
+      align-items:stretch;
+      flex-direction:column;
+      width:100%;
+    }
+    .adv-search,
+    .adv-select,
+    .adv-btn {
+      width:100%;
+      max-width:none;
+      min-width:0;
+    }
+    .adv-card {
+      border-radius:14px;
+      background:transparent;
+      border:0;
+      box-shadow:none;
+      overflow:visible;
+    }
+    .adv-table-wrap {
+      overflow:visible;
+    }
+    .adv-table,
+    .adv-table tbody,
+    .adv-table tr,
+    .adv-table td {
+      display:block;
+      width:100%;
+      min-width:0;
+    }
+    .adv-table {
+      border-collapse:separate;
+      border-spacing:0 12px;
+    }
+    .adv-table thead {
+      display:none;
+    }
+    .adv-table tr {
+      border:1px solid var(--border);
+      border-radius:14px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .adv-table td {
+      display:grid;
+      grid-template-columns:96px minmax(0, 1fr);
+      gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid var(--border);
+      background:#fff;
+      text-align:left;
+    }
+    .adv-table td:last-child {
+      border-bottom:0;
+    }
+    .adv-table td::before {
+      color:var(--text3);
+      font-size:.72rem;
+      font-weight:700;
+      letter-spacing:.04em;
+      padding-top:3px;
+      text-transform:uppercase;
+    }
+    .adv-table td:nth-child(1)::before { content:"Student"; }
+    .adv-table td:nth-child(2)::before { content:"Section"; }
+    .adv-table td:nth-child(3)::before { content:"Company"; }
+    .adv-table td:nth-child(4)::before { content:"Hours"; }
+    .adv-table td:nth-child(5)::before { content:"Requirements"; }
+    .adv-table td:nth-child(6)::before { content:"Actions"; }
+    .adv-table td[colspan] {
+      display:block;
+      text-align:center;
+    }
+    .adv-table td[colspan]::before {
+      display:none;
+    }
+    .adv-student,
+    .adv-actions,
+    .adv-req {
+      min-width:0;
+    }
+    .adv-actions {
+      align-items:stretch;
+    }
+    .adv-row-btn {
+      flex:1 1 120px;
+    }
+    .adv-row-btn.is-icon {
+      flex:0 0 38px;
+    }
+    .adv-modal-overlay {
+      align-items:flex-start;
+      overflow-y:auto;
+      padding:12px;
+    }
+    .adv-add-grid,
+    .acct-status-grid {
+      grid-template-columns:1fr;
+    }
+    .adv-add-modal,
+    .acct-modal {
+      width:100%;
+      padding:22px 18px;
+      border-radius:20px;
+    }
+    .adv-add-actions,
+    .acct-modal-footer {
+      flex-direction:column-reverse;
+    }
+    .adv-add-actions .adv-btn,
+    .acct-modal-footer .adv-btn {
+      width:100%;
+    }
+  }
 </style>
 
 <div class="adv-students">

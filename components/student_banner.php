@@ -163,7 +163,57 @@ $baseUrl = $baseUrl ?? '/SkillHive';
 }
 
 @media (max-width: 768px) {
-  .student-ojt-banner { flex-direction: column; text-align: center; }
+  .student-ojt-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 18px 16px;
+    text-align: left;
+  }
+  .student-ojt-banner::before {
+    left: -120px;
+    width: 300px;
+    height: 300px;
+    opacity: 0.24;
+  }
+  .student-ojt-banner::after {
+    right: -120px;
+    top: 55%;
+    width: 280px;
+    height: 280px;
+    opacity: 0.24;
+  }
+  .student-ojt-main {
+    gap: 0;
+    padding-right: 44px;
+  }
+  .student-ojt-info {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .student-ojt-date {
+    font-size: 11px;
+  }
+  .student-ojt-title {
+    display: block;
+    font-size: 16px;
+    line-height: 1.35;
+  }
+  .student-ojt-desc {
+    max-width: none;
+    font-size: 13px;
+    line-height: 1.55;
+    margin-top: 4px;
+  }
+  .student-ojt-toggle {
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+  }
+  .student-ojt-banner.collapsed {
+    padding: 8px 12px;
+  }
 }
 </style>
 

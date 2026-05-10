@@ -2271,8 +2271,9 @@ td,
     height: 100px;
     border-radius: 16px;
     display: flex;
-    align-items: centeend;
-    text-align: righ: center;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     margin-bottom: 0;
     position: relative;
     z-index: 2;
@@ -6419,5 +6420,269 @@ body.role-student .feed-main .job-card-actions .btn.btn-sm[aria-label] {
     }
     body.role-student .page-title {
         font-size: 1.6rem;
+    }
+    body.role-student .topbar {
+        height: auto;
+        min-height: 58px;
+        padding: 10px 14px;
+        gap: 10px;
+    }
+    body.role-student .topbar-left {
+        min-width: 0;
+        gap: 10px;
+    }
+    body.role-student .topbar-title {
+        max-width: 48vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 1rem;
+    }
+    body.role-student .topbar-right {
+        gap: 8px;
+        flex-shrink: 0;
+    }
+    body.role-student .topbar-btn,
+    body.role-student .topbar-user,
+    body.role-student .topbar-avatar {
+        width: 36px;
+        height: 36px;
+    }
+    body.role-student .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    body.role-student .page-header > div {
+        min-width: 0;
+    }
+    body.role-student .page-header .btn,
+    body.role-student .page-header select,
+    body.role-student .page-header .form-control {
+        width: 100%;
+        justify-content: center;
+    }
+    body.role-student .page-subtitle {
+        font-size: .86rem;
+        line-height: 1.55;
+    }
+    body.role-student .student-dashboard-hero {
+        padding: 20px 16px !important;
+        gap: 16px !important;
+        margin-bottom: 16px !important;
+    }
+    body.role-student .student-dashboard-hero h2 {
+        font-size: 1.28rem !important;
+        line-height: 1.35 !important;
+    }
+    body.role-student .student-dashboard-hero p {
+        font-size: .88rem !important;
+    }
+    body.role-student .student-dashboard-hero a {
+        flex: 1 1 150px;
+        justify-content: center;
+    }
+    body.role-student .panel-card,
+    body.role-student .card {
+        padding: 16px;
+        border-radius: 14px;
+    }
+    body.role-student .panel-card-header,
+    body.role-student .card-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+    }
+    body.role-student .panel-card-header .btn,
+    body.role-student .card-header .btn,
+    body.role-student .panel-card-header .filter-row {
+        width: 100%;
+    }
+    body.role-student .filter-row,
+    body.role-student .filter-select,
+    body.role-student .filter-search,
+    body.role-student .filter-search input {
+        width: 100%;
+        max-width: none;
+    }
+    body.role-student .stat-cards {
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    body.role-student .stat-card {
+        min-height: 112px;
+        padding: 16px;
+        gap: 10px;
+        border-radius: 14px;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    }
+    body.role-student .stat-card:hover {
+        transform: none;
+    }
+    body.role-student .stat-card .stat-card-icon,
+    body.role-student .stat-card:nth-child(1) .stat-card-icon,
+    body.role-student .stat-card:nth-child(2) .stat-card-icon,
+    body.role-student .stat-card:nth-child(3) .stat-card-icon,
+    body.role-student .stat-card:nth-child(4) .stat-card-icon {
+        width: 82px !important;
+        height: 82px !important;
+        margin: -8px 0 -8px -10px !important;
+    }
+    body.role-student .stat-card-num {
+        max-width: 130px;
+        font-size: 2.25rem;
+    }
+    body.role-student .stat-card-label {
+        font-size: .78rem;
+    }
+    body.role-student .stat-card-trend {
+        max-width: 100%;
+        white-space: normal;
+        line-height: 1.25;
+    }
+    body.role-student .feed-main .panel-card {
+        padding: 16px;
+    }
+    body.role-student .feed-main .job-card {
+        padding: 16px;
+        border-radius: 14px;
+    }
+    body.role-student .job-card-header,
+    body.role-student .jc-top {
+        align-items: flex-start;
+    }
+    body.role-student .job-card-bottom,
+    body.role-student .jc-bottom {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    body.role-student .job-card-actions,
+    body.role-student .jc-actions,
+    body.role-student .modern-job-card-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+    body.role-student .job-card-actions .btn,
+    body.role-student .jc-actions .btn,
+    body.role-student .modern-job-card-actions .btn,
+    body.role-student .feed-main .job-card-actions .btn.btn-sm {
+        flex: 1 1 auto;
+        min-width: 0;
+        justify-content: center;
+    }
+    body.role-student .job-card-meta,
+    body.role-student .job-card-stats,
+    body.role-student .jc-meta,
+    body.role-student .modern-job-card-meta {
+        gap: 8px;
+    }
+    body.role-student .job-card-meta span,
+    body.role-student .job-card-stats span,
+    body.role-student .jc-meta span,
+    body.role-student .modern-job-card-meta-item {
+        overflow-wrap: anywhere;
+    }
+    body.role-student .modern-job-card {
+        flex-direction: column;
+    }
+    body.role-student .modal-overlay,
+    body.role-student .pf-overlay,
+    body.role-student .market-overlay,
+    body.role-student .market-success-overlay,
+    body.role-student .app-progress-overlay {
+        padding: 12px;
+        align-items: flex-start;
+        overflow-y: auto;
+    }
+    body.role-student .modal,
+    body.role-student .pf-modal-box,
+    body.role-student .market-modal,
+    body.role-student .market-success-card,
+    body.role-student .app-progress-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: calc(100vh - 24px);
+        border-radius: 14px;
+    }
+    body.role-student .modal-header,
+    body.role-student .pf-modal-head,
+    body.role-student .market-modal-head,
+    body.role-student .app-progress-head {
+        gap: 10px;
+    }
+    body.role-student .modal-title,
+    body.role-student .pf-modal-head-title,
+    body.role-student .market-modal-title,
+    body.role-student .app-progress-title {
+        overflow-wrap: anywhere;
+    }
+    body.role-student .app-table-wrap {
+        overflow: visible;
+    }
+    body.role-student .app-table,
+    body.role-student .app-table tbody,
+    body.role-student .app-table tr,
+    body.role-student .app-table td {
+        display: block;
+        width: 100%;
+    }
+    body.role-student .app-table thead {
+        display: none;
+    }
+    body.role-student .app-table {
+        min-width: 0;
+        border-collapse: separate;
+        border-spacing: 0 12px;
+    }
+    body.role-student .app-table tr {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: #fff;
+        overflow: hidden;
+        margin-bottom: 12px;
+    }
+    body.role-student .app-table td {
+        display: grid !important;
+        grid-template-columns: 92px minmax(0, 1fr);
+        gap: 10px;
+        padding: 12px 14px;
+        border-bottom: 1px solid #eef2f7;
+        text-align: left !important;
+    }
+    body.role-student .app-table td:last-child {
+        border-bottom: 0;
+    }
+    body.role-student .app-table td::before {
+        content: attr(data-label);
+        color: var(--text3);
+        font-size: .72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        padding-top: 4px;
+    }
+    body.role-student .app-table td[colspan] {
+        display: block !important;
+        text-align: center !important;
+    }
+    body.role-student .app-table td[colspan]::before {
+        display: none;
+    }
+    body.role-student .app-table td[data-label="Action"] {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+    body.role-student .app-table td[data-label="Action"]::before {
+        flex: 0 0 100%;
+        padding: 0;
+    }
+    body.role-student .app-table td[data-label="Action"] .btn,
+    body.role-student .app-table td[data-label="Action"] form {
+        flex: 1 1 120px;
+    }
+    body.role-student .app-table td[data-label="Action"] form .btn {
+        width: 100%;
     }
 }
