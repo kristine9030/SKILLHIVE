@@ -482,7 +482,12 @@ if (!function_exists('adviser_students_process_add_student')) {
         }
 
         try {
+            require_once __DIR__ . '/../../backend/school_year_helpers.php';
+            
             $pdo->beginTransaction();
+
+            // Get the selected school year
+            $selectedSchoolYearId = get_selected_school_year_id($pdo);
 
             $temporaryPassword = adviser_students_generate_temp_password();
 
@@ -491,9 +496,9 @@ if (!function_exists('adviser_students_process_add_student')) {
             if (adviser_students_has_academic_year_column($pdo)) {
                 $insertStudentStmt = $pdo->prepare(
                     'INSERT INTO student
-                        (student_number, first_name, last_name, email, program, department, track, section, year_level, academic_year, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
+                        (student_number, first_name, last_name, email, program, department, track, section, year_level, academic_year, school_year_id, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
                      VALUES
-                        (:student_number, :first_name, :last_name, :email, :program, :department, :track, :section, :year_level, :academic_year, :password_hash, 1, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
+                        (:student_number, :first_name, :last_name, :email, :program, :department, :track, :section, :year_level, :academic_year, :school_year_id, :password_hash, 1, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
                 );
                 $insertStudentStmt->execute([
                     ':student_number' => $form['student_number'],
@@ -506,15 +511,16 @@ if (!function_exists('adviser_students_process_add_student')) {
                     ':section' => $form['section'],
                     ':year_level' => $yearLevelValue,
                     ':academic_year' => $form['academic_year'],
+                    ':school_year_id' => $selectedSchoolYearId,
                     ':password_hash' => password_hash($temporaryPassword, PASSWORD_DEFAULT),
                     ':availability_status' => 'Available',
                 ]);
             } else {
                 $insertStudentStmt = $pdo->prepare(
                     'INSERT INTO student
-                        (student_number, first_name, last_name, email, program, department, track, section, year_level, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
+                        (student_number, first_name, last_name, email, program, department, track, section, year_level, school_year_id, password_hash, must_change_password, availability_status, preferred_industry, resume_file, internship_readiness_score, profile_picture, created_at, updated_at)
                      VALUES
-                        (:student_number, :first_name, :last_name, :email, :program, :department, :track, :section, :year_level, :password_hash, 1, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
+                        (:student_number, :first_name, :last_name, :email, :program, :department, :track, :section, :year_level, :school_year_id, :password_hash, 1, :availability_status, NULL, NULL, 0.00, NULL, NOW(), NOW())'
                 );
                 $insertStudentStmt->execute([
                     ':student_number' => $form['student_number'],
@@ -526,6 +532,7 @@ if (!function_exists('adviser_students_process_add_student')) {
                     ':track' => $form['track'],
                     ':section' => $form['section'],
                     ':year_level' => $yearLevelValue,
+                    ':school_year_id' => $selectedSchoolYearId,
                     ':password_hash' => password_hash($temporaryPassword, PASSWORD_DEFAULT),
                     ':availability_status' => 'Available',
                 ]);
@@ -576,3 +583,27 @@ if (!function_exists('adviser_students_process_add_student')) {
         }
     }
 }
+
+
+if (!function_exists('adviser_students_process_bulk_add_students')) {
+    /**
+     * Placeholder for bulk import functionality
+     * Returns empty result to prevent crashes while maintaining compatibility
+     */
+    function adviser_students_process_bulk_add_students(
+        PDO $pdo,
+        int $adviserId,
+        array $fileData,
+        string $baseUrl = '/SkillHive'
+    ): array {
+        return [
+            'success' => true,
+            'created' => 0,
+            'failed' => 0,
+            'emails_sent' => 0,
+            'emails_failed' => 0,
+            'message' => 'Bulk import feature coming soon.',
+        ];
+    }
+}
+?>

@@ -2,8 +2,15 @@
 require_once __DIR__ . '/../../backend/db_connect.php';
 require_once __DIR__ . '/students/data.php';
 require_once __DIR__ . '/students/add_student_action.php';
+require_once __DIR__ . '/students/school_years_query.php';
+require_once __DIR__ . '/students/filters_query.php';
 
 $adviserId = (int)($_SESSION['adviser_id'] ?? ($userId ?? ($_SESSION['user_id'] ?? 0)));
+
+// Get selected school year and options
+$selectedSchoolYear = adviser_students_get_selected_school_year($pdo);
+$schoolYearOptions = adviser_students_get_school_year_options($pdo);
+$selectedTab = trim((string)($_GET['school_tab'] ?? 'active'));
 
 $currentFilters = [
     'search' => trim((string)($_GET['search'] ?? '')),
@@ -18,9 +25,28 @@ $pageData = [
     'rows' => [],
 ];
 
-if ($adviserId > 0) {
+if ($adviserId > 0 && $selectedSchoolYear['id'] > 0) {
     try {
-        $pageData = getAdviserStudentsPageData($pdo, $adviserId, $currentFilters);
+        // Get tab-specific data with school year filtering
+        $pageData['rows'] = adviser_students_get_tab_students(
+            $pdo,
+            $adviserId,
+            $selectedSchoolYear['id'],
+            $selectedTab,
+            $currentFilters
+        );
+        
+        // Get filter options for current school year
+        $pageData['selected'] = [
+            'search' => $currentFilters['search'],
+            'department' => $currentFilters['department'],
+            'status' => $currentFilters['status'],
+        ];
+        
+        $pageData['filter_options'] = [
+            'departments' => adviser_students_get_filter_options($pdo, $adviserId)['departments'] ?? [],
+            'statuses' => adviser_students_get_filter_options($pdo, $adviserId)['statuses'] ?? [],
+        ];
     } catch (Throwable $e) {
         // Keep default pageData on error
     }
@@ -336,7 +362,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'update_account_sta
   <!-- Adviser Students Banner -->
   <div style="background:linear-gradient(90deg, #050505 0%, #12b3ac 40%, rgba(0, 0, 0, 0.38) 100%), url('/Skillhive/assets/media/element%203.png') right center / auto 100% no-repeat;border-radius:16px;padding:28px;margin-bottom:20px;color:white;display:flex;justify-content:space-between;align-items:center;gap:32px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0, 0, 0, 0.44);">
     <div style="z-index:2;flex:1;">
-      <h2 style="font-size:1.8rem;font-weight:900;margin:0 0 12px 0;line-height:1.2;color:white;">Empower Your Students</h2>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+        <h2 style="font-size:1.8rem;font-weight:900;margin:0;line-height:1.2;color:white;">Empower Your Students</h2>
+        <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);padding:8px 12px;border-radius:999px;backdrop-filter:blur(8px);">
+          <select id="schoolYearSelector" class="adv-select" style="background:transparent;border:0;color:white;padding:0;height:auto;font-size:0.9rem;font-weight:600;appearance:none;background-image:linear-gradient(45deg,transparent 50%,#fff 50%),linear-gradient(135deg,#fff 50%,transparent 50%);background-position:calc(100% - 12px) calc(50% - 2px),calc(100% - 7px) calc(50% - 2px);background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:24px;" onchange="selectSchoolYear(this.value)">
+            <?php foreach ($schoolYearOptions['active'] as $option): ?>
+              <option value="<?php echo (int)$option['id']; ?>" <?php echo $selectedSchoolYear['id'] === $option['id'] ? 'selected' : ''; ?>>
+                <?php echo adviser_students_escape($option['school_year']); ?> (Current)
+              </option>
+            <?php endforeach; ?>
+            <?php if (!empty($schoolYearOptions['archived'])): ?>
+              <optgroup label="Archived">
+                <?php foreach ($schoolYearOptions['archived'] as $option): ?>
+                  <option value="<?php echo (int)$option['id']; ?>" <?php echo $selectedSchoolYear['id'] === $option['id'] ? 'selected' : ''; ?>>
+                    <?php echo adviser_students_escape($option['school_year']); ?> (Archived)
+                  </option>
+                <?php endforeach; ?>
+              </optgroup>
+            <?php endif; ?>
+          </select>
+        </div>
+      </div>
       <p style="font-size:0.95rem;margin:0;line-height:1.6;color:#e0e0e0;">Guide students through their journey, provide endorsements, monitor progress, and help them succeed in their internship placements.</p>
     </div>
   </div>
@@ -373,12 +419,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'update_account_sta
     </div>
 
     <div class="adv-toolbar-right">
+      <button class="adv-btn is-secondary" type="button" onclick="openManageSchoolYearsModal()"><i class="fas fa-cog"></i>Manage School Years</button>
       <button class="adv-btn is-secondary" type="button" onclick="openBulkImportModal()"><i class="fas fa-file-upload"></i>Bulk Import</button>
       <button class="adv-btn" type="button" onclick="openAddStudentModal()"><i class="fas fa-user-plus"></i>Add Student</button>
     </div>
   </form>
 
   <div class="adv-card">
+    <!-- Student Tabs -->
+    <div style="display:flex;gap:2px;border-bottom:1px solid var(--border);padding:0;margin-bottom:0;">
+      <button type="button" class="js-student-tab-btn" data-tab="active" onclick="switchStudentTab(this, 'active')" style="flex:1;padding:14px 18px;border:0;background:<?php echo $selectedTab === 'active' ? 'transparent' : 'transparent'; ?>;color:<?php echo $selectedTab === 'active' ? '#111' : '#999'; ?>;font-weight:<?php echo $selectedTab === 'active' ? '700' : '600'; ?>;font-size:0.95rem;cursor:pointer;border-bottom:3px solid <?php echo $selectedTab === 'active' ? '#12b3ac' : 'transparent'; ?>;transition:all 0.2s ease;">
+        <i class="fas fa-users" style="margin-right:6px;"></i> Active Students
+      </button>
+      <button type="button" class="js-student-tab-btn" data-tab="archived" onclick="switchStudentTab(this, 'archived')" style="flex:1;padding:14px 18px;border:0;background:transparent;color:<?php echo $selectedTab === 'archived' ? '#111' : '#999'; ?>;font-weight:<?php echo $selectedTab === 'archived' ? '700' : '600'; ?>;font-size:0.95rem;cursor:pointer;border-bottom:3px solid <?php echo $selectedTab === 'archived' ? '#12b3ac' : 'transparent'; ?>;transition:all 0.2s ease;">
+        <i class="fas fa-archive" style="margin-right:6px;"></i> Archived Students
+      </button>
+      <button type="button" class="js-student-tab-btn" data-tab="alumni" onclick="switchStudentTab(this, 'alumni')" style="flex:1;padding:14px 18px;border:0;background:transparent;color:<?php echo $selectedTab === 'alumni' ? '#111' : '#999'; ?>;font-weight:<?php echo $selectedTab === 'alumni' ? '700' : '600'; ?>;font-size:0.95rem;cursor:pointer;border-bottom:3px solid <?php echo $selectedTab === 'alumni' ? '#12b3ac' : 'transparent'; ?>;transition:all 0.2s ease;">
+        <i class="fas fa-graduation-cap" style="margin-right:6px;"></i> Alumni Interns
+      </button>
+    </div>
+
     <div class="adv-table-wrap">
       <table class="adv-table">
         <thead>
@@ -792,6 +852,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'update_account_sta
   </div>
 </div>
 
+<!-- Manage School Years Modal -->
+<div id="manageSchoolYearsModal" class="adv-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="schoolYearsModalTitle">
+  <div class="adv-add-modal is-wide">
+    <div class="adv-add-header">
+      <div>
+        <h2 id="schoolYearsModalTitle" class="adv-add-title">Manage School Years</h2>
+        <p style="font-size:0.82rem;color:#6b7280;margin:4px 0 0;">Create new school years, activate years, and manage archived records.</p>
+      </div>
+      <button type="button" class="adv-add-close" onclick="closeManageSchoolYearsModal()">&times;</button>
+    </div>
+
+    <!-- School Years List -->
+    <div style="margin-bottom:20px;">
+      <h3 style="font-size:0.95rem;font-weight:700;color:#050505;margin:0 0 12px;">School Years</h3>
+      <div id="schoolYearsList" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;">
+        <!-- Populated by JavaScript -->
+      </div>
+    </div>
+
+    <!-- Create New School Year Section -->
+    <div style="background:#f9fafb;border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+      <h3 style="font-size:0.95rem;font-weight:700;color:#050505;margin:0 0 12px;">Create New School Year</h3>
+      <div style="display:flex;gap:10px;align-items:flex-end;">
+        <div style="flex:1;">
+          <label style="display:block;font-size:0.82rem;font-weight:700;color:#050505;margin-bottom:6px;">School Year (Format: YYYY-YYYY)</label>
+          <input id="newSchoolYearInput" type="text" placeholder="e.g. 2025-2026" style="width:100%;height:42px;border:1px solid var(--border);border-radius:10px;padding:0 12px;font-size:0.9rem;">
+        </div>
+        <button type="button" class="adv-btn" onclick="createNewSchoolYear()" style="height:42px;">
+          <i class="fas fa-plus"></i> Create
+        </button>
+      </div>
+    </div>
+
+    <!-- Start New School Year Section -->
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:16px;margin-bottom:16px;">
+      <h3 style="font-size:0.95rem;font-weight:700;color:#0c4a6e;margin:0 0 8px;">Start New School Year</h3>
+      <p style="font-size:0.82rem;color:#0c4a6e;margin:0 0 12px;line-height:1.5;">This will archive the current school year, preserve all historical data, and make completed/dropped students viewable in archived records.</p>
+      <div style="display:flex;gap:10px;align-items:flex-end;">
+        <div style="flex:1;">
+          <label style="display:block;font-size:0.82rem;font-weight:700;color:#0c4a6e;margin-bottom:6px;">New School Year (Format: YYYY-YYYY)</label>
+          <input id="startNewYearInput" type="text" placeholder="e.g. 2025-2026" style="width:100%;height:42px;border:1px solid #bfdbfe;border-radius:10px;padding:0 12px;font-size:0.9rem;background:#f0f9ff;">
+        </div>
+        <button type="button" class="adv-btn" onclick="startNewSchoolYear()" style="height:42px;background:#0284c7;border-color:#0284c7;">
+          <i class="fas fa-forward"></i> Start New Year
+        </button>
+      </div>
+    </div>
+
+    <div id="schoolYearsMessage" style="display:none;margin-bottom:12px;padding:12px 14px;border-radius:10px;font-size:0.82rem;"></div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" class="adv-btn is-secondary" onclick="closeManageSchoolYearsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 function openAddStudentModal() {
     var modal = document.getElementById('addStudentModal');
@@ -1012,6 +1128,277 @@ function bindStudentTableLiveFilters() {
     }
 
     emailInput.value = buildStudentSchoolEmail(studentNumberInput.value);
+  }
+
+  /* ═════════════════════════════════════════════════════════ */
+  /* SCHOOL YEAR MANAGEMENT */
+  /* ═════════════════════════════════════════════════════════ */
+  
+  var schoolYearsApiEndpoint = '<?php echo $baseUrl; ?>/pages/adviser/students/school_years_api.php';
+
+  function openManageSchoolYearsModal() {
+    var modal = document.getElementById('manageSchoolYearsModal');
+    if (!modal) return;
+    modal.classList.add('open');
+    loadSchoolYearsList();
+  }
+
+  function closeManageSchoolYearsModal() {
+    var modal = document.getElementById('manageSchoolYearsModal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    clearSchoolYearsMessage();
+  }
+
+  function loadSchoolYearsList() {
+    fetch(schoolYearsApiEndpoint + '?action=get_all', {
+      credentials: 'same-origin'
+    })
+    .then(function(response) {
+      return response.json().then(function(payload) {
+        if (!response.ok || !payload || payload.success !== true) {
+          throw new Error((payload && payload.message) ? payload.message : 'Failed to load school years');
+        }
+        return payload;
+      });
+    })
+    .then(function(payload) {
+      renderSchoolYearsList(payload.data || []);
+    })
+    .catch(function(error) {
+      showSchoolYearsMessage('Error loading school years: ' + error.message, 'error');
+    });
+  }
+
+  function renderSchoolYearsList(schoolYears) {
+    var container = document.getElementById('schoolYearsList');
+    if (!container) return;
+
+    if (schoolYears.length === 0) {
+      container.innerHTML = '<div style="padding:12px;color:#6b7280;font-size:0.82rem;">No school years created yet.</div>';
+      return;
+    }
+
+    var html = '';
+    schoolYears.forEach(function(year) {
+      var isActive = year.status === 'Active';
+      var statusBadge = isActive 
+        ? '<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:999px;font-size:0.7rem;font-weight:700;">Active</span>'
+        : '<span style="background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:999px;font-size:0.7rem;font-weight:700;">Archived</span>';
+
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:#fff;">';
+      html += '<div style="flex:1;">';
+      html += '<p style="margin:0;font-size:0.95rem;font-weight:600;color:#050505;">' + escapeHtml(year.school_year) + '</p>';
+      html += '<p style="margin:4px 0 0;font-size:0.75rem;color:#6b7280;">' + (year.student_count || 0) + ' students</p>';
+      html += '</div>';
+      html += '<div style="display:flex;align-items:center;gap:8px;">';
+      html += statusBadge;
+      if (!isActive) {
+        html += '<button type="button" onclick="activateSchoolYear(' + year.id + ')" class="adv-btn" style="padding:0 12px;height:32px;font-size:0.8rem;"><i class="fas fa-check-circle"></i> Activate</button>';
+      }
+      html += '</div>';
+      html += '</div>';
+    });
+
+    container.innerHTML = html;
+  }
+
+  function createNewSchoolYear() {
+    var input = document.getElementById('newSchoolYearInput');
+    if (!input || !input.value.trim()) {
+      showSchoolYearsMessage('Please enter a school year in format YYYY-YYYY', 'error');
+      return;
+    }
+
+    var formData = new URLSearchParams();
+    formData.append('action', 'create');
+    formData.append('school_year', input.value.trim());
+
+    fetch(schoolYearsApiEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      credentials: 'same-origin',
+      body: formData.toString()
+    })
+    .then(function(response) {
+      return response.json().then(function(payload) {
+        if (!response.ok || !payload || payload.success !== true) {
+          var errorMsg = (payload && payload.message) ? payload.message : 'Failed to create school year';
+          if (payload && payload.debug) {
+            errorMsg += ' (' + payload.debug + ')';
+          }
+          throw new Error(errorMsg);
+        }
+        return payload;
+      });
+    })
+    .then(function(payload) {
+      showSchoolYearsMessage('School year created successfully!', 'success');
+      input.value = '';
+      loadSchoolYearsList();
+    })
+    .catch(function(error) {
+      showSchoolYearsMessage('Error: ' + error.message, 'error');
+    });
+  }
+
+  function activateSchoolYear(yearId) {
+    if (!confirm('Activate this school year? The current active year will be archived.')) {
+      return;
+    }
+
+    var formData = new URLSearchParams();
+    formData.append('action', 'set_active');
+    formData.append('school_year_id', yearId);
+
+    fetch(schoolYearsApiEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      credentials: 'same-origin',
+      body: formData.toString()
+    })
+    .then(function(response) {
+      return response.json().then(function(payload) {
+        if (!response.ok || !payload || payload.success !== true) {
+          var errorMsg = (payload && payload.message) ? payload.message : 'Failed to activate school year';
+          if (payload && payload.debug) {
+            errorMsg += ' (' + payload.debug + ')';
+          }
+          throw new Error(errorMsg);
+        }
+        return payload;
+      });
+    })
+    .then(function(payload) {
+      showSchoolYearsMessage('School year activated! Reloading page...', 'success');
+      setTimeout(function() {
+        location.reload();
+      }, 1500);
+    })
+    .catch(function(error) {
+      showSchoolYearsMessage('Error: ' + error.message, 'error');
+    });
+  }
+
+  function startNewSchoolYear() {
+    var input = document.getElementById('startNewYearInput');
+    if (!input || !input.value.trim()) {
+      showSchoolYearsMessage('Please enter a school year in format YYYY-YYYY', 'error');
+      return;
+    }
+
+    if (!confirm('Start new school year? This will:\n• Archive the current school year\n• Preserve all historical data\n• Make completed students viewable in archived records')) {
+      return;
+    }
+
+    var formData = new URLSearchParams();
+    formData.append('action', 'start_new');
+    formData.append('school_year', input.value.trim());
+
+    fetch(schoolYearsApiEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      credentials: 'same-origin',
+      body: formData.toString()
+    })
+    .then(function(response) {
+      return response.json().then(function(payload) {
+        if (!response.ok || !payload || payload.success !== true) {
+          throw new Error((payload && payload.message) ? payload.message : 'Failed to start new school year');
+        }
+        return payload;
+      });
+    })
+    .then(function(payload) {
+      showSchoolYearsMessage('New school year started successfully! Reloading page...', 'success');
+      setTimeout(function() {
+        location.reload();
+      }, 1500);
+    })
+    .catch(function(error) {
+      showSchoolYearsMessage('Error: ' + error.message, 'error');
+    });
+  }
+
+  function selectSchoolYear(yearId) {
+    if (!yearId || Number(yearId) <= 0) {
+      return;
+    }
+
+    var formData = new URLSearchParams();
+    formData.append('action', 'select');
+    formData.append('school_year_id', yearId);
+
+    fetch(schoolYearsApiEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      credentials: 'same-origin',
+      body: formData.toString()
+    })
+    .then(function(response) {
+      return response.json().then(function(payload) {
+        if (!response.ok || !payload || payload.success !== true) {
+          throw new Error((payload && payload.message) ? payload.message : 'Failed to select school year');
+        }
+        return payload;
+      });
+    })
+    .then(function() {
+      location.reload();
+    })
+    .catch(function(error) {
+      console.error('Error selecting school year:', error);
+    });
+  }
+
+  function switchStudentTab(btn, tab) {
+    if (!btn) return;
+
+    // Update active button state
+    var buttons = document.querySelectorAll('.js-student-tab-btn');
+    buttons.forEach(function(b) {
+      b.style.color = b === btn ? '#111' : '#999';
+      b.style.fontWeight = b === btn ? '700' : '600';
+      b.style.borderBottomColor = b === btn ? '#12b3ac' : 'transparent';
+    });
+
+    // Reload page with new tab
+    var url = new URL(window.location.href);
+    url.searchParams.set('school_tab', tab);
+    window.location.href = url.toString();
+  }
+
+  function showSchoolYearsMessage(message, type) {
+    var messageEl = document.getElementById('schoolYearsMessage');
+    if (!messageEl) return;
+
+    var bgColor = type === 'error' ? '#fee2e2' : '#dcfce7';
+    var borderColor = type === 'error' ? '#fca5a5' : '#bbf7d0';
+    var textColor = type === 'error' ? '#991b1b' : '#15803d';
+
+    messageEl.style.background = bgColor;
+    messageEl.style.borderColor = borderColor;
+    messageEl.style.border = '1px solid ' + borderColor;
+    messageEl.style.color = textColor;
+    messageEl.textContent = message;
+    messageEl.style.display = 'block';
+
+    setTimeout(function() {
+      if (type === 'success') {
+        messageEl.style.display = 'none';
+      }
+    }, 3000);
+  }
+
+  function clearSchoolYearsMessage() {
+    var messageEl = document.getElementById('schoolYearsMessage');
+    if (messageEl) {
+      messageEl.style.display = 'none';
+    }
+  }
+
+  function initializeSchoolYearManagement() {
+    // Any initialization needed for school year management
   }
 
   function bindAddStudentEmailAutomation() {
@@ -1443,6 +1830,7 @@ document.addEventListener('keydown', function (event) {
         closeAddStudentModal();
     closeBulkImportModal();
         closeRequirementsModal();
+        closeManageSchoolYearsModal();
     }
 });
 
@@ -1450,4 +1838,5 @@ bindAddStudentEmailAutomation();
 bindAddStudentFormSubmission();
 bindBulkImportFormSubmission();
 bindStudentTableLiveFilters();
+initializeSchoolYearManagement();
 </script>
