@@ -248,6 +248,18 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
     color: var(--text3);
   }
 
+  .adviser-companies-status-cell {
+    min-width: 168px;
+  }
+
+  .adviser-companies-status-detail {
+    margin-top: 6px;
+    max-width: 230px;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: var(--text3);
+  }
+
   .adviser-companies-badge {
     display: inline-flex;
     align-items: center;
@@ -456,6 +468,66 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
     margin-top: 14px;
   }
 
+  .company-modal-section-title {
+    margin: 4px 0 10px;
+    font-size: .8rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-weight: 800;
+  }
+
+  .company-student-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .company-student-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 11px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .company-student-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: #111;
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 800;
+  }
+
+  .company-student-name {
+    margin: 0;
+    font-size: .86rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .company-student-meta {
+    margin: 3px 0 0;
+    font-size: .75rem;
+    color: var(--text3);
+    line-height: 1.4;
+  }
+
+  .company-student-empty {
+    padding: 12px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    color: var(--text3);
+    font-size: .8rem;
+  }
+
   .company-modal-btn {
     flex: 1;
     min-height: 40px;
@@ -537,7 +609,7 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
     <div class="adviser-companies-panel-head">
       <div>
         <h2 class="adviser-companies-title">Company Verification Queue</h2>
-        <p class="adviser-companies-subtitle">View partner company details and current MOA progress.</p>
+        <p class="adviser-companies-subtitle">View company contacts, assigned BSU students, and internship accepting status.</p>
       </div>
 
       <div class="adviser-companies-export-actions">
@@ -589,7 +661,10 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
           <thead>
             <tr>
               <th>Company</th>
+              <th>Contact Person</th>
               <th>Industry</th>
+              <th>BSU Status</th>
+              <th>Students</th>
               <th>Submitted</th>
               <th>Documents</th>
               <th>Action</th>
@@ -600,18 +675,31 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
               <?php
               $companyName = trim((string)($row['company_name'] ?? 'Company'));
               $industry = trim((string)($row['industry'] ?? '')) ?: 'Unspecified';
+              $contactPerson = adviser_companies_contact_person_label($row);
+              $acceptingMeta = adviser_companies_accepting_status_meta($row);
+              $students = is_array($row['students'] ?? null) ? $row['students'] : [];
               $createdAtLabel = adviser_companies_format_date((string)($row['created_at'] ?? ''));
               $documentsMeta = adviser_companies_documents_meta($row);
+              $studentSearchParts = [];
+              foreach ($students as $student) {
+                  $studentSearchParts[] = (string)($student['student_name'] ?? '');
+                  $studentSearchParts[] = (string)($student['student_number'] ?? '');
+                  $studentSearchParts[] = (string)($student['internship_title'] ?? '');
+              }
               $searchRow = strtolower(trim((string)preg_replace(
                   '/\s+/',
                   ' ',
                   implode(' ', [
                       $companyName,
                       $industry,
+                      $contactPerson,
+                      (string)($acceptingMeta['label'] ?? ''),
+                      (string)($acceptingMeta['detail'] ?? ''),
                       (string)($row['email'] ?? ''),
                       (string)($row['website_url'] ?? ''),
                       (string)($row['company_address'] ?? ''),
                       (string)($row['contact_number'] ?? ''),
+                      implode(' ', $studentSearchParts),
                   ])
               )));
               $modalId = 'company-review-modal-' . $index;
@@ -626,11 +714,19 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
                       <button class="adviser-companies-company-link" type="button" data-open-company-modal="<?php echo adviser_companies_escape($modalId); ?>">
                         <span class="adviser-companies-company-name"><?php echo adviser_companies_escape($companyName); ?></span>
                       </button>
-                      <p class="adviser-companies-meta"><?php echo adviser_companies_escape((string)($row['current_interns'] ?? 0)); ?> active interns</p>
+                      <p class="adviser-companies-meta"><?php echo (int)($row['current_interns'] ?? 0); ?> active interns</p>
                     </div>
                   </div>
                 </td>
+                <td><?php echo adviser_companies_escape($contactPerson); ?></td>
                 <td><?php echo adviser_companies_escape($industry); ?></td>
+                <td class="adviser-companies-status-cell">
+                  <span class="adviser-companies-badge <?php echo adviser_companies_escape((string)$acceptingMeta['class']); ?>">
+                    <?php echo adviser_companies_escape((string)$acceptingMeta['label']); ?>
+                  </span>
+                  <div class="adviser-companies-status-detail"><?php echo adviser_companies_escape((string)$acceptingMeta['detail']); ?></div>
+                </td>
+                <td><?php echo count($students); ?> BSU student<?php echo count($students) === 1 ? '' : 's'; ?></td>
                 <td><?php echo adviser_companies_escape($createdAtLabel); ?></td>
                 <td>
                   <span class="adviser-companies-badge <?php echo adviser_companies_escape($documentsMeta['class']); ?>">
@@ -653,6 +749,9 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
         <?php
         $companyName = trim((string)($row['company_name'] ?? 'Company'));
         $industry = trim((string)($row['industry'] ?? '')) ?: 'Unspecified';
+        $contactPerson = adviser_companies_contact_person_label($row);
+        $acceptingMeta = adviser_companies_accepting_status_meta($row);
+        $students = is_array($row['students'] ?? null) ? $row['students'] : [];
         $createdAtLabel = adviser_companies_format_date((string)($row['created_at'] ?? ''));
         $documentsMeta = adviser_companies_documents_meta($row);
         $riskMeta = adviser_companies_risk_meta($row);
@@ -670,7 +769,7 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
             <div class="company-modal-head">
               <div>
                 <h3 class="company-modal-title" id="<?php echo adviser_companies_escape($modalId); ?>-title"><?php echo adviser_companies_escape($companyName); ?></h3>
-                <div class="company-modal-subtitle">MOA preview for this company (sample data).</div>
+                <div class="company-modal-subtitle">Company contacts, BSU internship status, and assigned students.</div>
               </div>
               <button class="company-modal-close" type="button" data-close-company-modal aria-label="Close">Close</button>
             </div>
@@ -683,6 +782,18 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
               <div class="company-modal-item">
                 <div class="company-modal-label">Current Status</div>
                 <div class="company-modal-value"><?php echo adviser_companies_escape($statusLabel); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Contact Person</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape($contactPerson); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">BSU Internship Status</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape((string)$acceptingMeta['label']); ?></div>
+              </div>
+              <div class="company-modal-item full">
+                <div class="company-modal-label">Status Detail</div>
+                <div class="company-modal-value"><?php echo adviser_companies_escape((string)$acceptingMeta['detail']); ?></div>
               </div>
               <div class="company-modal-item">
                 <div class="company-modal-label">Documents</div>
@@ -741,9 +852,57 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
                 <div class="company-modal-value"><?php echo (int)($row['current_interns'] ?? 0); ?></div>
               </div>
               <div class="company-modal-item">
+                <div class="company-modal-label">Open Postings</div>
+                <div class="company-modal-value"><?php echo (int)($row['open_postings'] ?? 0); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Listed Slots</div>
+                <div class="company-modal-value"><?php echo (int)($row['open_slots'] ?? 0); ?></div>
+              </div>
+              <div class="company-modal-item">
+                <div class="company-modal-label">Assigned Students</div>
+                <div class="company-modal-value"><?php echo count($students); ?></div>
+              </div>
+              <div class="company-modal-item">
                 <div class="company-modal-label">Submitted</div>
                 <div class="company-modal-value"><?php echo adviser_companies_escape($createdAtLabel); ?></div>
               </div>
+            </div>
+
+            <div>
+              <div class="company-modal-section-title">Students in This Company</div>
+              <?php if (!empty($students)): ?>
+                <div class="company-student-list">
+                  <?php foreach ($students as $studentIndex => $student): ?>
+                    <?php
+                    $studentName = trim((string)($student['student_name'] ?? 'Student')) ?: 'Student';
+                    $studentNumber = trim((string)($student['student_number'] ?? ''));
+                    $studentProgram = trim((string)($student['program'] ?? ''));
+                    $studentYear = (int)($student['year_level'] ?? 0);
+                    $internshipTitle = trim((string)($student['internship_title'] ?? 'Internship'));
+                    $placementStatus = trim((string)($student['completion_status'] ?? 'Assigned'));
+                    $hoursText = adviser_companies_student_hours_text($student);
+                    $studentMetaParts = array_filter([
+                        $studentNumber !== '' ? $studentNumber : null,
+                        $studentProgram !== '' ? $studentProgram : null,
+                        $studentYear > 0 ? ('Year ' . $studentYear) : null,
+                    ]);
+                    ?>
+                    <div class="company-student-row">
+                      <span class="company-student-avatar" style="background:<?php echo adviser_companies_escape(adviser_companies_gradient((int)$studentIndex)); ?>;">
+                        <?php echo adviser_companies_escape(adviser_companies_initial($studentName)); ?>
+                      </span>
+                      <div>
+                        <p class="company-student-name"><?php echo adviser_companies_escape($studentName); ?></p>
+                        <p class="company-student-meta"><?php echo adviser_companies_escape(implode(' | ', $studentMetaParts)); ?></p>
+                        <p class="company-student-meta"><?php echo adviser_companies_escape($internshipTitle); ?> | <?php echo adviser_companies_escape($placementStatus); ?> | <?php echo adviser_companies_escape($hoursText); ?></p>
+                      </div>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              <?php else: ?>
+                <div class="company-student-empty">No assigned BSU students found for this company.</div>
+              <?php endif; ?>
             </div>
 
             <div class="company-modal-actions">
@@ -788,7 +947,7 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
       }
       var row = document.createElement('tr');
       row.className = 'adviser-companies-no-results';
-      row.innerHTML = '<td colspan="5">No matching companies found.</td>';
+      row.innerHTML = '<td colspan="8">No matching companies found.</td>';
       tableBody.appendChild(row);
     }
 

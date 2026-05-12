@@ -63,11 +63,16 @@ function adviser_companies_export_rows(array $rows): array
         $documents = adviser_companies_documents_meta($row);
         $risk = adviser_companies_risk_meta($row);
         $actionMeta = adviser_companies_action_meta($row);
+        $acceptingMeta = adviser_companies_accepting_status_meta($row);
+        $students = is_array($row['students'] ?? null) ? $row['students'] : [];
 
         $exportRows[] = [
             'Company' => trim((string)($row['company_name'] ?? 'Company')),
+            'Contact Person' => adviser_companies_contact_person_label($row),
             'Industry' => trim((string)($row['industry'] ?? '')) ?: 'Unspecified',
             'Status' => adviser_companies_verification_label((string)($row['verification_status'] ?? 'Pending')),
+            'BSU Internship Status' => (string)$acceptingMeta['label'],
+            'BSU Status Detail' => (string)$acceptingMeta['detail'],
             'Submitted' => adviser_companies_format_date((string)($row['created_at'] ?? '')),
             'Documents' => (string)$documents['label'],
             'Risk' => (string)$risk['label'],
@@ -77,6 +82,10 @@ function adviser_companies_export_rows(array $rows): array
             'Website' => trim((string)($row['website_url'] ?? '')),
             'Address' => trim((string)($row['company_address'] ?? '')),
             'Current Interns' => (string)(int)($row['current_interns'] ?? 0),
+            'Open Postings' => (string)(int)($row['open_postings'] ?? 0),
+            'Listed Slots' => (string)(int)($row['open_slots'] ?? 0),
+            'Assigned Students' => (string)count($students),
+            'Student Names' => adviser_companies_student_export_text($students),
             'Average Rating' => adviser_companies_rating_text($row['avg_rating'] ?? null),
         ];
     }
@@ -88,8 +97,11 @@ function adviser_companies_export_csv(array $rows): void
 {
     $headers = [
         'Company',
+        'Contact Person',
         'Industry',
         'Status',
+        'BSU Internship Status',
+        'BSU Status Detail',
         'Submitted',
         'Documents',
         'Risk',
@@ -99,6 +111,10 @@ function adviser_companies_export_csv(array $rows): void
         'Website',
         'Address',
         'Current Interns',
+        'Open Postings',
+        'Listed Slots',
+        'Assigned Students',
+        'Student Names',
         'Average Rating',
     ];
 
@@ -147,8 +163,10 @@ function adviser_companies_export_doc(array $rows, array $filters): void
 
     $headers = [
         'Company',
+        'Contact Person',
         'Industry',
         'Status',
+        'BSU Internship Status',
         'Submitted',
         'Documents',
         'Risk',
@@ -156,6 +174,10 @@ function adviser_companies_export_doc(array $rows, array $filters): void
         'Email',
         'Phone',
         'Current Interns',
+        'Open Postings',
+        'Listed Slots',
+        'Assigned Students',
+        'Student Names',
         'Average Rating',
     ];
 

@@ -73,6 +73,102 @@ if (!function_exists('adviser_companies_rating_text')) {
     }
 }
 
+if (!function_exists('adviser_companies_contact_person_label')) {
+    function adviser_companies_contact_person_label(array $row): string
+    {
+        $contactPerson = trim((string)($row['contact_person_name'] ?? ''));
+        return $contactPerson !== '' ? $contactPerson : 'Not recorded';
+    }
+}
+
+if (!function_exists('adviser_companies_accepting_status_meta')) {
+    function adviser_companies_accepting_status_meta(array $row): array
+    {
+        $verification = strtolower(trim((string)($row['verification_status'] ?? 'pending')));
+        $openPostings = (int)($row['open_postings'] ?? 0);
+        $openSlots = (int)($row['open_slots'] ?? 0);
+
+        if (in_array($verification, ['rejected', 'flagged'], true)) {
+            return [
+                'label' => 'Inactive',
+                'detail' => 'Company is not cleared for BSU interns.',
+                'class' => 'is-danger',
+            ];
+        }
+
+        if ($openPostings > 0 && in_array($verification, ['approved', 'verified'], true)) {
+            $postingText = $openPostings === 1 ? '1 open posting' : $openPostings . ' open postings';
+            $slotText = $openSlots === 1 ? '1 listed slot' : $openSlots . ' listed slots';
+            return [
+                'label' => 'Active',
+                'detail' => 'Accepting interns: ' . $postingText . ', ' . $slotText . '.',
+                'class' => 'is-success',
+            ];
+        }
+
+        if ($openPostings > 0) {
+            return [
+                'label' => 'Pending',
+                'detail' => 'Has open postings but company approval is still pending.',
+                'class' => 'is-warning',
+            ];
+        }
+
+        if (in_array($verification, ['approved', 'verified'], true)) {
+            return [
+                'label' => 'Inactive',
+                'detail' => 'No open internship postings right now.',
+                'class' => 'is-warning',
+            ];
+        }
+
+        return [
+            'label' => 'Pending',
+            'detail' => 'Awaiting company verification.',
+            'class' => 'is-warning',
+        ];
+    }
+}
+
+if (!function_exists('adviser_companies_student_hours_text')) {
+    function adviser_companies_student_hours_text(array $student): string
+    {
+        $hoursRequired = (float)($student['hours_required'] ?? 0);
+        if ($hoursRequired <= 0) {
+            return 'No OJT hours yet';
+        }
+
+        $hoursCompleted = (float)($student['hours_completed'] ?? 0);
+        return (int)round($hoursCompleted) . '/' . (int)round($hoursRequired) . ' hrs';
+    }
+}
+
+if (!function_exists('adviser_companies_student_export_text')) {
+    function adviser_companies_student_export_text(array $students): string
+    {
+        if (empty($students)) {
+            return 'None';
+        }
+
+        $parts = [];
+        foreach ($students as $student) {
+            $studentName = trim((string)($student['student_name'] ?? 'Student'));
+            $internshipTitle = trim((string)($student['internship_title'] ?? 'Internship'));
+            $status = trim((string)($student['completion_status'] ?? ''));
+            $label = $studentName;
+            if ($internshipTitle !== '') {
+                $label .= ' - ' . $internshipTitle;
+            }
+            if ($status !== '') {
+                $label .= ' (' . $status . ')';
+            }
+            $parts[] = $label;
+        }
+
+        return implode('; ', $parts);
+    }
+}
+
 if (!function_exists('adviser_companies_format_date')) {
     function adviser_companies_format_date(?string $dateValue): string
     {

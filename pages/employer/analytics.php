@@ -115,6 +115,110 @@ if ($filterStatus)  $stmt->bindValue(':status',     $filterStatus);
 $stmt->execute();
 $topPostings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Student ranking by skill match against each posting's required skills.
+// This is intentionally all-time for the employer because skill fit is a candidate/profile metric,
+// while posting/status filters still narrow the ranking when selected.
+$rankingPostingWhere = $filterPosting ? ' AND a.internship_id = :posting_id' : '';
+$rankingStatusWhere = $filterStatus ? ' AND a.status = :status' : '';
+$rankingQuery = "
+  SELECT
+    a.application_id,
+    a.status,
+    a.application_date,
+    a.compatibility_score,
+    s.student_id,
+    s.student_number,
+    s.first_name,
+    s.last_name,
+    s.program,
+    s.year_level,
+    i.internship_id,
+    i.title AS internship_title,
+    COALESCE(req.required_count, 0) AS required_count,
+    COALESCE(req.mandatory_count, 0) AS mandatory_count,
+    COALESCE(mat.matched_count, 0) AS matched_count,
+    COALESCE(mat.mandatory_matched_count, 0) AS mandatory_matched_count,
+    COALESCE(mat.matched_skills, '') AS matched_skills,
+    COALESCE(mis.missing_skills, '') AS missing_skills
+  FROM application a
+  INNER JOIN internship i ON i.internship_id = a.internship_id
+  INNER JOIN student s ON s.student_id = a.student_id
+  LEFT JOIN (
+    SELECT
+      internship_id,
+      COUNT(DISTINCT skill_id) AS required_count,
+      COUNT(DISTINCT CASE WHEN is_mandatory = 1 THEN skill_id END) AS mandatory_count
+    FROM internship_skill
+    GROUP BY internship_id
+  ) req ON req.internship_id = i.internship_id
+  LEFT JOIN (
+    SELECT
+      a2.application_id,
+      COUNT(DISTINCT ins.skill_id) AS matched_count,
+      COUNT(DISTINCT CASE WHEN ins.is_mandatory = 1 THEN ins.skill_id END) AS mandatory_matched_count,
+      GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.skill_name SEPARATOR ', ') AS matched_skills
+    FROM application a2
+    INNER JOIN internship_skill ins ON ins.internship_id = a2.internship_id
+    INNER JOIN student_skill ss ON ss.student_id = a2.student_id
+      AND ss.skill_id = ins.skill_id
+    INNER JOIN skill sk ON sk.skill_id = ins.skill_id
+    GROUP BY a2.application_id
+  ) mat ON mat.application_id = a.application_id
+  LEFT JOIN (
+    SELECT
+      a3.application_id,
+      GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.skill_name SEPARATOR ', ') AS missing_skills
+    FROM application a3
+    INNER JOIN internship_skill ins ON ins.internship_id = a3.internship_id
+    INNER JOIN skill sk ON sk.skill_id = ins.skill_id
+    LEFT JOIN student_skill ss ON ss.student_id = a3.student_id
+      AND ss.skill_id = ins.skill_id
+    WHERE ss.skill_id IS NULL
+    GROUP BY a3.application_id
+  ) mis ON mis.application_id = a.application_id
+  WHERE i.employer_id = :employer_id
+    $rankingPostingWhere
+    $rankingStatusWhere
+";
+$stmt = $pdo->prepare($rankingQuery);
+$stmt->bindValue(':employer_id', $employerId, PDO::PARAM_INT);
+if ($filterPosting) $stmt->bindValue(':posting_id', $filterPosting, PDO::PARAM_INT);
+if ($filterStatus) $stmt->bindValue(':status', $filterStatus);
+$stmt->execute();
+$studentRankings = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+foreach ($studentRankings as &$ranking) {
+  $requiredCount = (int)($ranking['required_count'] ?? 0);
+  $matchedCount = (int)($ranking['matched_count'] ?? 0);
+  $mandatoryCount = (int)($ranking['mandatory_count'] ?? 0);
+  $mandatoryMatched = (int)($ranking['mandatory_matched_count'] ?? 0);
+  $fallbackCompatibility = is_numeric($ranking['compatibility_score'] ?? null) ? (float)$ranking['compatibility_score'] : 0.0;
+
+  $ranking['skill_match_score'] = $requiredCount > 0
+    ? (int)round(($matchedCount / max(1, $requiredCount)) * 100)
+    : (int)round($fallbackCompatibility);
+  $ranking['mandatory_match_score'] = $mandatoryCount > 0
+    ? (int)round(($mandatoryMatched / max(1, $mandatoryCount)) * 100)
+    : null;
+}
+unset($ranking);
+
+usort($studentRankings, static function (array $a, array $b): int {
+  $scoreCompare = ((int)($b['skill_match_score'] ?? 0)) <=> ((int)($a['skill_match_score'] ?? 0));
+  if ($scoreCompare !== 0) {
+    return $scoreCompare;
+  }
+
+  $mandatoryCompare = ((int)($b['mandatory_matched_count'] ?? 0)) <=> ((int)($a['mandatory_matched_count'] ?? 0));
+  if ($mandatoryCompare !== 0) {
+    return $mandatoryCompare;
+  }
+
+  return strcmp((string)($b['application_date'] ?? ''), (string)($a['application_date'] ?? ''));
+});
+
+$studentRankings = array_slice($studentRankings, 0, 8);
+
 // Calculate total stats
 $totalApplications = array_sum(array_column($applicationsData, 'count'));
 $totalInquiries = array_sum(array_column($inquiriesData, 'count'));
@@ -491,6 +595,144 @@ if (empty($topLabels)) {
   color: #9ca3af;
 }
 
+.skill-ranking-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+.skill-ranking-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.skill-ranking-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.skill-ranking-sub {
+  margin: 5px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.skill-ranking-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.skill-ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.skill-ranking-table th,
+.skill-ranking-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  vertical-align: top;
+  font-size: 12px;
+}
+
+.skill-ranking-table th {
+  background: #f9fafb;
+  color: #6b7280;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 700;
+}
+
+.skill-ranking-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.skill-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.skill-candidate-name {
+  display: block;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.skill-candidate-meta {
+  display: block;
+  margin-top: 3px;
+  color: #6b7280;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.skill-score-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.skill-score-pill.warn {
+  background: #fef3c7;
+  color: #a16207;
+}
+
+.skill-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 160px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  color: #0f766e;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.skill-chip.missing {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
 .chart-card {
   background: #fff;
   border: 1px solid #e5e7eb;
@@ -772,6 +1014,104 @@ if (empty($topLabels)) {
         </div>
       <?php endif; ?>
     </div>
+
+    <section class="skill-ranking-card">
+      <div class="skill-ranking-head">
+        <div>
+          <h3 class="skill-ranking-title"><i class="fas fa-ranking-star" style="color:#0f766e;margin-right:8px;"></i>Student Skill Match Ranking</h3>
+          <p class="skill-ranking-sub">Ranks applicants by how many of their profile skills match the required skills in your internship postings.</p>
+        </div>
+      </div>
+
+      <?php if (!empty($studentRankings)): ?>
+        <div class="skill-ranking-table-wrap">
+          <table class="skill-ranking-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Student</th>
+                <th>Posting</th>
+                <th>Match</th>
+                <th>Matched Skills</th>
+                <th>Missing Skills</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($studentRankings as $rankIndex => $candidate): ?>
+                <?php
+                  $requiredCount = (int)($candidate['required_count'] ?? 0);
+                  $matchedCount = (int)($candidate['matched_count'] ?? 0);
+                  $matchScore = (int)($candidate['skill_match_score'] ?? 0);
+                  $matchedSkills = array_values(array_filter(array_map('trim', explode(',', (string)($candidate['matched_skills'] ?? '')))));
+                  $missingSkills = array_values(array_filter(array_map('trim', explode(',', (string)($candidate['missing_skills'] ?? '')))));
+                  $studentName = trim((string)($candidate['first_name'] ?? '') . ' ' . (string)($candidate['last_name'] ?? ''));
+                  $studentName = $studentName !== '' ? $studentName : 'Unnamed Student';
+                  $scoreClass = $matchScore >= 70 ? '' : 'warn';
+                ?>
+                <tr>
+                  <td><span class="skill-rank-badge">#<?php echo (int)($rankIndex + 1); ?></span></td>
+                  <td>
+                    <span class="skill-candidate-name"><?php echo htmlspecialchars($studentName); ?></span>
+                    <span class="skill-candidate-meta"><?php echo htmlspecialchars((string)($candidate['program'] ?? '')); ?><?php echo !empty($candidate['year_level']) ? ' | Year ' . (int)$candidate['year_level'] : ''; ?></span>
+                  </td>
+                  <td>
+                    <span class="skill-candidate-name"><?php echo htmlspecialchars((string)($candidate['internship_title'] ?? 'Internship')); ?></span>
+                    <span class="skill-candidate-meta">Applied <?php echo htmlspecialchars(date('M j, Y', strtotime((string)($candidate['application_date'] ?? 'now')))); ?></span>
+                  </td>
+                  <td>
+                    <span class="skill-score-pill <?php echo $scoreClass; ?>">
+                      <i class="fas fa-bullseye"></i>
+                      <?php echo $matchScore; ?>%
+                    </span>
+                    <span class="skill-candidate-meta"><?php echo $matchedCount; ?>/<?php echo $requiredCount; ?> required skills matched</span>
+                    <?php if ($candidate['mandatory_match_score'] !== null): ?>
+                      <span class="skill-candidate-meta"><?php echo (int)$candidate['mandatory_matched_count']; ?>/<?php echo (int)$candidate['mandatory_count']; ?> mandatory matched</span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <div class="skill-chip-row">
+                      <?php if (!empty($matchedSkills)): ?>
+                        <?php foreach (array_slice($matchedSkills, 0, 5) as $skillName): ?>
+                          <span class="skill-chip"><?php echo htmlspecialchars($skillName); ?></span>
+                        <?php endforeach; ?>
+                      <?php elseif ($requiredCount === 0): ?>
+                        <span class="skill-chip missing">No required skills set</span>
+                      <?php else: ?>
+                        <span class="skill-chip missing">No matched skills</span>
+                      <?php endif; ?>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="skill-chip-row">
+                      <?php if (!empty($missingSkills)): ?>
+                        <?php foreach (array_slice($missingSkills, 0, 5) as $skillName): ?>
+                          <span class="skill-chip missing"><?php echo htmlspecialchars($skillName); ?></span>
+                        <?php endforeach; ?>
+                      <?php elseif ($requiredCount > 0): ?>
+                        <span class="skill-chip">Complete match</span>
+                      <?php else: ?>
+                        <span class="skill-chip missing">N/A</span>
+                      <?php endif; ?>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="skill-score-pill <?php echo strtolower((string)($candidate['status'] ?? '')) === 'rejected' ? 'warn' : ''; ?>">
+                      <?php echo htmlspecialchars((string)($candidate['status'] ?? 'Pending')); ?>
+                    </span>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php else: ?>
+        <div class="no-data">
+          <i class="fas fa-users-viewfinder"></i>
+          <p>No student skill match data available yet.</p>
+        </div>
+      <?php endif; ?>
+    </section>
 
     <!-- Charts Section -->
     <div class="charts-grid">

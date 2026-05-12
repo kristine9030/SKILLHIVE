@@ -247,6 +247,27 @@ try {
     // Non-fatal: app should continue even if migration fails.
 }
 
+// Schema Migration: Ensure contact_person_name exists on employer table.
+// Employer registration captures a company contact person for adviser review.
+try {
+    $stmt = $pdo->prepare(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'employer'
+           AND COLUMN_NAME = 'contact_person_name'"
+    );
+    $stmt->execute();
+    if ($stmt->rowCount() === 0) {
+        $pdo->exec(
+            "ALTER TABLE employer
+             ADD COLUMN contact_person_name VARCHAR(160) NOT NULL DEFAULT ''
+             AFTER company_name"
+        );
+    }
+} catch (Throwable $e) {
+    // Non-fatal: app should continue even if migration fails.
+}
+
 // Schema Migration: Create ojt_journal_entries table for structured journal entries
 try {
     $stmt = $pdo->prepare(

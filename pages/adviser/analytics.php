@@ -5,12 +5,31 @@ require_once __DIR__ . '/analytics/data.php';
 $stats = $data['stats'] ?? [];
 $placementByDept = $data['placement_by_dept'] ?? [];
 $topCompanies = array_slice($data['top_companies'] ?? [], 0, 4);
+$companyActivity = is_array($data['company_activity_report'] ?? null) ? $data['company_activity_report'] : [];
+$companyActivitySummary = is_array($companyActivity['summary'] ?? null) ? $companyActivity['summary'] : [];
+$companyActivityRows = is_array($companyActivity['rows'] ?? null) ? $companyActivity['rows'] : [];
+$studentPerformance = is_array($data['student_performance_report'] ?? null) ? $data['student_performance_report'] : [];
+$studentPerformanceSummary = is_array($studentPerformance['summary'] ?? null) ? $studentPerformance['summary'] : [];
+$earlyFinishers = is_array($studentPerformance['early_finishers'] ?? null) ? $studentPerformance['early_finishers'] : [];
+$punctualStudents = is_array($studentPerformance['punctual_students'] ?? null) ? $studentPerformance['punctual_students'] : [];
+$needsAttentionStudents = is_array($studentPerformance['needs_attention'] ?? null) ? $studentPerformance['needs_attention'] : [];
 $topSkills = $data['top_skills'] ?? [];
 $trends = $data['trends'] ?? [];
+$analyticsBaseUrl = isset($baseUrl) ? (string)$baseUrl : '/SkillHive';
 
 $placementRate = (int)($stats['placement_rate'] ?? 0);
 $hiringCompanies = (int)($stats['hiring_companies'] ?? 0);
 $completionRate = (int)($stats['completion_rate'] ?? 0);
+$activeCompanies = (int)($companyActivitySummary['active'] ?? 0);
+$inactiveCompanies = (int)($companyActivitySummary['inactive'] ?? 0);
+$pendingCompanies = (int)($companyActivitySummary['pending'] ?? 0);
+$notActiveCompanies = (int)($companyActivitySummary['not_active'] ?? ($inactiveCompanies + $pendingCompanies));
+$totalActivityCompanies = (int)($companyActivitySummary['total'] ?? count($companyActivityRows));
+$activeCompanyRate = $totalActivityCompanies > 0 ? (int)round(($activeCompanies / $totalActivityCompanies) * 100) : 0;
+$earlyFinisherCount = (int)($studentPerformanceSummary['early_finishers'] ?? count($earlyFinishers));
+$punctualStudentCount = (int)($studentPerformanceSummary['punctual_students'] ?? count($punctualStudents));
+$needsAttentionCount = (int)($studentPerformanceSummary['needs_attention'] ?? count($needsAttentionStudents));
+$evaluatedStudentCount = (int)($studentPerformanceSummary['evaluated_students'] ?? 0);
 $topSkill = trim((string)($topSkills[0]['skill'] ?? 'No data yet'));
 $topSkillDemand = 0;
 $placementInsight = 'Based on active OJT records';
@@ -536,6 +555,248 @@ foreach ($statusChart as $item) {
     font-size: 0.82rem;
   }
 
+  .adviser-activity-report-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .adviser-activity-report-subtitle {
+    margin: 6px 0 0;
+    font-size: .82rem;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  .adviser-activity-export {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: #111;
+    color: #fff;
+    text-decoration: none;
+    font-size: .82rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .adviser-activity-export:hover {
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .adviser-activity-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .adviser-activity-metric {
+    padding: 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+  }
+
+  .adviser-activity-metric-value {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #050505;
+    line-height: 1;
+  }
+
+  .adviser-activity-metric-label {
+    display: block;
+    margin-top: 5px;
+    font-size: .72rem;
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  .adviser-activity-table-wrap {
+    overflow-x: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .adviser-activity-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 920px;
+  }
+
+  .adviser-activity-table th,
+  .adviser-activity-table td {
+    padding: 11px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: .8rem;
+    vertical-align: top;
+  }
+
+  .adviser-activity-table th {
+    color: #64748b;
+    background: #f8fafc;
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-weight: 800;
+  }
+
+  .adviser-activity-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .adviser-activity-company {
+    font-weight: 800;
+    color: #050505;
+  }
+
+  .adviser-activity-muted {
+    display: block;
+    margin-top: 3px;
+    color: #64748b;
+    font-size: .72rem;
+    line-height: 1.35;
+  }
+
+  .adviser-activity-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .adviser-activity-badge.success {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  .adviser-activity-badge.warning {
+    background: #fef3c7;
+    color: #a16207;
+  }
+
+  .adviser-activity-badge.danger {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .adviser-performance-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .adviser-performance-column {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .adviser-performance-column-head {
+    padding: 12px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .adviser-performance-column-title {
+    margin: 0;
+    font-size: .86rem;
+    font-weight: 900;
+    color: #050505;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .adviser-performance-column-sub {
+    margin: 5px 0 0;
+    color: #64748b;
+    font-size: .72rem;
+    line-height: 1.35;
+  }
+
+  .adviser-performance-list {
+    display: grid;
+    gap: 0;
+  }
+
+  .adviser-performance-item {
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .adviser-performance-item:last-child {
+    border-bottom: 0;
+  }
+
+  .adviser-performance-name {
+    display: block;
+    font-size: .84rem;
+    color: #050505;
+    font-weight: 900;
+    line-height: 1.3;
+  }
+
+  .adviser-performance-meta {
+    display: block;
+    margin-top: 4px;
+    color: #64748b;
+    font-size: .72rem;
+    line-height: 1.4;
+  }
+
+  .adviser-performance-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    margin-top: 8px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #f0fdf4;
+    color: #047857;
+    font-size: .72rem;
+    font-weight: 900;
+    line-height: 1.35;
+    white-space: normal;
+  }
+
+  .adviser-performance-value.warning {
+    background: #fef3c7;
+    color: #a16207;
+  }
+
+  .adviser-performance-value.danger {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .adviser-performance-comment {
+    margin-top: 8px;
+    color: #475569;
+    font-size: .72rem;
+    line-height: 1.45;
+    padding: 8px;
+    background: #f8fafc;
+    border-radius: 8px;
+  }
+
   .adviser-analytics-companies-panel {
     padding: 22px;
   }
@@ -649,6 +910,22 @@ foreach ($statusChart as $item) {
     .adviser-analytics-grid {
       grid-template-columns: 1fr;
     }
+
+    .adviser-activity-report-head {
+      flex-direction: column;
+    }
+
+    .adviser-activity-export {
+      width: 100%;
+    }
+
+    .adviser-activity-summary {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .adviser-performance-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   @media (max-width: 680px) {
@@ -665,7 +942,9 @@ foreach ($statusChart as $item) {
 
   @media (max-width: 680px) {
     .adviser-analytics-stats,
-    .adviser-analytics-companies-grid {
+    .adviser-analytics-companies-grid,
+    .adviser-activity-summary,
+    .adviser-performance-grid {
       grid-template-columns: 1fr;
     }
 
@@ -783,13 +1062,13 @@ foreach ($statusChart as $item) {
       </article>
 
       <article class="adviser-analytics-chart-card">
-        <h3 class="adviser-analytics-chart-title"><i class="fas fa-building" style="color:#12b3ac;"></i> Dept. Placement Rates</h3>
+        <h3 class="adviser-analytics-chart-title"><i class="fas fa-building" style="color:#12b3ac;"></i> Section Placement Rates</h3>
         <?php if (!empty($deptChart)): ?>
           <div class="adviser-dept-chart" style="height:220px;">
             <?php foreach ($deptChart as $department): ?>
               <?php
                 $rate = max(0, min(100, (int)($department['placement_rate'] ?? 0)));
-                $deptLabel = adviser_analytics_department_label($department['department'] ?? '');
+                $deptLabel = adviser_analytics_section_label($department['section'] ?? ($department['department'] ?? ''));
               ?>
               <div class="adviser-dept-bar">
                 <span class="adviser-dept-bar-rate" style="font-weight:700; color:#050505;"><?php echo adviser_analytics_escape($rate); ?>%</span>
@@ -802,7 +1081,7 @@ foreach ($statusChart as $item) {
           </div>
         <?php else: ?>
           <div class="adviser-analytics-empty">
-            Department placement chart will appear once student placement data is available.
+            Section placement chart will appear once student placement data is available.
           </div>
         <?php endif; ?>
       </article>
@@ -845,7 +1124,7 @@ foreach ($statusChart as $item) {
   <section class="adviser-analytics-grid">
     <article class="adviser-analytics-panel" style="background:linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%); border:1px solid var(--border);">
       <h3 class="adviser-analytics-panel-title" style="font-size:1.05rem; background:linear-gradient(135deg, #050505 0%, #12b3ac 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">
-        <i class="fas fa-university" style="-webkit-text-fill-color:#12b3ac;"></i> Dept. Placement Performance
+        <i class="fas fa-university" style="-webkit-text-fill-color:#12b3ac;"></i> Section Placement Performance
       </h3>
 
       <?php if (!empty($placementByDept)): ?>
@@ -854,7 +1133,7 @@ foreach ($statusChart as $item) {
             <?php $rate = max(0, min(100, (int)($department['placement_rate'] ?? 0))); ?>
             <div class="adviser-analytics-bar-row" style="padding:10px; background:#f8fafc; border-radius:8px; margin-bottom:8px;">
               <div class="adviser-analytics-bar-top">
-                <span class="adviser-analytics-bar-label" style="font-weight:600; color:#334155;"><?php echo adviser_analytics_escape(adviser_analytics_department_label($department['department'] ?? '')); ?></span>
+                <span class="adviser-analytics-bar-label" style="font-weight:600; color:#334155;"><?php echo adviser_analytics_escape(adviser_analytics_section_label($department['section'] ?? ($department['department'] ?? ''))); ?></span>
                 <span class="adviser-analytics-bar-value" style="font-size:1.1rem; color:#050505;"><?php echo adviser_analytics_escape($rate); ?>%</span>
               </div>
               <div class="adviser-analytics-track" style="height:12px; border-radius:6px; background:#e2e8f0;">
@@ -864,7 +1143,7 @@ foreach ($statusChart as $item) {
           <?php endforeach; ?>
         </div>
         <div style="margin-top:12px; padding:10px; background:linear-gradient(135deg, #f0fdf4, #ffffff); border-radius:8px; font-size:0.82rem; color:#166534;">
-          <i class="fas fa-graduation-cap"></i> <strong>University Insight:</strong> Track department performance to identify programs needing more industry partnerships.
+          <i class="fas fa-graduation-cap"></i> <strong>University Insight:</strong> Track section performance to identify groups needing more industry partnerships.
         </div>
       <?php else: ?>
         <div class="adviser-analytics-empty">
@@ -910,6 +1189,200 @@ foreach ($statusChart as $item) {
         </div>
       <?php endif; ?>
     </article>
+  </section>
+
+  <section class="adviser-analytics-panel" style="background:linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border:1px solid var(--border);">
+    <div class="adviser-activity-report-head">
+      <div>
+        <h3 class="adviser-analytics-panel-title" style="font-size:1.1rem; margin-bottom:0; background:linear-gradient(135deg, #050505 0%, #12b3ac 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">
+          <i class="fas fa-file-lines" style="-webkit-text-fill-color:#12b3ac;"></i> Company Activity Report
+        </h3>
+        <p class="adviser-activity-report-subtitle">Tracks which companies are actively accepting BSU interns, pending verification, or inactive.</p>
+      </div>
+      <a class="adviser-activity-export" href="<?php echo adviser_analytics_escape($analyticsBaseUrl); ?>/pages/adviser/analytics/export_company_activity.php">
+        <i class="fas fa-file-csv"></i>
+        Export CSV
+      </a>
+    </div>
+
+    <div class="adviser-activity-summary">
+      <div class="adviser-activity-metric">
+        <span class="adviser-activity-metric-value"><?php echo adviser_analytics_escape($activeCompanies); ?></span>
+        <span class="adviser-activity-metric-label">Active Companies</span>
+      </div>
+      <div class="adviser-activity-metric">
+        <span class="adviser-activity-metric-value"><?php echo adviser_analytics_escape($notActiveCompanies); ?></span>
+        <span class="adviser-activity-metric-label">Not Active / Pending</span>
+      </div>
+      <div class="adviser-activity-metric">
+        <span class="adviser-activity-metric-value"><?php echo adviser_analytics_escape($pendingCompanies); ?></span>
+        <span class="adviser-activity-metric-label">Pending Verification</span>
+      </div>
+      <div class="adviser-activity-metric">
+        <span class="adviser-activity-metric-value"><?php echo adviser_analytics_escape($activeCompanyRate); ?>%</span>
+        <span class="adviser-activity-metric-label">Active Share</span>
+      </div>
+    </div>
+
+    <?php if (!empty($companyActivityRows)): ?>
+      <div class="adviser-activity-table-wrap">
+        <table class="adviser-activity-table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Activity</th>
+              <th>Openings</th>
+              <th>Students</th>
+              <th>Verification</th>
+              <th>Latest Placement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($companyActivityRows as $company): ?>
+              <?php
+                $activityClass = trim((string)($company['activity_class'] ?? 'warning'));
+                $contactPerson = trim((string)($company['contact_person_name'] ?? ''));
+                $companyEmail = trim((string)($company['email'] ?? ''));
+                $contactLine = $contactPerson !== '' ? $contactPerson : ($companyEmail !== '' ? $companyEmail : 'No contact recorded');
+              ?>
+              <tr>
+                <td>
+                  <span class="adviser-activity-company"><?php echo adviser_analytics_escape($company['company_name'] ?? 'Company'); ?></span>
+                  <span class="adviser-activity-muted"><?php echo adviser_analytics_escape($company['industry'] ?? 'General'); ?> | <?php echo adviser_analytics_escape($contactLine); ?></span>
+                </td>
+                <td>
+                  <span class="adviser-activity-badge <?php echo adviser_analytics_escape($activityClass); ?>"><?php echo adviser_analytics_escape($company['activity_status'] ?? 'Pending'); ?></span>
+                  <span class="adviser-activity-muted"><?php echo adviser_analytics_escape($company['activity_detail'] ?? ''); ?></span>
+                </td>
+                <td>
+                  <strong><?php echo adviser_analytics_escape((int)($company['open_postings'] ?? 0)); ?></strong> open posts
+                  <span class="adviser-activity-muted"><?php echo adviser_analytics_escape((int)($company['open_slots'] ?? 0)); ?> listed slots</span>
+                </td>
+                <td>
+                  <strong><?php echo adviser_analytics_escape((int)($company['student_count'] ?? 0)); ?></strong> assigned
+                  <span class="adviser-activity-muted"><?php echo adviser_analytics_escape((int)($company['active_interns'] ?? 0)); ?> active, <?php echo adviser_analytics_escape((int)($company['completed_interns'] ?? 0)); ?> completed</span>
+                </td>
+                <td><?php echo adviser_analytics_escape($company['verification_status'] ?? 'Pending'); ?></td>
+                <td><?php echo adviser_analytics_escape(adviser_analytics_format_report_date($company['latest_placement_date'] ?? '')); ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php else: ?>
+      <div class="adviser-analytics-empty">
+        Company activity report will appear once company records are available.
+      </div>
+    <?php endif; ?>
+  </section>
+
+  <section class="adviser-analytics-panel" style="background:linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border:1px solid var(--border);">
+    <div class="adviser-activity-report-head">
+      <div>
+        <h3 class="adviser-analytics-panel-title" style="font-size:1.1rem; margin-bottom:0; background:linear-gradient(135deg, #050505 0%, #12b3ac 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">
+          <i class="fas fa-user-check" style="-webkit-text-fill-color:#12b3ac;"></i> Student Performance Report
+        </h3>
+        <p class="adviser-activity-report-subtitle">Shows early OJT finishers, punctual log submitters, and evaluated students who need attention.</p>
+      </div>
+      <a class="adviser-activity-export" href="<?php echo adviser_analytics_escape($analyticsBaseUrl); ?>/pages/adviser/analytics/export_student_performance.php">
+        <i class="fas fa-file-csv"></i>
+        Export CSV
+      </a>
+    </div>
+
+    <div class="adviser-activity-summary">
+      <div class="adviser-activity-metric">
+        <span class="adviser-activity-metric-value"><?php echo adviser_analytics_escape($earlyFinisherCount); ?></span>
+        <span class="adviser-activity-metric-label">Early Finishers</span>
+      </div>
+      <div class="adviser-activity-metric">
+        <span class="adviser-activity-metric-value"><?php echo adviser_analytics_escape($punctualStudentCount); ?></span>
+        <span class="adviser-activity-metric-label">Punctual Ranked</span>
+      </div>
+      <div class="adviser-activity-metric">
+        <span class="adviser-activity-metric-value"><?php echo adviser_analytics_escape($needsAttentionCount); ?></span>
+        <span class="adviser-activity-metric-label">Needs Attention</span>
+      </div>
+      <div class="adviser-activity-metric">
+        <span class="adviser-activity-metric-value"><?php echo adviser_analytics_escape($evaluatedStudentCount); ?></span>
+        <span class="adviser-activity-metric-label">Employer Evaluated</span>
+      </div>
+    </div>
+
+    <div class="adviser-performance-grid">
+      <article class="adviser-performance-column">
+        <div class="adviser-performance-column-head">
+          <h4 class="adviser-performance-column-title"><i class="fas fa-forward"></i> Early Finishers</h4>
+          <p class="adviser-performance-column-sub">Completed required OJT hours before the expected end date.</p>
+        </div>
+        <div class="adviser-performance-list">
+          <?php if (!empty($earlyFinishers)): ?>
+            <?php foreach ($earlyFinishers as $row): ?>
+              <div class="adviser-performance-item">
+                <span class="adviser-performance-name"><?php echo adviser_analytics_escape($row['student_name'] ?? 'Student'); ?></span>
+                <span class="adviser-performance-meta"><?php echo adviser_analytics_escape($row['company_name'] ?? 'Company'); ?> | <?php echo adviser_analytics_escape($row['internship_title'] ?? 'Internship'); ?></span>
+                <span class="adviser-performance-value"><i class="fas fa-clock"></i> <?php echo adviser_analytics_escape((int)($row['days_early'] ?? 0)); ?> days early</span>
+                <span class="adviser-performance-meta">Completed <?php echo adviser_analytics_escape(adviser_analytics_format_report_date($row['completion_date'] ?? '')); ?> | Expected <?php echo adviser_analytics_escape(adviser_analytics_format_report_date($row['end_date'] ?? '')); ?></span>
+              </div>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <div class="adviser-performance-item">
+              <span class="adviser-performance-meta">No early finishers detected yet.</span>
+            </div>
+          <?php endif; ?>
+        </div>
+      </article>
+
+      <article class="adviser-performance-column">
+        <div class="adviser-performance-column-head">
+          <h4 class="adviser-performance-column-title"><i class="fas fa-calendar-check"></i> Most Punctual</h4>
+          <p class="adviser-performance-column-sub">Ranked by on-time daily log submissions.</p>
+        </div>
+        <div class="adviser-performance-list">
+          <?php if (!empty($punctualStudents)): ?>
+            <?php foreach ($punctualStudents as $row): ?>
+              <div class="adviser-performance-item">
+                <span class="adviser-performance-name"><?php echo adviser_analytics_escape($row['student_name'] ?? 'Student'); ?></span>
+                <span class="adviser-performance-meta"><?php echo adviser_analytics_escape($row['company_name'] ?? 'Company'); ?> | <?php echo adviser_analytics_escape($row['internship_title'] ?? 'Internship'); ?></span>
+                <span class="adviser-performance-value"><i class="fas fa-check"></i> <?php echo adviser_analytics_escape((int)($row['on_time_rate'] ?? 0)); ?>% on time</span>
+                <span class="adviser-performance-meta"><?php echo adviser_analytics_escape((int)($row['on_time_logs'] ?? 0)); ?> on-time logs | <?php echo adviser_analytics_escape((int)($row['late_logs'] ?? 0)); ?> late | <?php echo adviser_analytics_escape((int)($row['total_logs'] ?? 0)); ?> total</span>
+              </div>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <div class="adviser-performance-item">
+              <span class="adviser-performance-meta">No daily log punctuality data yet.</span>
+            </div>
+          <?php endif; ?>
+        </div>
+      </article>
+
+      <article class="adviser-performance-column">
+        <div class="adviser-performance-column-head">
+          <h4 class="adviser-performance-column-title"><i class="fas fa-triangle-exclamation"></i> Needs Attention</h4>
+          <p class="adviser-performance-column-sub">Shown only after employer evaluation gives objective concern signals.</p>
+        </div>
+        <div class="adviser-performance-list">
+          <?php if (!empty($needsAttentionStudents)): ?>
+            <?php foreach ($needsAttentionStudents as $row): ?>
+              <?php $cleanComment = adviser_analytics_clean_evaluation_comment($row['comment'] ?? ''); ?>
+              <div class="adviser-performance-item">
+                <span class="adviser-performance-name"><?php echo adviser_analytics_escape($row['student_name'] ?? 'Student'); ?></span>
+                <span class="adviser-performance-meta"><?php echo adviser_analytics_escape($row['company_name'] ?? 'Company'); ?> | <?php echo adviser_analytics_escape($row['internship_title'] ?? 'Internship'); ?></span>
+                <span class="adviser-performance-value danger"><i class="fas fa-circle-exclamation"></i> <?php echo adviser_analytics_escape($row['reason_text'] ?? 'Review needed'); ?></span>
+                <span class="adviser-performance-meta">Overall <?php echo adviser_analytics_escape(adviser_analytics_score_text($row['overall_score'] ?? null)); ?> | Behavioral <?php echo adviser_analytics_escape(adviser_analytics_score_text($row['behavioral_score'] ?? null)); ?> | Evaluated <?php echo adviser_analytics_escape(adviser_analytics_format_report_date($row['evaluation_date'] ?? '')); ?></span>
+                <?php if ($cleanComment !== ''): ?>
+                  <div class="adviser-performance-comment"><?php echo adviser_analytics_escape($cleanComment); ?></div>
+                <?php endif; ?>
+              </div>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <div class="adviser-performance-item">
+              <span class="adviser-performance-meta">No evaluated students are currently flagged for attention.</span>
+            </div>
+          <?php endif; ?>
+        </div>
+      </article>
+    </div>
   </section>
 
   <section class="adviser-analytics-panel adviser-analytics-companies-panel" style="background:linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%); border:1px solid var(--border);">

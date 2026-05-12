@@ -20,6 +20,27 @@ $data = [
     ],
     'placement_by_dept' => [],
     'top_companies' => [],
+    'company_activity_report' => [
+        'summary' => [
+            'total' => 0,
+            'active' => 0,
+            'inactive' => 0,
+            'pending' => 0,
+            'not_active' => 0,
+        ],
+        'rows' => [],
+    ],
+    'student_performance_report' => [
+        'summary' => [
+            'early_finishers' => 0,
+            'punctual_students' => 0,
+            'needs_attention' => 0,
+            'evaluated_students' => 0,
+        ],
+        'early_finishers' => [],
+        'punctual_students' => [],
+        'needs_attention' => [],
+    ],
     'top_skills' => [],
     'trends' => [],
 ];
@@ -29,6 +50,8 @@ if ($adviser_id > 0) {
         $data['stats'] = adviser_analytics_get_stats($pdo, $adviser_id);
         $data['placement_by_dept'] = adviser_analytics_get_placement_by_dept($pdo, $adviser_id);
         $data['top_companies'] = adviser_analytics_get_top_companies($pdo, $adviser_id);
+        $data['company_activity_report'] = adviser_analytics_get_company_activity_report($pdo, $adviser_id);
+        $data['student_performance_report'] = adviser_analytics_get_student_performance_report($pdo, $adviser_id);
         $data['top_skills'] = adviser_analytics_get_top_skills($pdo, $adviser_id);
         $data['trends'] = adviser_analytics_get_trends($pdo, $adviser_id);
     } catch (Exception $e) {

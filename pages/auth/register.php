@@ -79,12 +79,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($role === 'employer') {
                 $companyName = trim($firstName . ' ' . $lastName);
                 if ($org !== '') $companyName = $org;
-                $stmt = $pdo->prepare("
-                    INSERT INTO employer
-                    (company_name, industry, company_address, email, contact_number, password_hash, verification_status, company_badge_status, company_logo, website_url, created_at, updated_at)
-                    VALUES (?, '', '', ?, '', ?, 'Pending', 'None', NULL, NULL, NOW(), NOW())
-                ");
-                $stmt->execute([$companyName, $email, $hash]);
+                $contactPersonName = trim($firstName . ' ' . $lastName);
+                $hasContactPersonColumn = false;
+                try {
+                    $columnStmt = $pdo->prepare(
+                        "SELECT 1
+                         FROM INFORMATION_SCHEMA.COLUMNS
+                         WHERE TABLE_SCHEMA = DATABASE()
+                           AND TABLE_NAME = 'employer'
+                           AND COLUMN_NAME = 'contact_person_name'
+                         LIMIT 1"
+                    );
+                    $columnStmt->execute();
+                    $hasContactPersonColumn = (bool)$columnStmt->fetchColumn();
+                } catch (Throwable $e) {
+                    $hasContactPersonColumn = false;
+                }
+
+                if ($hasContactPersonColumn) {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO employer
+                        (company_name, contact_person_name, industry, company_address, email, contact_number, password_hash, verification_status, company_badge_status, company_logo, website_url, created_at, updated_at)
+                        VALUES (?, ?, '', '', ?, '', ?, 'Pending', 'None', NULL, NULL, NOW(), NOW())
+                    ");
+                    $stmt->execute([$companyName, $contactPersonName, $email, $hash]);
+                } else {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO employer
+                        (company_name, industry, company_address, email, contact_number, password_hash, verification_status, company_badge_status, company_logo, website_url, created_at, updated_at)
+                        VALUES (?, '', '', ?, '', ?, 'Pending', 'None', NULL, NULL, NOW(), NOW())
+                    ");
+                    $stmt->execute([$companyName, $email, $hash]);
+                }
             } elseif ($role === 'adviser') {
                 $dept = $org !== '' ? $org : '';
                 $stmt = $pdo->prepare("

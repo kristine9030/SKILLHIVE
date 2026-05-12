@@ -17,6 +17,11 @@ function adviser_analytics_department_label($value) {
     return $map[$label] ?? ($label !== '' ? $label : 'Unassigned');
 }
 
+function adviser_analytics_section_label($value) {
+    $label = trim((string)$value);
+    return $label !== '' ? $label : 'Unassigned';
+}
+
 function adviser_analytics_get_gradient($percentage) {
     if ($percentage >= 90) return 'linear-gradient(90deg, #12b3ac, #12b3ac)';
     if ($percentage >= 75) return 'linear-gradient(90deg, #12b3ac, #12b3ac)';
@@ -77,4 +82,85 @@ function adviser_analytics_company_partner_label(array $company) {
     }
 
     return 'Partner Company';
+}
+
+function adviser_analytics_company_activity_meta(array $company) {
+    $verification = strtolower(trim((string)($company['verification_status'] ?? 'pending')));
+    $openPostings = (int)($company['open_postings'] ?? 0);
+    $openSlots = (int)($company['open_slots'] ?? 0);
+
+    if (in_array($verification, ['rejected', 'flagged'], true)) {
+        return [
+            'label' => 'Inactive',
+            'detail' => 'Not cleared for BSU intern acceptance.',
+            'class' => 'danger',
+        ];
+    }
+
+    if ($openPostings > 0 && in_array($verification, ['approved', 'verified'], true)) {
+        $postingText = $openPostings === 1 ? '1 open posting' : $openPostings . ' open postings';
+        $slotText = $openSlots === 1 ? '1 listed slot' : $openSlots . ' listed slots';
+        return [
+            'label' => 'Active',
+            'detail' => $postingText . ', ' . $slotText,
+            'class' => 'success',
+        ];
+    }
+
+    if ($openPostings > 0) {
+        return [
+            'label' => 'Pending',
+            'detail' => 'Has open postings but verification is pending.',
+            'class' => 'warning',
+        ];
+    }
+
+    if (in_array($verification, ['approved', 'verified'], true)) {
+        return [
+            'label' => 'Inactive',
+            'detail' => 'Verified but no open internship postings.',
+            'class' => 'warning',
+        ];
+    }
+
+    return [
+        'label' => 'Pending',
+        'detail' => 'Awaiting company verification.',
+        'class' => 'warning',
+    ];
+}
+
+function adviser_analytics_format_report_date($dateValue) {
+    $value = trim((string)$dateValue);
+    if ($value === '') {
+        return 'N/A';
+    }
+
+    $timestamp = strtotime($value);
+    if ($timestamp === false) {
+        return 'N/A';
+    }
+
+    return date('M j, Y', $timestamp);
+}
+
+function adviser_analytics_clean_evaluation_comment($comment) {
+    $raw = trim((string)$comment);
+    if ($raw === '') {
+        return '';
+    }
+
+    if (preg_match('/^\[COMM:[0-9]+(?:\.[0-9]+)?\]\[ETHIC:[0-9]+(?:\.[0-9]+)?\]\s*(.*)$/s', $raw, $matches)) {
+        return trim((string)($matches[1] ?? ''));
+    }
+
+    return $raw;
+}
+
+function adviser_analytics_score_text($score) {
+    if ($score === null || $score === '' || !is_numeric($score)) {
+        return 'N/A';
+    }
+
+    return number_format((float)$score, 1) . '/5';
 }
