@@ -82,10 +82,9 @@ $errorMessage = '';
 
 $formState = [
   'candidate_key' => '',
-  'period' => 'Final',
   'technical_score' => 0,
-  'communication_score' => 0,
-  'work_ethic_score' => 0,
+  'behavioral_score' => 0,
+  'recommendation_status' => '',
   'comments' => '',
   'internship_id' => 0,
 ];
@@ -97,10 +96,9 @@ $selectedFilters = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $employerId > 0) {
   $formState['internship_id'] = $selectedFilters['internship_id'];
   $formState['candidate_key'] = trim((string)($_POST['candidate_key'] ?? ''));
-  $formState['period'] = 'Final';
   $formState['technical_score'] = (float)($_POST['technical_score'] ?? 0);
-  $formState['communication_score'] = (float)($_POST['communication_score'] ?? 0);
-  $formState['work_ethic_score'] = (float)($_POST['work_ethic_score'] ?? 0);
+  $formState['behavioral_score'] = (float)($_POST['behavioral_score'] ?? 0);
+  $formState['recommendation_status'] = trim((string)($_POST['recommendation_status'] ?? ''));
   $formState['comments'] = trim((string)($_POST['comments'] ?? ''));
 
   try {
@@ -161,17 +159,17 @@ if ($exportMode === 'csv' && $employerId > 0) {
   $out = fopen('php://output', 'w');
   if ($out !== false) {
     fwrite($out, "\xEF\xBB\xBF");
-    fputcsv($out, ['Intern', 'Internship', 'Period', 'Technical', 'Communication', 'Work Ethic', 'Overall', 'Feedback', 'Evaluation Date']);
+    fputcsv($out, ['Intern', 'Internship', 'Recommendation', 'Technical', 'Behavioral', 'Overall', 'Evaluation Summary', 'Feedback', 'Evaluation Date']);
 
     foreach ($history as $row) {
       fputcsv($out, [
         (string)($row['intern'] ?? ''),
         (string)($row['internship_title'] ?? ''),
-        (string)($row['period'] ?? ''),
+        (string)($row['recommendation_status'] ?? ''),
         (string)number_format((float)($row['technical'] ?? 0), 1),
-        (string)number_format((float)($row['communication'] ?? 0), 1),
-        (string)number_format((float)($row['ethic'] ?? 0), 1),
+        (string)number_format((float)($row['behavioral'] ?? 0), 1),
         (string)number_format((float)($row['overall'] ?? 0), 1),
+        (string)($row['summary_text'] ?? ''),
         (string)($row['comment'] ?? ''),
         (string)($row['evaluation_date'] ?? ''),
       ]);
@@ -525,10 +523,9 @@ if ($exportMode === 'csv' && $employerId > 0) {
             </select>
           </div>
           <div class="eval-form-group">
-            <label class="eval-form-label">Evaluation Period</label>
-            <input type="hidden" name="period" value="Final">
-            <div class="eval-form-input eval-period-display">
-              <i class="fas fa-calendar-check" style="color:#12b3ac;"></i> Final Evaluation
+            <label class="eval-form-label">Recommendation Outcome</label>
+            <div class="eval-form-input eval-recommendation-display">
+              <i class="fas fa-circle-check" style="color:#12b3ac;"></i> Based on technical and behavioral scores
             </div>
           </div>
         </div>
@@ -544,31 +541,33 @@ if ($exportMode === 'csv' && $employerId > 0) {
               <i class="fas fa-star" data-rating="4" onclick="setRating('techStars',4,'technical_score')"></i>
               <i class="fas fa-star" data-rating="5" onclick="setRating('techStars',5,'technical_score')"></i>
             </div>
-            <span class="eval-score-label" id="techScoreLabel">Not rated</span>
+            <span class="eval-score-label" id="techScoreLabel">Select a score</span>
           </div>
           <div class="eval-criterion">
-            <label class="eval-form-label">Communication</label>
-            <input type="hidden" name="communication_score" id="communication_score" value="<?php echo (float)$formState['communication_score']; ?>">
-            <div class="eval-stars" id="commStars">
-              <i class="fas fa-star" data-rating="1" onclick="setRating('commStars',1,'communication_score')"></i>
-              <i class="fas fa-star" data-rating="2" onclick="setRating('commStars',2,'communication_score')"></i>
-              <i class="fas fa-star" data-rating="3" onclick="setRating('commStars',3,'communication_score')"></i>
-              <i class="fas fa-star" data-rating="4" onclick="setRating('commStars',4,'communication_score')"></i>
-              <i class="fas fa-star" data-rating="5" onclick="setRating('commStars',5,'communication_score')"></i>
+            <label class="eval-form-label">Behavioral Score</label>
+            <input type="hidden" name="behavioral_score" id="behavioral_score" value="<?php echo (float)$formState['behavioral_score']; ?>">
+            <div class="eval-stars" id="behaviorStars">
+              <i class="fas fa-star" data-rating="1" onclick="setRating('behaviorStars',1,'behavioral_score')"></i>
+              <i class="fas fa-star" data-rating="2" onclick="setRating('behaviorStars',2,'behavioral_score')"></i>
+              <i class="fas fa-star" data-rating="3" onclick="setRating('behaviorStars',3,'behavioral_score')"></i>
+              <i class="fas fa-star" data-rating="4" onclick="setRating('behaviorStars',4,'behavioral_score')"></i>
+              <i class="fas fa-star" data-rating="5" onclick="setRating('behaviorStars',5,'behavioral_score')"></i>
             </div>
-            <span class="eval-score-label" id="commScoreLabel">Not rated</span>
+            <span class="eval-score-label" id="behaviorScoreLabel">Select a score</span>
           </div>
           <div class="eval-criterion">
-            <label class="eval-form-label">Work Ethic</label>
-            <input type="hidden" name="work_ethic_score" id="work_ethic_score" value="<?php echo (float)$formState['work_ethic_score']; ?>">
-            <div class="eval-stars" id="ethicStars">
-              <i class="fas fa-star" data-rating="1" onclick="setRating('ethicStars',1,'work_ethic_score')"></i>
-              <i class="fas fa-star" data-rating="2" onclick="setRating('ethicStars',2,'work_ethic_score')"></i>
-              <i class="fas fa-star" data-rating="3" onclick="setRating('ethicStars',3,'work_ethic_score')"></i>
-              <i class="fas fa-star" data-rating="4" onclick="setRating('ethicStars',4,'work_ethic_score')"></i>
-              <i class="fas fa-star" data-rating="5" onclick="setRating('ethicStars',5,'work_ethic_score')"></i>
+            <label class="eval-form-label">Employer Recommendation</label>
+            <div class="eval-recommendation-options">
+              <label class="eval-recommendation-option">
+                <input type="radio" name="recommendation_status" value="Recommended" <?php echo $formState['recommendation_status'] === 'Recommended' ? 'checked' : ''; ?> required>
+                <span><i class="fas fa-check"></i> Recommended</span>
+              </label>
+              <label class="eval-recommendation-option danger">
+                <input type="radio" name="recommendation_status" value="Not Recommended" <?php echo $formState['recommendation_status'] === 'Not Recommended' ? 'checked' : ''; ?> required>
+                <span><i class="fas fa-xmark"></i> Not Recommended</span>
+              </label>
             </div>
-            <span class="eval-score-label" id="ethicScoreLabel">Not rated</span>
+            <span class="eval-score-label">Select outcome</span>
           </div>
         </div>
 
@@ -598,11 +597,11 @@ if ($exportMode === 'csv' && $employerId > 0) {
             <tr>
               <th>Intern</th>
               <th>Internship</th>
-              <th>Period</th>
+              <th>Recommendation</th>
               <th>Technical</th>
-              <th>Communication</th>
-              <th>Work Ethic</th>
+              <th>Behavioral</th>
               <th>Overall</th>
+              <th>Evaluation Summary</th>
               <th>Feedback</th>
               <th>Date</th>
             </tr>
@@ -620,6 +619,14 @@ if ($exportMode === 'csv' && $employerId > 0) {
                 $evaluatedDateLabel = $evaluatedDateText !== '' ? date('M j, Y', strtotime($evaluatedDateText)) : 'N/A';
                 $overallScore = (float)$row['overall'];
                 $overallClass = $overallScore >= 4.5 ? 'outstanding' : ($overallScore >= 3.5 ? 'good' : ($overallScore >= 2.5 ? 'fair' : 'needs-improvement'));
+                $summaryRaw = trim((string)($row['summary_text'] ?? ''));
+                $summaryText = $summaryRaw !== '' ? $summaryRaw : 'Employer marked Recommended';
+                if (strlen($summaryText) > 120) {
+                  $summaryText = substr($summaryText, 0, 117) . '...';
+                }
+                $recommendationStatus = trim((string)($row['recommendation_status'] ?? 'Recommended'));
+                $recommendationClass = trim((string)($row['recommendation_class'] ?? 'recommended'));
+                $summaryClass = !empty($row['has_concerns']) ? 'attention' : 'clear';
                 ?>
                 <tr>
                   <td>
@@ -629,11 +636,11 @@ if ($exportMode === 'csv' && $employerId > 0) {
                     </div>
                   </td>
                   <td><?php echo dashboard_escape($row['internship_title']); ?></td>
-                  <td><span class="eval-period-badge"><?php echo dashboard_escape($row['period']); ?></span></td>
+                  <td><span class="eval-recommendation-badge <?php echo dashboard_escape($recommendationClass); ?>"><?php echo dashboard_escape($recommendationStatus); ?></span></td>
                   <td><span class="eval-score"><i class="fas fa-star"></i> <?php echo number_format((float)$row['technical'], 1); ?></span></td>
-                  <td><span class="eval-score"><i class="fas fa-star"></i> <?php echo number_format((float)$row['communication'], 1); ?></span></td>
-                  <td><span class="eval-score"><i class="fas fa-star"></i> <?php echo number_format((float)$row['ethic'], 1); ?></span></td>
+                  <td><span class="eval-score"><i class="fas fa-star"></i> <?php echo number_format((float)$row['behavioral'], 1); ?></span></td>
                   <td><span class="eval-overall <?php echo $overallClass; ?>"><?php echo number_format($overallScore, 1); ?></span></td>
+                  <td class="eval-summary-cell" title="<?php echo dashboard_escape($summaryRaw); ?>"><span class="eval-summary-text <?php echo $summaryClass; ?>"><?php echo dashboard_escape($summaryText); ?></span></td>
                   <td class="eval-feedback" title="<?php echo dashboard_escape($feedbackRaw); ?>"><?php echo dashboard_escape($feedbackText); ?></td>
                   <td class="eval-date"><?php echo dashboard_escape($evaluatedDateLabel); ?></td>
                 </tr>
@@ -735,8 +742,7 @@ function setRating(groupId, rating, inputId) {
 
   var scoreLabelId = '';
   if (inputId === 'technical_score') scoreLabelId = 'techScoreLabel';
-  else if (inputId === 'communication_score') scoreLabelId = 'commScoreLabel';
-  else if (inputId === 'work_ethic_score') scoreLabelId = 'ethicScoreLabel';
+  else if (inputId === 'behavioral_score') scoreLabelId = 'behaviorScoreLabel';
 
   if (scoreLabelId) {
     var label = document.getElementById(scoreLabelId);
@@ -745,7 +751,7 @@ function setRating(groupId, rating, inputId) {
         label.textContent = rating + '/5 — ' + evalLabels[rating];
         label.className = 'eval-score-label rated';
       } else {
-        label.textContent = 'Not rated';
+        label.textContent = 'Select a score';
         label.className = 'eval-score-label';
       }
     }
@@ -754,7 +760,6 @@ function setRating(groupId, rating, inputId) {
 
 document.addEventListener('DOMContentLoaded', function () {
   setRating('techStars', parseFloat(document.getElementById('technical_score').value || '0'), 'technical_score');
-  setRating('commStars', parseFloat(document.getElementById('communication_score').value || '0'), 'communication_score');
-  setRating('ethicStars', parseFloat(document.getElementById('work_ethic_score').value || '0'), 'work_ethic_score');
+  setRating('behaviorStars', parseFloat(document.getElementById('behavioral_score').value || '0'), 'behavioral_score');
 });
 </script>

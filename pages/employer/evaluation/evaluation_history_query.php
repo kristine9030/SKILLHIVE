@@ -1,6 +1,6 @@
 <?php
 /**
- * Purpose: Loads recent employer evaluations and derives communication, ethic, and overall display scores.
+ * Purpose: Loads recent employer evaluations and derives adviser-style recommendation display text.
  * Tables/columns used: employer_evaluation(evaluation_id, student_id, internship_id, employer_id, technical_score, behavioral_score, comments, recommendation_status, evaluation_date), student(student_id, first_name, last_name), internship(internship_id, employer_id).
  */
 
@@ -44,25 +44,30 @@ if (!function_exists('evaluation_get_history')) {
 
         $history = [];
         foreach ($rows as $row) {
-            $parsed = parseEvaluationCommentPayload($row['comments'] ?? '');
-
             $technical     = (float)($row['technical_score']  ?? 0);
             $behavioral    = (float)($row['behavioral_score'] ?? 0);
-            $communication = $parsed['communication'] !== null ? (float)$parsed['communication'] : $behavioral;
-            $ethic         = $parsed['ethic']         !== null ? (float)$parsed['ethic']         : $behavioral;
-            $overall       = round(($technical + $communication + $ethic) / 3, 1);
+            $overall       = round(($technical + $behavioral) / 2, 1);
+            $parsed        = parseEvaluationCommentPayload($row['comments'] ?? '');
+            $storedStatus  = trim((string)($row['recommendation_status'] ?? ''));
+            $recommendationStatus = deriveEmployerEvaluationRecommendationStatus($technical, $behavioral, $storedStatus);
+            $concernReasons = buildEmployerEvaluationConcernReasons($technical, $behavioral, $recommendationStatus);
+            $summaryText = buildEmployerEvaluationSummaryText($technical, $behavioral, $recommendationStatus);
 
-            $periodRaw = trim((string)($row['recommendation_status'] ?? 'Midterm'));
-            $period    = $periodRaw !== '' ? $periodRaw : 'Midterm';
+            $recommendationClass = strtolower(str_replace(' ', '-', $recommendationStatus));
 
             $history[] = [
                 'intern'          => trim((string)$row['first_name'] . ' ' . (string)$row['last_name']),
                 'internship_id'   => (int)($row['internship_id'] ?? 0),
                 'internship_title'=> (string)($row['internship_title'] ?? 'Internship'),
-                'period'          => $period,
+                'period'          => $recommendationStatus,
+                'recommendation_status' => $recommendationStatus,
+                'recommendation_class' => $recommendationClass,
+                'summary_text'    => $summaryText,
+                'has_concerns'    => !empty($concernReasons),
                 'technical'       => round($technical, 1),
-                'communication'   => round($communication, 1),
-                'ethic'           => round($ethic, 1),
+                'behavioral'      => round($behavioral, 1),
+                'communication'   => round($behavioral, 1),
+                'ethic'           => round($behavioral, 1),
                 'overall'         => $overall,
                 'comment'         => (string)($parsed['clean_comment'] ?? ''),
                 'evaluation_date' => (string)($row['evaluation_date'] ?? ''),

@@ -8,10 +8,11 @@ if (!function_exists('saveEmployerEvaluation')) {
     function saveEmployerEvaluation(PDO $pdo, int $employerId, array $payload): array
     {
         $candidateKey  = trim((string)($payload['candidate_key'] ?? ''));
-        $period        = 'Final';
         $comment       = trim((string)($payload['comments'] ?? ''));
+        $submittedRecommendation = trim((string)($payload['recommendation_status'] ?? ''));
 
         $technical     = filter_var($payload['technical_score']     ?? null, FILTER_VALIDATE_FLOAT);
+        $behavioral    = filter_var($payload['behavioral_score']    ?? null, FILTER_VALIDATE_FLOAT);
         $communication = filter_var($payload['communication_score'] ?? null, FILTER_VALIDATE_FLOAT);
         $ethic         = filter_var($payload['work_ethic_score']    ?? null, FILTER_VALIDATE_FLOAT);
 
@@ -27,10 +28,19 @@ if (!function_exists('saveEmployerEvaluation')) {
             return ['success' => false, 'error' => 'Invalid intern selection.'];
         }
 
-        foreach (['technical' => $technical, 'communication' => $communication, 'work ethic' => $ethic] as $label => $score) {
+        if ($behavioral === false && $communication !== false && $ethic !== false) {
+            $behavioral = round((((float)$communication) + ((float)$ethic)) / 2, 1);
+        }
+
+        foreach (['technical' => $technical, 'behavioral' => $behavioral] as $label => $score) {
             if ($score === false || $score < 1 || $score > 5) {
                 return ['success' => false, 'error' => 'Please provide a valid ' . $label . ' rating (1 to 5).'];
             }
+        }
+
+        $recommendationKey = strtolower($submittedRecommendation);
+        if (!in_array($recommendationKey, ['recommended', 'not recommended'], true)) {
+            return ['success' => false, 'error' => 'Please choose a recommendation outcome.'];
         }
 
         $ownershipStmt = $pdo->prepare(
@@ -56,8 +66,9 @@ if (!function_exists('saveEmployerEvaluation')) {
             return ['success' => false, 'error' => 'Intern is not yet eligible for evaluation. Complete OJT first.'];
         }
 
-        $behavioral    = round((((float)$communication) + ((float)$ethic)) / 2, 1);
-        $storedComment = composeEvaluationCommentPayload((float)$communication, (float)$ethic, $comment);
+        $behavioral = round((float)$behavioral, 1);
+        $recommendationStatus = deriveEmployerEvaluationRecommendationStatus((float)$technical, $behavioral, $submittedRecommendation);
+        $storedComment = composeEvaluationCommentPayload($behavioral, $behavioral, $comment);
 
         $existingStmt = $pdo->prepare(
             'SELECT evaluation_id
@@ -65,14 +76,13 @@ if (!function_exists('saveEmployerEvaluation')) {
              WHERE student_id = :student_id
                AND internship_id = :internship_id
                AND employer_id = :employer_id
-               AND recommendation_status = :recommendation_status
+             ORDER BY evaluation_id DESC
              LIMIT 1'
         );
         $existingStmt->execute([
             ':student_id' => $studentId,
             ':internship_id' => $internshipId,
             ':employer_id' => $employerId,
-            ':recommendation_status' => $period,
         ]);
 
         $existingEvaluationId = (int)$existingStmt->fetchColumn();
@@ -83,6 +93,7 @@ if (!function_exists('saveEmployerEvaluation')) {
                  SET technical_score = :technical_score,
                      behavioral_score = :behavioral_score,
                      comments = :comments,
+                     recommendation_status = :recommendation_status,
                      evaluation_date = NOW()
                  WHERE evaluation_id = :evaluation_id
                    AND employer_id = :employer_id'
@@ -91,6 +102,7 @@ if (!function_exists('saveEmployerEvaluation')) {
                 ':technical_score' => (float)$technical,
                 ':behavioral_score' => $behavioral,
                 ':comments' => $storedComment,
+                ':recommendation_status' => $recommendationStatus,
                 ':evaluation_id' => $existingEvaluationId,
                 ':employer_id' => $employerId,
             ]);
@@ -109,7 +121,7 @@ if (!function_exists('saveEmployerEvaluation')) {
                 ':technical_score'        => (float)$technical,
                 ':behavioral_score'       => $behavioral,
                 ':comments'               => $storedComment,
-                ':recommendation_status'  => $period,
+                ':recommendation_status'  => $recommendationStatus,
             ]);
         }
 

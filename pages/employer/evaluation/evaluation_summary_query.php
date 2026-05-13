@@ -34,12 +34,9 @@ if (!function_exists('evaluation_get_summary')) {
 
         $overallTotal = 0.0;
         foreach ($evaluationRows as $row) {
-            $parsed = parseEvaluationCommentPayload($row['comments'] ?? '');
             $technical = (float)($row['technical_score'] ?? 0);
             $behavioral = (float)($row['behavioral_score'] ?? 0);
-            $communication = $parsed['communication'] !== null ? (float)$parsed['communication'] : $behavioral;
-            $ethic = $parsed['ethic'] !== null ? (float)$parsed['ethic'] : $behavioral;
-            $overallTotal += (($technical + $communication + $ethic) / 3);
+            $overallTotal += (($technical + $behavioral) / 2);
         }
 
         $totalEvaluations = count($evaluationRows);

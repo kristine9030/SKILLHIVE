@@ -4807,7 +4807,7 @@ select.eval-form-input {
     appearance: auto;
 }
 
-.eval-period-display {
+.eval-recommendation-display {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -4834,7 +4834,7 @@ select.eval-form-input {
 
 .eval-criteria-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
 }
 
@@ -4859,6 +4859,61 @@ select.eval-form-input {
 
 .eval-score-label.rated {
     color: #12b3ac;
+}
+
+.eval-recommendation-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.eval-recommendation-option {
+    display: flex;
+    width: 100%;
+    cursor: pointer;
+}
+
+.eval-recommendation-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.eval-recommendation-option span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 1px solid #d1fae5;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #047857;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    transition: all 0.18s ease;
+}
+
+.eval-recommendation-option.danger span {
+    border-color: #fee2e2;
+    color: #b91c1c;
+}
+
+.eval-recommendation-option input:checked + span {
+    background: #ecfdf5;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+.eval-recommendation-option.danger input:checked + span {
+    background: #fef2f2;
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
 }
 
 
@@ -4923,6 +4978,47 @@ select.eval-form-input {
     background: #f0fdf9;
     color: #0d9488;
     font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.eval-recommendation-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.eval-recommendation-badge.recommended {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.eval-recommendation-badge.not-recommended {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.eval-summary-cell {
+    max-width: 280px;
+}
+
+.eval-summary-text {
+    display: block;
+    color: #4b5563;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.eval-summary-text.attention {
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+.eval-summary-text.clear {
+    color: #047857;
     font-weight: 600;
 }
 
