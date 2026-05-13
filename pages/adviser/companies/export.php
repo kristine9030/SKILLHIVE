@@ -70,9 +70,8 @@ function adviser_companies_export_rows(array $rows): array
             'Company' => trim((string)($row['company_name'] ?? 'Company')),
             'Contact Person' => adviser_companies_contact_person_label($row),
             'Industry' => trim((string)($row['industry'] ?? '')) ?: 'Unspecified',
-            'Status' => adviser_companies_verification_label((string)($row['verification_status'] ?? 'Pending')),
-            'BSU Internship Status' => (string)$acceptingMeta['label'],
-            'BSU Status Detail' => (string)$acceptingMeta['detail'],
+            'Verification' => adviser_companies_verification_label((string)($row['verification_status'] ?? 'Pending')),
+            'Verification Detail' => (string)$acceptingMeta['detail'],
             'Submitted' => adviser_companies_format_date((string)($row['created_at'] ?? '')),
             'Documents' => (string)$documents['label'],
             'Risk' => (string)$risk['label'],
@@ -99,9 +98,8 @@ function adviser_companies_export_csv(array $rows): void
         'Company',
         'Contact Person',
         'Industry',
-        'Status',
-        'BSU Internship Status',
-        'BSU Status Detail',
+        'Verification',
+        'Verification Detail',
         'Submitted',
         'Documents',
         'Risk',
@@ -146,7 +144,7 @@ function adviser_companies_export_doc(array $rows, array $filters): void
     header('Expires: 0');
 
     $activeFilters = [];
-    foreach (['industry' => 'Industry', 'status' => 'Status', 'search' => 'Search'] as $key => $label) {
+    foreach (['industry' => 'Industry', 'status' => 'Verification', 'search' => 'Search'] as $key => $label) {
         $value = trim((string)($filters[$key] ?? ''));
         if ($value !== '') {
             $activeFilters[] = $label . ': ' . $value;
@@ -165,8 +163,8 @@ function adviser_companies_export_doc(array $rows, array $filters): void
         'Company',
         'Contact Person',
         'Industry',
-        'Status',
-        'BSU Internship Status',
+        'Verification',
+        'Verification Detail',
         'Submitted',
         'Documents',
         'Risk',

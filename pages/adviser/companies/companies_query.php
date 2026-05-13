@@ -94,8 +94,15 @@ if (!function_exists('adviser_companies_get_rows')) {
 
         $status = trim((string)($filters['status'] ?? ''));
         if ($status !== '') {
-            $sql .= ' AND COALESCE(NULLIF(TRIM(e.verification_status), ""), "Pending") = :verification_status';
-            $params[':verification_status'] = $status;
+            $normalizedStatus = strtolower($status);
+            if (in_array($normalizedStatus, ['verified', 'approved'], true)) {
+                $sql .= ' AND LOWER(COALESCE(NULLIF(TRIM(e.verification_status), ""), "pending")) IN ("approved", "verified")';
+            } elseif (in_array($normalizedStatus, ['unverified', 'pending', 'rejected', 'flagged'], true)) {
+                $sql .= ' AND LOWER(COALESCE(NULLIF(TRIM(e.verification_status), ""), "pending")) NOT IN ("approved", "verified")';
+            } else {
+                $sql .= ' AND COALESCE(NULLIF(TRIM(e.verification_status), ""), "Pending") = :verification_status';
+                $params[':verification_status'] = $status;
+            }
         }
 
         $search = trim((string)($filters['search'] ?? ''));

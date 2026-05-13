@@ -23,16 +23,10 @@ if (!function_exists('adviser_companies_verification_label')) {
     function adviser_companies_verification_label(?string $verificationStatus): string
     {
         $status = strtolower(trim((string)($verificationStatus ?? 'pending')));
-        if ($status === 'approved') {
+        if (in_array($status, ['approved', 'verified'], true)) {
             return 'Verified';
         }
-        if ($status === 'rejected') {
-            return 'Rejected';
-        }
-        if ($status === 'flagged') {
-            return 'Flagged';
-        }
-        return 'Pending';
+        return 'Unverified';
     }
 }
 
@@ -40,10 +34,10 @@ if (!function_exists('adviser_companies_verification_badge_class')) {
     function adviser_companies_verification_badge_class(?string $verificationStatus): string
     {
         $status = strtolower(trim((string)($verificationStatus ?? 'pending')));
-        if ($status === 'approved') {
-            return 'badge-active';
+        if (in_array($status, ['approved', 'verified'], true)) {
+            return 'badge-verified';
         }
-        return 'badge-pending';
+        return 'badge-unverified';
     }
 }
 
@@ -90,8 +84,8 @@ if (!function_exists('adviser_companies_accepting_status_meta')) {
 
         if (in_array($verification, ['rejected', 'flagged'], true)) {
             return [
-                'label' => 'Inactive',
-                'detail' => 'Company is not cleared for BSU interns.',
+                'label' => 'Unverified',
+                'detail' => 'Company is not verified for BSU interns.',
                 'class' => 'is-danger',
             ];
         }
@@ -100,30 +94,30 @@ if (!function_exists('adviser_companies_accepting_status_meta')) {
             $postingText = $openPostings === 1 ? '1 open posting' : $openPostings . ' open postings';
             $slotText = $openSlots === 1 ? '1 listed slot' : $openSlots . ' listed slots';
             return [
-                'label' => 'Active',
-                'detail' => 'Accepting interns: ' . $postingText . ', ' . $slotText . '.',
+                'label' => 'Verified',
+                'detail' => 'Verified company with ' . $postingText . ' and ' . $slotText . '.',
                 'class' => 'is-success',
             ];
         }
 
         if ($openPostings > 0) {
             return [
-                'label' => 'Pending',
-                'detail' => 'Has open postings but company approval is still pending.',
+                'label' => 'Unverified',
+                'detail' => 'Has open postings but still needs verification.',
                 'class' => 'is-warning',
             ];
         }
 
         if (in_array($verification, ['approved', 'verified'], true)) {
             return [
-                'label' => 'Inactive',
-                'detail' => 'No open internship postings right now.',
-                'class' => 'is-warning',
+                'label' => 'Verified',
+                'detail' => 'Verified company with no open internship postings right now.',
+                'class' => 'is-success',
             ];
         }
 
         return [
-            'label' => 'Pending',
+            'label' => 'Unverified',
             'detail' => 'Awaiting company verification.',
             'class' => 'is-warning',
         ];

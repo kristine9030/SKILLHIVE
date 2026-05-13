@@ -52,6 +52,7 @@ if ($adviserId > 0) {
 }
 
 $selected = $pageData['selected'];
+$filterOptions = $pageData['filter_options'];
 $rows = $pageData['rows'];
 $moduleSettings = is_array($_SESSION['adviser_module_settings'] ?? null) ? $_SESSION['adviser_module_settings'] : [];
 $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings)
@@ -141,7 +142,24 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
     margin-bottom: 16px;
+  }
+
+  .adviser-companies-search-control {
+    position: relative;
+    flex: 1 1 280px;
+    min-width: 240px;
+  }
+
+  .adviser-companies-search-control i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 0.82rem;
+    pointer-events: none;
   }
 
   .adviser-companies-search-input {
@@ -149,14 +167,58 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
     min-height: 40px;
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 9px 12px;
+    padding: 9px 12px 9px 36px;
     font-size: 0.86rem;
     color: var(--text);
     background: #fff;
     outline: none;
   }
 
-  .adviser-companies-search-input:focus {
+  .adviser-companies-filter-select {
+    min-width: 180px;
+    min-height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0 38px 0 12px;
+    font-size: 0.86rem;
+    color: var(--text);
+    background-color: #fff;
+    outline: none;
+    appearance: none;
+    background-image:
+      linear-gradient(45deg, transparent 50%, #111 50%),
+      linear-gradient(135deg, #111 50%, transparent 50%);
+    background-position:
+      calc(100% - 18px) calc(50% - 3px),
+      calc(100% - 12px) calc(50% - 3px);
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+  }
+
+  .adviser-companies-search-input:focus,
+  .adviser-companies-filter-select:focus {
+    border-color: #111;
+  }
+
+  .adviser-companies-clear-filter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--text2);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .adviser-companies-clear-filter:hover {
+    color: #111;
     border-color: #111;
   }
 
@@ -645,15 +707,46 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
       </div>
     </div>
 
-    <div class="adviser-companies-filters" role="search" aria-label="Search companies">
-      <input
-        id="adviserCompaniesSearchInput"
-        type="text"
-        class="adviser-companies-search-input"
-        placeholder="Search company name, email, or industry"
-        value="<?php echo adviser_companies_escape((string)($selected['search'] ?? '')); ?>"
-      >
-    </div>
+    <form class="adviser-companies-filters" method="get" action="<?php echo $baseUrl; ?>/layout.php" role="search" aria-label="Filter companies">
+      <input type="hidden" name="page" value="adviser/companies">
+
+      <label class="adviser-companies-search-control" aria-label="Search companies">
+        <i class="fas fa-search"></i>
+        <input
+          id="adviserCompaniesSearchInput"
+          name="search"
+          type="text"
+          class="adviser-companies-search-input"
+          placeholder="Search company name, email, or industry"
+          value="<?php echo adviser_companies_escape((string)($selected['search'] ?? '')); ?>"
+        >
+      </label>
+
+      <select id="adviserCompaniesIndustryFilter" class="adviser-companies-filter-select" name="industry" aria-label="Filter by industry">
+        <option value="">All Industries</option>
+        <?php foreach (($filterOptions['industries'] ?? []) as $industryOption): ?>
+          <option value="<?php echo adviser_companies_escape($industryOption); ?>" <?php echo ($selected['industry'] ?? '') === $industryOption ? 'selected' : ''; ?>>
+            <?php echo adviser_companies_escape($industryOption); ?>
+          </option>
+        <?php endforeach; ?>
+      </select>
+
+      <select id="adviserCompaniesStatusFilter" class="adviser-companies-filter-select" name="status" aria-label="Filter by verification status">
+        <option value="">All Verification Status</option>
+        <?php foreach (($filterOptions['statuses'] ?? []) as $statusOption): ?>
+          <option value="<?php echo adviser_companies_escape($statusOption); ?>" <?php echo ($selected['status'] ?? '') === $statusOption ? 'selected' : ''; ?>>
+            <?php echo adviser_companies_escape(adviser_companies_verification_label($statusOption)); ?>
+          </option>
+        <?php endforeach; ?>
+      </select>
+
+      <?php if (($selected['search'] ?? '') !== '' || ($selected['industry'] ?? '') !== '' || ($selected['status'] ?? '') !== ''): ?>
+        <a class="adviser-companies-clear-filter" href="<?php echo $baseUrl; ?>/layout.php?page=adviser/companies">
+          <i class="fas fa-rotate-left"></i>
+          Clear
+        </a>
+      <?php endif; ?>
+    </form>
 
     <?php if (!empty($rows)): ?>
       <div class="adviser-companies-table-wrap">
@@ -663,7 +756,7 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
               <th>Company</th>
               <th>Contact Person</th>
               <th>Industry</th>
-              <th>BSU Status</th>
+              <th>Verification</th>
               <th>Students</th>
               <th>Submitted</th>
               <th>Documents</th>
@@ -675,6 +768,7 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
               <?php
               $companyName = trim((string)($row['company_name'] ?? 'Company'));
               $industry = trim((string)($row['industry'] ?? '')) ?: 'Unspecified';
+              $verificationStatus = adviser_companies_verification_label((string)($row['verification_status'] ?? ''));
               $contactPerson = adviser_companies_contact_person_label($row);
               $acceptingMeta = adviser_companies_accepting_status_meta($row);
               $students = is_array($row['students'] ?? null) ? $row['students'] : [];
@@ -704,7 +798,7 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
               )));
               $modalId = 'company-review-modal-' . $index;
               ?>
-              <tr data-search-row="<?php echo adviser_companies_escape($searchRow); ?>">
+              <tr data-search-row="<?php echo adviser_companies_escape($searchRow); ?>" data-industry="<?php echo adviser_companies_escape($industry); ?>" data-verification-status="<?php echo adviser_companies_escape($verificationStatus); ?>">
                 <td>
                   <div class="adviser-companies-company">
                     <span class="adviser-companies-avatar" style="background:<?php echo adviser_companies_escape(adviser_companies_gradient((int)$index)); ?>;">
@@ -714,7 +808,7 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
                       <button class="adviser-companies-company-link" type="button" data-open-company-modal="<?php echo adviser_companies_escape($modalId); ?>">
                         <span class="adviser-companies-company-name"><?php echo adviser_companies_escape($companyName); ?></span>
                       </button>
-                      <p class="adviser-companies-meta"><?php echo (int)($row['current_interns'] ?? 0); ?> active interns</p>
+                      <p class="adviser-companies-meta"><?php echo (int)($row['current_interns'] ?? 0); ?> current interns</p>
                     </div>
                   </div>
                 </td>
@@ -780,7 +874,7 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
                 <div class="company-modal-value"><?php echo adviser_companies_escape($industry); ?></div>
               </div>
               <div class="company-modal-item">
-                <div class="company-modal-label">Current Status</div>
+                <div class="company-modal-label">Verification Status</div>
                 <div class="company-modal-value"><?php echo adviser_companies_escape($statusLabel); ?></div>
               </div>
               <div class="company-modal-item">
@@ -788,7 +882,7 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
                 <div class="company-modal-value"><?php echo adviser_companies_escape($contactPerson); ?></div>
               </div>
               <div class="company-modal-item">
-                <div class="company-modal-label">BSU Internship Status</div>
+                <div class="company-modal-label">Verification Summary</div>
                 <div class="company-modal-value"><?php echo adviser_companies_escape((string)$acceptingMeta['label']); ?></div>
               </div>
               <div class="company-modal-item full">
@@ -923,7 +1017,10 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
 
 <script>
   (function () {
+    var filterForm = document.querySelector('.adviser-companies-filters');
     var searchInput = document.getElementById('adviserCompaniesSearchInput');
+    var industryFilter = document.getElementById('adviserCompaniesIndustryFilter');
+    var statusFilter = document.getElementById('adviserCompaniesStatusFilter');
     var exportLinks = Array.prototype.slice.call(document.querySelectorAll('[data-export-link="companies"]'));
     var tableBody = document.querySelector('.adviser-companies-table tbody');
     var searchableRows = tableBody
@@ -963,12 +1060,19 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
         return;
       }
 
-      var query = normalizeSearchText(searchInput.value);
+      var query = normalizeSearchText(searchInput ? searchInput.value : '');
+      var selectedIndustry = normalizeSearchText(industryFilter ? industryFilter.value : '');
+      var selectedStatus = normalizeSearchText(statusFilter ? statusFilter.value : '');
       var visibleCount = 0;
 
       searchableRows.forEach(function (row) {
         var haystack = normalizeSearchText(row.getAttribute('data-search-row'));
-        var isMatch = query === '' || haystack.indexOf(query) !== -1;
+        var rowIndustry = normalizeSearchText(row.getAttribute('data-industry'));
+        var rowStatus = normalizeSearchText(row.getAttribute('data-verification-status'));
+        var matchesSearch = query === '' || haystack.indexOf(query) !== -1;
+        var matchesIndustry = selectedIndustry === '' || rowIndustry === selectedIndustry;
+        var matchesStatus = selectedStatus === '' || rowStatus === selectedStatus;
+        var isMatch = matchesSearch && matchesIndustry && matchesStatus;
         row.style.display = isMatch ? '' : 'none';
         if (isMatch) {
           visibleCount += 1;
@@ -982,31 +1086,49 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
       }
     }
 
-    if (searchInput && searchableRows.length) {
-      searchInput.addEventListener('input', filterCompanyRows);
-      searchInput.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-        }
+    if (filterForm) {
+      filterForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        filterCompanyRows();
+        syncExportLinksWithFilters();
       });
-      filterCompanyRows();
     }
 
-    function syncExportLinksWithSearch() {
-      if (!searchInput || !exportLinks.length) {
+    if (searchInput && searchableRows.length) {
+      searchInput.addEventListener('input', filterCompanyRows);
+    }
+
+    [industryFilter, statusFilter].forEach(function (filter) {
+      if (!filter || !searchableRows.length) {
+        return;
+      }
+      filter.addEventListener('change', filterCompanyRows);
+    });
+
+    filterCompanyRows();
+
+    function syncExportLinksWithFilters() {
+      if (!exportLinks.length) {
         return;
       }
 
-      var rawValue = String(searchInput.value || '').replace(/\s+/g, ' ').trim();
+      var filters = {
+        search: String(searchInput ? searchInput.value : '').replace(/\s+/g, ' ').trim(),
+        industry: String(industryFilter ? industryFilter.value : '').replace(/\s+/g, ' ').trim(),
+        status: String(statusFilter ? statusFilter.value : '').replace(/\s+/g, ' ').trim()
+      };
+
       exportLinks.forEach(function (link) {
         try {
           var exportUrl = new URL(link.getAttribute('href'), window.location.origin);
 
-          if (rawValue) {
-            exportUrl.searchParams.set('search', rawValue);
-          } else {
-            exportUrl.searchParams.delete('search');
-          }
+          Object.keys(filters).forEach(function (key) {
+            if (filters[key]) {
+              exportUrl.searchParams.set(key, filters[key]);
+            } else {
+              exportUrl.searchParams.delete(key);
+            }
+          });
 
           link.setAttribute('href', exportUrl.pathname + exportUrl.search);
         } catch (error) {
@@ -1015,10 +1137,15 @@ $showCompaniesBanner = array_key_exists('show_companies_banner', $moduleSettings
       });
     }
 
-    if (searchInput) {
-      syncExportLinksWithSearch();
-      searchInput.addEventListener('input', syncExportLinksWithSearch);
-    }
+    syncExportLinksWithFilters();
+
+    [searchInput, industryFilter, statusFilter].forEach(function (control) {
+      if (!control) {
+        return;
+      }
+      control.addEventListener('input', syncExportLinksWithFilters);
+      control.addEventListener('change', syncExportLinksWithFilters);
+    });
 
     function closeModal(modal) {
       if (!modal) {

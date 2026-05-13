@@ -14,16 +14,9 @@ if (!function_exists('adviser_companies_get_filter_options')) {
         );
         $industries = $industryStmt ? ($industryStmt->fetchAll(PDO::FETCH_COLUMN) ?: []) : [];
 
-        $statusStmt = $pdo->query(
-            'SELECT DISTINCT COALESCE(NULLIF(TRIM(verification_status), ""), "Pending") AS verification_status
-             FROM employer
-             ORDER BY verification_status ASC'
-        );
-        $statuses = $statusStmt ? ($statusStmt->fetchAll(PDO::FETCH_COLUMN) ?: []) : [];
-
         return [
             'industries' => $industries,
-            'statuses' => $statuses,
+            'statuses' => ['Verified', 'Unverified'],
         ];
     }
 }
