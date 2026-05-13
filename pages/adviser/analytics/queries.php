@@ -712,36 +712,24 @@ function adviser_analytics_get_top_skills($pdo, $adviser_id) {
     try {
         $stmt = $pdo->prepare('
             SELECT 
-                i.skills,
+                sk.skill_name AS skill,
                 COUNT(DISTINCT ojt.student_id) as postings
-            FROM internship i
-            INNER JOIN ojt_record ojt ON i.internship_id = ojt.internship_id
+            FROM ojt_record ojt
             INNER JOIN adviser_assignment aa ON ojt.student_id = aa.student_id
+            INNER JOIN internship_skill isk ON isk.internship_id = ojt.internship_id
+            INNER JOIN skill sk ON sk.skill_id = isk.skill_id
             WHERE aa.adviser_id = ?
-            AND i.skills IS NOT NULL
-            AND i.skills != \'\'
-            GROUP BY i.skills
-            ORDER BY postings DESC
+            AND COALESCE(NULLIF(TRIM(aa.status), \'\'), \'Active\') = \'Active\'
+            GROUP BY sk.skill_id, sk.skill_name
+            ORDER BY postings DESC, sk.skill_name ASC
             LIMIT 5
         ');
         $stmt->execute([$adviser_id]);
-        $rawSkills = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Parse comma-separated skills and aggregate
-        $skillCounts = [];
-        foreach ($rawSkills as $row) {
-            $skillList = array_map('trim', explode(',', $row['skills']));
-            foreach ($skillList as $skill) {
-                if (!empty($skill)) {
-                    $skillCounts[$skill] = ($skillCounts[$skill] ?? 0) + $row['postings'];
-                }
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $skillName = trim((string)($row['skill'] ?? ''));
+            if ($skillName !== '') {
+                $skills[] = ['skill' => $skillName, 'postings' => (int)($row['postings'] ?? 0)];
             }
-        }
-
-        // Sort and limit to top 5
-        arsort($skillCounts);
-        foreach (array_slice($skillCounts, 0, 5) as $skill => $count) {
-            $skills[] = ['skill' => $skill, 'postings' => $count];
         }
     } catch (Exception $e) {
         error_log("adviser_analytics_get_top_skills error: " . $e->getMessage());

@@ -40,6 +40,19 @@ $fullName = trim($firstName . ' ' . $lastName);
 if ($fullName === '') {
     $fullName = (string) $userName;
 }
+$initials = '';
+foreach (preg_split('/\s+/', trim($fullName)) ?: [] as $namePart) {
+  $namePart = trim((string) $namePart);
+  if ($namePart !== '') {
+    $initials .= strtoupper(substr($namePart, 0, 1));
+  }
+  if (strlen($initials) >= 2) {
+    break;
+  }
+}
+if ($initials === '') {
+  $initials = 'S';
+}
 
 $profilePictureFile = trim((string) ($student['profile_picture'] ?? ''));
 $profilePicturePath = $profilePictureFile !== '' ? ($baseUrl . '/assets/backend/uploads/profile/' . rawurlencode($profilePictureFile)) : '';
