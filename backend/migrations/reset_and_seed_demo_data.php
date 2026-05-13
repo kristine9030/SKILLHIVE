@@ -689,6 +689,9 @@ try {
         }
 
         $hoursCompleted = $completed ? 500.00 : (80 + (($i % 8) * 32));
+        if (($student['student_number'] ?? '') === '25-00091') {
+            $hoursCompleted = 492.00;
+        }
         $updateRecord = $pdo->prepare(
             'UPDATE ojt_record
              SET hours_required = 500.00,
