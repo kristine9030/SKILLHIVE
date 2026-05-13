@@ -11,6 +11,9 @@ $adviserId = (int)($_SESSION['adviser_id'] ?? ($userId ?? ($_SESSION['user_id'] 
 $selectedSchoolYear = adviser_students_get_selected_school_year($pdo);
 $schoolYearOptions = adviser_students_get_school_year_options($pdo);
 $selectedTab = trim((string)($_GET['school_tab'] ?? 'active'));
+if (!in_array($selectedTab, ['active', 'archived'], true)) {
+    $selectedTab = 'active';
+}
 
 $currentFilters = [
     'search' => trim((string)($_GET['search'] ?? '')),
@@ -433,9 +436,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAction === 'update_account_sta
       </button>
       <button type="button" class="js-student-tab-btn" data-tab="archived" onclick="switchStudentTab(this, 'archived')" style="flex:1;padding:14px 18px;border:0;background:transparent;color:<?php echo $selectedTab === 'archived' ? '#111' : '#999'; ?>;font-weight:<?php echo $selectedTab === 'archived' ? '700' : '600'; ?>;font-size:0.95rem;cursor:pointer;border-bottom:3px solid <?php echo $selectedTab === 'archived' ? '#12b3ac' : 'transparent'; ?>;transition:all 0.2s ease;">
         <i class="fas fa-archive" style="margin-right:6px;"></i> Archived Students
-      </button>
-      <button type="button" class="js-student-tab-btn" data-tab="alumni" onclick="switchStudentTab(this, 'alumni')" style="flex:1;padding:14px 18px;border:0;background:transparent;color:<?php echo $selectedTab === 'alumni' ? '#111' : '#999'; ?>;font-weight:<?php echo $selectedTab === 'alumni' ? '700' : '600'; ?>;font-size:0.95rem;cursor:pointer;border-bottom:3px solid <?php echo $selectedTab === 'alumni' ? '#12b3ac' : 'transparent'; ?>;transition:all 0.2s ease;">
-        <i class="fas fa-graduation-cap" style="margin-right:6px;"></i> Alumni Interns
       </button>
     </div>
 
@@ -1353,6 +1353,7 @@ function bindStudentTableLiveFilters() {
 
   function switchStudentTab(btn, tab) {
     if (!btn) return;
+    if (['active', 'archived'].indexOf(tab) === -1) return;
 
     // Update active button state
     var buttons = document.querySelectorAll('.js-student-tab-btn');

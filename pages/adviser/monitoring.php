@@ -297,12 +297,19 @@ $exportUrl = $baseUrl . '/layout.php?' . $exportQuery;
     padding: 0;
     list-style: none;
     display: grid;
-    gap: 8px;
+    gap: 7px;
+    max-height: 150px;
+    overflow: auto;
+    border-top: 1px solid #eef2f7;
+    padding-top: 9px;
   }
 
   .monitoring-map-student-list li {
     display: grid;
     gap: 2px;
+    padding: 7px 8px;
+    border-radius: 8px;
+    background: #f8fafc;
     font-size: .78rem;
     color: var(--text2);
     line-height: 1.35;
@@ -345,16 +352,95 @@ $exportUrl = $baseUrl . '/layout.php?' . $exportQuery;
 
   .monitoring-map-legend {
     border-top: 1px solid var(--border);
-    padding: 12px 18px;
+    background: #fff;
+  }
+
+  .monitoring-map-legend > summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 18px;
+    cursor: pointer;
+  }
+
+  .monitoring-map-legend > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .monitoring-map-legend-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    color: var(--text);
+    font-size: .9rem;
+    font-weight: 800;
+  }
+
+  .monitoring-map-legend-title i {
+    color: #0f766e;
+  }
+
+  .monitoring-map-legend-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .monitoring-map-legend-count {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #e8f8f2;
+    color: #0f766e;
+    font-size: .76rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .monitoring-map-legend-toggle {
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text2);
+    background: #fff;
+  }
+
+  .monitoring-map-legend-toggle i {
+    transition: transform .18s ease;
+  }
+
+  .monitoring-map-legend[open] .monitoring-map-legend-toggle i {
+    transform: rotate(180deg);
+  }
+
+  .monitoring-map-legend-grid {
+    border-top: 1px solid var(--border);
+    padding: 12px 18px 16px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 10px;
+    max-height: 240px;
+    overflow: auto;
     background: #fbfdfc;
   }
 
   .monitoring-map-legend-item {
     display: grid;
     gap: 3px;
+    padding: 10px 12px;
+    border: 1px solid #eef2f7;
+    border-radius: 10px;
+    background: #fff;
     font-size: .78rem;
     color: var(--text3);
   }
@@ -858,6 +944,16 @@ $exportUrl = $baseUrl . '/layout.php?' . $exportQuery;
       max-height: none;
     }
 
+    .monitoring-map-legend > summary {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .monitoring-map-legend-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+
     #map {
       height: 340px;
       min-height: 340px;
@@ -993,14 +1089,23 @@ $exportUrl = $baseUrl . '/layout.php?' . $exportQuery;
       <ul id="monitoringMapWarningList"></ul>
     </div>
     <?php if (!empty($mapStudents)): ?>
-      <div class="monitoring-map-legend" id="monitoringMapLegend">
-        <?php foreach ($mapStudents as $mapStudent): ?>
-          <div class="monitoring-map-legend-item">
-            <strong><?php echo adviser_monitoring_escape((string)($mapStudent['student_name'] ?? 'Student')); ?></strong>
-            <span><?php echo adviser_monitoring_escape((string)($mapStudent['company_name'] ?? 'No company listed')); ?> - <?php echo adviser_monitoring_escape((string)($mapStudent['hours_label'] ?? '0/0 hrs')); ?></span>
-          </div>
-        <?php endforeach; ?>
-      </div>
+      <details class="monitoring-map-legend" id="monitoringMapLegend">
+        <summary>
+          <span class="monitoring-map-legend-title"><i class="fas fa-user-graduate"></i> Accepted Student Placements</span>
+          <span class="monitoring-map-legend-actions">
+            <span class="monitoring-map-legend-count"><?php echo count($mapStudents); ?> student<?php echo count($mapStudents) === 1 ? '' : 's'; ?></span>
+            <span class="monitoring-map-legend-toggle" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+          </span>
+        </summary>
+        <div class="monitoring-map-legend-grid">
+          <?php foreach ($mapStudents as $mapStudent): ?>
+            <div class="monitoring-map-legend-item">
+              <strong><?php echo adviser_monitoring_escape((string)($mapStudent['student_name'] ?? 'Student')); ?></strong>
+              <span><?php echo adviser_monitoring_escape((string)($mapStudent['company_name'] ?? 'No company listed')); ?> - <?php echo adviser_monitoring_escape((string)($mapStudent['hours_label'] ?? '0/0 hrs')); ?></span>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      </details>
     <?php endif; ?>
   </section>
 
